@@ -90,7 +90,7 @@ export default function Header() {
                 height={24}
                 className="w-6 h-6"
               />
-              <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              <span className="absolute -top-2 -right-2 bg-[#8DC63F] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                 5
               </span>
             </Link>

@@ -29,18 +29,18 @@ export default function SearchBar() {
   }, [isCategoryOpen]);
 
   return (
-    <div className="w-full bg-green-500 py-4">
+    <div className="w-full bg-[#8DC63F] py-3 md:py-4">
       <div className="container mx-auto px-4">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 md:gap-6">
           {/* Search Input */}
           <div className="flex-1 relative" ref={dropdownRef}>
-            <div className="flex items-center bg-white rounded-lg overflow-hidden">
+            <div className="flex items-center bg-white rounded-lg overflow-hidden shadow-sm h-12">
               {/* Category Dropdown */}
               <button
                 onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                className="flex items-center gap-2 px-4 py-3 border-r border-gray-200 hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-2 px-4 md:px-5 py-3 border-r border-gray-200 hover:bg-gray-50 transition-colors whitespace-nowrap h-full"
               >
-                <span className="text-gray-700 font-medium">Ангилал</span>
+                <span className="text-gray-700 font-normal text-sm">Ангилал</span>
                 <Image
                   src="/svg/dropdown.svg"
                   alt="Dropdown"
@@ -54,11 +54,11 @@ export default function SearchBar() {
               <input
                 type="text"
                 placeholder="Бүтээгдэхүүн хайх..."
-                className="flex-1 px-4 py-3 text-gray-700 placeholder-gray-400 focus:outline-none"
+                className="flex-1 px-4 py-3 text-gray-700 placeholder-gray-400 focus:outline-none text-sm h-full"
               />
 
-              {/* Search Icon */}
-              <button className="px-4 py-3 hover:bg-gray-50 transition-colors">
+              {/* Search Icon Button */}
+              <button className="px-4 md:px-5 py-3 border-l border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center h-full">
                 <Image
                   src="/svg/search.svg"
                   alt="Search"
@@ -75,28 +75,28 @@ export default function SearchBar() {
                 <div className="py-2">
                   <Link
                     href="/products?category=all"
-                    className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
+                    className="block px-4 py-2 text-gray-700 hover:bg-[#8DC63F]/10 hover:text-[#8DC63F] transition-colors"
                     onClick={() => setIsCategoryOpen(false)}
                   >
                     Бүх ангилал
                   </Link>
                   <Link
                     href="/products?category=laptops"
-                    className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
+                    className="block px-4 py-2 text-gray-700 hover:bg-[#8DC63F]/10 hover:text-[#8DC63F] transition-colors"
                     onClick={() => setIsCategoryOpen(false)}
                   >
                     Laptops
                   </Link>
                   <Link
                     href="/products?category=phones"
-                    className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
+                    className="block px-4 py-2 text-gray-700 hover:bg-[#8DC63F]/10 hover:text-[#8DC63F] transition-colors"
                     onClick={() => setIsCategoryOpen(false)}
                   >
                     Cell Phones
                   </Link>
                   <Link
                     href="/products?category=tablets"
-                    className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
+                    className="block px-4 py-2 text-gray-700 hover:bg-[#8DC63F]/10 hover:text-[#8DC63F] transition-colors"
                     onClick={() => setIsCategoryOpen(false)}
                   >
                     Tablets
@@ -107,22 +107,22 @@ export default function SearchBar() {
           </div>
 
           {/* Quick Links */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center justify-center md:justify-start gap-4 md:gap-6 lg:gap-8 flex-shrink-0">
             <Link
               href="/delivery"
-              className="text-white uppercase font-medium hover:text-gray-100 transition-colors text-sm"
+              className="text-white uppercase font-semibold hover:text-gray-100 transition-colors text-xs md:text-sm whitespace-nowrap"
             >
               ХҮРГЭЛТ
             </Link>
             <Link
               href="/return"
-              className="text-white uppercase font-medium hover:text-gray-100 transition-colors text-sm"
+              className="text-white uppercase font-semibold hover:text-gray-100 transition-colors text-xs md:text-sm whitespace-nowrap"
             >
               БУЦААЛТ
             </Link>
             <Link
               href="/order"
-              className="text-white uppercase font-medium hover:text-gray-100 transition-colors text-sm"
+              className="text-white uppercase font-semibold hover:text-gray-100 transition-colors text-xs md:text-sm whitespace-nowrap"
             >
               ЗАХИАЛГА
             </Link>
