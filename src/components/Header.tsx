@@ -11,7 +11,7 @@ export default function Header() {
     <header className="w-full bg-white">
       {/* Top Header Bar */}
       <div className="w-full bg-white border-b border-white">
-        <div className="container mx-auto px-4 py-2 flex flex-col items-center justify-between gap-2 text-xs sm:flex-row sm:text-sm">
+        <div className="container mx-auto px-4 py-2 flex items-center justify-between gap-3 text-xs sm:text-sm">
           {/* Left: Social Media Icons */}
           <div className="flex items-center gap-2">
             <Link href="#" className="flex items-center justify-center">
