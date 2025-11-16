@@ -1,14 +1,696 @@
+"use client";
 import Header from "@/components/Header";
+import { Card, CardContent } from "@/components/ui/card";
+import Image from "next/image";
+import { useMemo, useState } from "react";
+import { Shield, LifeBuoy, Wrench } from "lucide-react";
+
+type Product = {
+  id: number;
+  name: string;
+  price: string;
+  img: string;
+  category: "ppe" | "rescue" | "workplace";
+  subcategory: string;
+  subleaf: string;
+  color: string;
+  brand: string;
+  size: string;
+  priceNum: number;
+  stock: "in_stock" | "preorder";
+  theme: string;
+};
+
+const ALL_PRODUCTS: Product[] = Array.from({ length: 200 }).map((_, i) => {
+  const idx = (i % 3) + 1;
+  const cat: Product["category"] = i % 3 === 0 ? "ppe" : i % 3 === 1 ? "rescue" : "workplace";
+  const subByCat: Record<Product["category"], string[]> = {
+    ppe: ["Толгойн хамгаалалт", "Хамгаалалтын хувцас", "Гар хамгаалалт", "Хөл хамгаалалт"],
+    rescue: ["Аюулгүйн цоож пайз", "Цахилгааны хамгаалалтын багаж", "Тэмдэг тэмдэглэгээ", "Гэрэл, чийдэн", "Осолын үеийн багаж хэрэгсэл"],
+    workplace: ["Дуу чимээ, тоосжилт"],
+  };
+  const subs = subByCat[cat];
+  const sub = subs[i % subs.length];
+  const leafByCat: Record<Product["category"], Record<string, string[]>> = {
+    ppe: {
+      "Толгойн хамгаалалт": ["Малгай, каск", "Нүүрний хамгаалалт, нүдний шил", "Гагнуурын баг", "Амьсгалын маск", "Чихэвч", "Баг шүүлтүүр"],
+      "Хамгаалалтын хувцас": ["Зуны хувцас", "Өвлийн хувцас", "Цахилгаан, нуман ниргэлтээс", "Гагнуурын хувцас", "Халуунаас хамгаалах", "Хими, цацрагаас"],
+      "Гар хамгаалалт": ["Ажлын бээлий", "Цахилгааны бээлий", "Гагнуурын/халуун бээлий", "Хими, шүлт, цацрагаас"],
+      "Хөл хамгаалалт": ["Ажлын гутал", "Гагнуурын гутал", "Хүчил шүлтнээс", "Усны гутал"],
+    },
+    rescue: {
+      "Аюулгүйн цоож пайз": ["Цоож", "Түгжээ", "Хайрцаг/стайшин", "Пайз", "Иж бүрдэл"],
+      "Цахилгааны хамгаалалтын багаж": ["Хөндийрүүлэгч штанг", "Зөөврийн газардуулга", "Хүчдэл хэмжигч", "Тусгаарлагч материал", "Зөөврийн хайс/шат"],
+      "Тэмдэг тэмдэглэгээ": ["Анхааруулах палакат", "Тууз/наалт/скоч", "Замын тэмдэг", "Тумбо/шон", "Туг дарцаг"],
+      "Гэрэл, чийдэн": ["Духны гэрэл", "Баттерей", "Зөөврийн гэрэл", "Прожектор гэрэл", "Маяк/дохиолол"],
+      "Осолын үеийн багаж хэрэгсэл": ["Химийн асгаралтын иж бүрдэл", "Галын анхан шатны хэрэгсэл", "Түргэн тусламжийн хэрэгсэл"],
+    },
+    workplace: {
+      "Дуу чимээ, тоосжилт": ["Тоосны маск", "Чихний хамгаалалт"],
+    },
+  };
+  const leaves = (leafByCat[cat][sub] ?? []);
+  const subleaf = leaves.length ? leaves[i % leaves.length] : "";
+  const colors = ["Улаан", "Цэнхэр", "Хар", "Цагаан", "Ногоон"];
+  const brands = ["Swootech", "Nike", "Aegis", "SafePro", "WorkWear"];
+  const sizes = ["S", "M", "L", "XL"];
+  const themes = ["Classic", "Sport", "Pro", "Eco"];
+  const priceNum = Math.floor(Math.random() * 900) + 100; // 100-999
+  return {
+    id: i + 1,
+    name: `Sample Product ${i + 1}`,
+    price: `${priceNum.toLocaleString()}₮`,
+    img:
+      idx === 1
+        ? "/images/product1.jpg"
+        : idx === 2
+        ? "/images/product2.jpg"
+        : "/images/product3.jpg",
+    category: cat,
+    subcategory: sub,
+    subleaf,
+    color: colors[i % colors.length],
+    brand: brands[i % brands.length],
+    size: sizes[i % sizes.length],
+    priceNum,
+    stock: i % 4 === 0 ? "preorder" : "in_stock",
+    theme: themes[i % themes.length],
+  };
+});
 
 export default function ProductsPage() {
+  const pageSize = 50;
+  const [page, setPage] = useState(1);
+  const [selectedCat, setSelectedCat] = useState<"all" | Product["category"]>("all");
+  const [selectedSub, setSelectedSub] = useState<string | null>(null);
+  const [selectedLeaf, setSelectedLeaf] = useState<string[]>([]);
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [selectedStock, setSelectedStock] = useState<Array<Product["stock"]>>([]);
+  const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const minPrice = useMemo(() => Math.min(...ALL_PRODUCTS.map((p) => p.priceNum)), []);
+  const maxPrice = useMemo(() => Math.max(...ALL_PRODUCTS.map((p) => p.priceNum)), []);
+  const [priceFrom, setPriceFrom] = useState<number>(minPrice);
+  const [priceTo, setPriceTo] = useState<number>(maxPrice);
+
+  const categories = [
+    { id: "all" as const, label: "Бүгд", icon: null, count: ALL_PRODUCTS.length },
+    { id: "ppe" as const, label: "ХАБ хувцас хэрэгсэл", icon: Shield, count: ALL_PRODUCTS.filter(p => p.category === "ppe").length },
+    { id: "rescue" as const, label: "Аврах хамгаалах", icon: LifeBuoy, count: ALL_PRODUCTS.filter(p => p.category === "rescue").length },
+    { id: "workplace" as const, label: "Ажлын байр", icon: Wrench, count: ALL_PRODUCTS.filter(p => p.category === "workplace").length },
+  ];
+
+  const subcats: Record<Product["category"], string[]> = {
+    ppe: ["Толгойн хамгаалалт", "Хамгаалалтын хувцас", "Гар хамгаалалт", "Хөл хамгаалалт"],
+    rescue: ["Аюулгүйн цоож пайз", "Цахилгааны хамгаалалтын багаж", "Тэмдэг тэмдэглэгээ", "Гэрэл, чийдэн", "Осолын үеийн багаж хэрэгсэл"],
+    workplace: ["Дуу чимээ, тоосжилт"],
+  };
+  const leafcats: Record<Product["category"], Record<string, string[]>> = {
+    ppe: {
+      "Толгойн хамгаалалт": ["Малгай, каск", "Нүүрний хамгаалалт, нүдний шил", "Гагнуурын баг", "Амьсгалын маск", "Чихэвч", "Баг шүүлтүүр"],
+      "Хамгаалалтын хувцас": ["Зуны хувцас", "Өвлийн хувцас", "Цахилгаан, нуман ниргэлтээс", "Гагнуурын хувцас", "Халуунаас хамгаалах", "Хими, цацрагаас"],
+      "Гар хамгаалалт": ["Ажлын бээлий", "Цахилгааны бээлий", "Гагнуурын/халуун бээлий", "Хими, шүлт, цацрагаас"],
+      "Хөл хамгаалалт": ["Ажлын гутал", "Гагнуурын гутал", "Хүчил шүлтнээс", "Усны гутал"],
+    },
+    rescue: {
+      "Аюулгүйн цоож пайз": ["Цоож", "Түгжээ", "Хайрцаг/стайшин", "Пайз", "Иж бүрдэл"],
+      "Цахилгааны хамгаалалтын багаж": ["Хөндийрүүлэгч штанг", "Зөөврийн газардуулга", "Хүчдэл хэмжигч", "Тусгаарлагч материал", "Зөөврийн хайс/шат"],
+      "Тэмдэг тэмдэглэгээ": ["Анхааруулах палакат", "Тууз/наалт/скоч", "Замын тэмдэг", "Тумбо/шон", "Туг дарцаг"],
+      "Гэрэл, чийдэн": ["Духны гэрэл", "Баттерей", "Зөөврийн гэрэл", "Прожектор гэрэл", "Маяк/дохиолол"],
+      "Осолын үеийн багаж хэрэгсэл": ["Химийн асгаралтын иж бүрдэл", "Галын анхан шатны хэрэгсэл", "Түргэн тусламжийн хэрэгсэл"],
+    },
+    workplace: {
+      "Дуу чимээ, тоосжилт": ["Тоосны маск", "Чихний хамгаалалт"],
+    },
+  };
+
+  const filtered = useMemo(() => {
+    let base = selectedCat === "all" ? ALL_PRODUCTS : ALL_PRODUCTS.filter(p => p.category === selectedCat);
+    if (selectedCat !== "all" && selectedSub) {
+      base = base.filter(p => p.subcategory === selectedSub);
+    }
+    if (selectedCat !== "all" && selectedLeaf.length) {
+      base = base.filter(p => selectedLeaf.includes(p.subleaf));
+    }
+    if (selectedColors.length) base = base.filter(p => selectedColors.includes(p.color));
+    if (selectedBrands.length) base = base.filter(p => selectedBrands.includes(p.brand));
+    if (selectedSizes.length) base = base.filter(p => selectedSizes.includes(p.size));
+    if (selectedStock.length) base = base.filter(p => selectedStock.includes(p.stock));
+    if (selectedThemes.length) base = base.filter(p => selectedThemes.includes(p.theme));
+    base = base.filter((p) => p.priceNum >= priceFrom && p.priceNum <= priceTo);
+    return base;
+  }, [selectedCat, selectedSub, selectedLeaf, selectedColors, selectedBrands, selectedSizes, selectedStock, selectedThemes, priceFrom, priceTo]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageItems = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [page, filtered]);
+
   return (
     <main className="min-h-screen bg-white">
       <Header />
-      <div className="container mx-auto px-4 py-16">
-        <h1 className="text-4xl font-bold text-gray-800 mb-8">БҮТЭЭГДЭХҮҮН</h1>
-        <p className="text-gray-600 text-lg">Products page content coming soon...</p>
+      <div className="container mx-auto px-4 py-12">
+        <div className="mb-4 flex items-end justify-between gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">БҮТЭЭГДЭХҮҮН</h1>
+         
+        </div>
+
+        {/* Top category filter bar */}
+        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+          <div className="flex flex-wrap gap-3">
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => {
+                  setSelectedCat(c.id);
+                  setPage(1);
+                  setSelectedSub(null);
+                }}
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs md:text-sm transition-colors ${
+                  selectedCat === c.id
+                    ? "border-[#8DC63F] bg-[#8DC63F] text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-[#8DC63F]"
+                }`}
+              >
+                {c.icon ? <c.icon className="h-4 w-4" /> : null}
+                <span>{c.label}</span>
+                <span className="ml-1 text-[10px] opacity-80">{c.count}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Mobile filters toggle */}
+        <div className="mb-4 md:hidden">
+          <button
+            onClick={() => setShowMobileFilters(true)}
+            className="w-full rounded-lg border px-4 py-2 text-sm font-medium"
+          >
+            Шүүлтүүрүүд
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-6">
+          {/* Left filters: show subcats only when main selected */}
+          <aside className="hidden md:block space-y-4">
+            {selectedCat !== "all" ? (
+              <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                <div className="text-sm font-semibold text-gray-800 mb-2">Дэд ангилал</div>
+                <div className="space-y-2">
+                  {subcats[selectedCat].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => {
+                        setSelectedSub(s === selectedSub ? null : s);
+                        setSelectedLeaf([]);
+                        setPage(1);
+                      }}
+                      className={`w-full text-left rounded-md px-2 py-2 text-sm transition-colors ${
+                        s === selectedSub ? "bg-[#8DC63F]/10 text-[#8DC63F]" : "hover:bg-gray-50"
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Sub-sub categories */}
+            {selectedCat !== "all" && selectedSub ? (
+              <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                <div className="text-sm font-semibold text-gray-800 mb-2">Нарийвчилсан ангилал</div>
+                <div className="space-y-2 text-sm">
+                  {(leafcats[selectedCat][selectedSub] ?? []).map((leaf) => (
+                    <label key={leaf} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedLeaf.includes(leaf)}
+                        onChange={(e) => {
+                          setPage(1);
+                          setSelectedLeaf((prev) =>
+                            e.target.checked ? [...prev, leaf] : prev.filter((x) => x !== leaf)
+                          );
+                        }}
+                      />
+                      {leaf}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Color filter */}
+            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+              <div className="text-sm font-semibold text-gray-800 mb-2">Өнгө</div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                {Array.from(new Set(ALL_PRODUCTS.map((p) => p.color))).map((c) => {
+                  const checked = selectedColors.includes(c);
+                  return (
+                    <label key={c} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          setPage(1);
+                          setSelectedColors((prev) =>
+                            e.target.checked ? [...prev, c] : prev.filter((x) => x !== c)
+                          );
+                        }}
+                      />
+                      {c}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Brand filter */}
+            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+              <div className="text-sm font-semibold text-gray-800 mb-2">Брэнд</div>
+              <div className="space-y-2 text-sm">
+                {Array.from(new Set(ALL_PRODUCTS.map((p) => p.brand))).map((b) => {
+                  const checked = selectedBrands.includes(b);
+                  return (
+                    <label key={b} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          setPage(1);
+                          setSelectedBrands((prev) =>
+                            e.target.checked ? [...prev, b] : prev.filter((x) => x !== b)
+                          );
+                        }}
+                      />
+                      {b}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Size filter */}
+            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+              <div className="text-sm font-semibold text-gray-800 mb-2">Хэмжээ</div>
+              <div className="flex flex-wrap gap-2">
+                {Array.from(new Set(ALL_PRODUCTS.map((p) => p.size))).map((s) => {
+                  const active = selectedSizes.includes(s);
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => {
+                        setPage(1);
+                        setSelectedSizes((prev) =>
+                          active ? prev.filter((x) => x !== s) : [...prev, s]
+                        );
+                      }}
+                      className={`rounded-md border px-2 py-1 text-sm ${
+                        active ? "border-[#8DC63F] text-[#8DC63F]" : "border-gray-200"
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Stock filter */}
+            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+              <div className="text-sm font-semibold text-gray-800 mb-2">Нөөц</div>
+              <div className="space-y-2 text-sm">
+                {[
+                  { id: "in_stock" as const, label: "Агуулахад байна" },
+                  { id: "preorder" as const, label: "Захиалгаар" },
+                ].map((s) => {
+                  const checked = selectedStock.includes(s.id);
+                  return (
+                    <label key={s.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          setPage(1);
+                          setSelectedStock((prev) =>
+                            e.target.checked ? [...prev, s.id] : prev.filter((x) => x !== s.id)
+                          );
+                        }}
+                      />
+                      {s.label}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+
+
+            {/* Price filter */}
+            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+              <div className="text-sm font-semibold text-gray-800 mb-2">Үнэ</div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  className="w-full rounded-md border px-2 py-1 text-sm"
+                  value={priceFrom}
+                  min={minPrice}
+                  max={priceTo}
+                  onChange={(e) => {
+                    setPage(1);
+                    setPriceFrom(Number(e.target.value || minPrice));
+                  }}
+                />
+                <span className="text-xs text-gray-500">-</span>
+                <input
+                  type="number"
+                  className="w-full rounded-md border px-2 py-1 text-sm"
+                  value={priceTo}
+                  min={priceFrom}
+                  max={maxPrice}
+                  onChange={(e) => {
+                    setPage(1);
+                    setPriceTo(Number(e.target.value || maxPrice));
+                  }}
+                />
+              </div>
+              <div className="mt-2 flex justify-between text-xs text-gray-500">
+                <span>Мин: {minPrice.toLocaleString()}₮</span>
+                <span>Макс: {maxPrice.toLocaleString()}₮</span>
+              </div>
+            </div>
+
+            {/* Clear filters */}
+            <button
+              onClick={() => {
+                setSelectedSub(null);
+                setSelectedColors([]);
+                setSelectedBrands([]);
+                setSelectedSizes([]);
+                setSelectedStock([]);
+                setSelectedThemes([]);
+                setPriceFrom(minPrice);
+                setPriceTo(maxPrice);
+                setPage(1);
+              }}
+              className="w-full rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
+            >
+              Шүүлтүүр цэвэрлэх
+            </button>
+          </aside>
+
+          {/* Products grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+          {pageItems.map((p) => (
+            <Card key={p.id} className="overflow-hidden flex flex-col h-full">
+              <div className="relative h-40 w-full">
+                <Image
+                  src={p.img}
+                  alt={p.name}
+                  fill
+                  className="object-contain bg-white"
+                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
+                />
+              </div>
+              <CardContent className="p-3 flex flex-col grow">
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span>ID: {p.id}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 ${
+                        p.stock === "in_stock"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {p.stock === "in_stock" ? "Бэлэн" : "Захиалгаар"}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-sm font-medium text-gray-800 line-clamp-2">{p.name}</div>
+                  <div className="mt-1 text-xs text-gray-600">
+                    Брэнд: <span className="font-medium">{p.brand}</span> • Өнгө: {p.color} •
+                    Хэмжээ: {p.size} • Загвар: {p.theme}
+                  </div>
+                  <div className="mt-auto pt-2 text-sm font-semibold text-gray-900">{p.price}</div>
+              </CardContent>
+            </Card>
+          ))}
+          </div>
+        </div>
+
+        {/* Mobile filters bottom sheet */}
+        {showMobileFilters && (
+          <div
+            className="md:hidden fixed inset-0 z-50 bg-black/40"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowMobileFilters(false);
+            }}
+          >
+            <div className="absolute bottom-0 left-0 right-0 max-h-[80%] overflow-y-auto rounded-t-2xl bg-white p-4 space-y-4">
+              <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-gray-300" />
+
+              {selectedCat !== "all" ? (
+                <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                  <div className="text-sm font-semibold text-gray-800 mb-2">Дэд ангилал</div>
+                  <div className="space-y-2">
+                    {subcats[selectedCat].map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => {
+                          setSelectedSub(s === selectedSub ? null : s);
+                          setPage(1);
+                        }}
+                        className={`w-full text-left rounded-md px-2 py-2 text-sm transition-colors ${
+                          s === selectedSub ? "bg-[#8DC63F]/10 text-[#8DC63F]" : "hover:bg-gray-50"
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Color */}
+              <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                <div className="text-sm font-semibold text-gray-800 mb-2">Өнгө</div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {Array.from(new Set(ALL_PRODUCTS.map((p) => p.color))).map((c) => {
+                    const checked = selectedColors.includes(c);
+                    return (
+                      <label key={c} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            setPage(1);
+                            setSelectedColors((prev) =>
+                              e.target.checked ? [...prev, c] : prev.filter((x) => x !== c)
+                            );
+                          }}
+                        />
+                        {c}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Brand */}
+              <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                <div className="text-sm font-semibold text-gray-800 mb-2">Брэнд</div>
+                <div className="space-y-2 text-sm">
+                  {Array.from(new Set(ALL_PRODUCTS.map((p) => p.brand))).map((b) => {
+                    const checked = selectedBrands.includes(b);
+                    return (
+                      <label key={b} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            setPage(1);
+                            setSelectedBrands((prev) =>
+                              e.target.checked ? [...prev, b] : prev.filter((x) => x !== b)
+                            );
+                          }}
+                        />
+                        {b}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Size */}
+              <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                <div className="text-sm font-semibold text-gray-800 mb-2">Хэмжээ</div>
+                <div className="flex flex-wrap gap-2">
+                  {Array.from(new Set(ALL_PRODUCTS.map((p) => p.size))).map((s) => {
+                    const active = selectedSizes.includes(s);
+                    return (
+                      <button
+                        key={s}
+                        onClick={() => {
+                          setPage(1);
+                          setSelectedSizes((prev) =>
+                            active ? prev.filter((x) => x !== s) : [...prev, s]
+                          );
+                        }}
+                        className={`rounded-md border px-2 py-1 text-sm ${
+                          active ? "border-[#8DC63F] text-[#8DC63F]" : "border-gray-200"
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Stock */}
+              <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                <div className="text-sm font-semibold text-gray-800 mb-2">Нөөц</div>
+                <div className="space-y-2 text-sm">
+                  {[
+                    { id: "in_stock" as const, label: "Агуулахад байна" },
+                    { id: "preorder" as const, label: "Захиалгаар" },
+                  ].map((s) => {
+                    const checked = selectedStock.includes(s.id);
+                    return (
+                      <label key={s.id} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            setPage(1);
+                            setSelectedStock((prev) =>
+                              e.target.checked ? [...prev, s.id] : prev.filter((x) => x !== s.id)
+                            );
+                          }}
+                        />
+                        {s.label}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Theme */}
+              <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                <div className="text-sm font-semibold text-gray-800 mb-2">Загвар (Theme)</div>
+                <div className="space-y-2 text-sm">
+                  {Array.from(new Set(ALL_PRODUCTS.map((p) => p.theme))).map((t) => {
+                    const checked = selectedThemes.includes(t);
+                    return (
+                      <label key={t} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            setPage(1);
+                            setSelectedThemes((prev) =>
+                              e.target.checked ? [...prev, t] : prev.filter((x) => x !== t)
+                            );
+                          }}
+                        />
+                        {t}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Price */}
+              <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                <div className="text-sm font-semibold text-gray-800 mb-2">Үнэ</div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    className="w-full rounded-md border px-2 py-1 text-sm"
+                    value={priceFrom}
+                    min={minPrice}
+                    max={priceTo}
+                    onChange={(e) => {
+                      setPage(1);
+                      setPriceFrom(Number(e.target.value || minPrice));
+                    }}
+                  />
+                  <span className="text-xs text-gray-500">-</span>
+                  <input
+                    type="number"
+                    className="w-full rounded-md border px-2 py-1 text-sm"
+                    value={priceTo}
+                    min={priceFrom}
+                    max={maxPrice}
+                    onChange={(e) => {
+                      setPage(1);
+                      setPriceTo(Number(e.target.value || maxPrice));
+                    }}
+                  />
+                </div>
+                <div className="mt-2 flex justify-between text-xs text-gray-500">
+                  <span>Мин: {minPrice.toLocaleString()}₮</span>
+                  <span>Макс: {maxPrice.toLocaleString()}₮</span>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setSelectedSub(null);
+                    setSelectedLeaf([]);
+                    setSelectedColors([]);
+                    setSelectedBrands([]);
+                    setSelectedSizes([]);
+                    setSelectedStock([]);
+                    setSelectedThemes([]);
+                    setPriceFrom(minPrice);
+                    setPriceTo(maxPrice);
+                    setPage(1);
+                  }}
+                  className="w-full rounded-md border px-4 py-2 text-sm"
+                >
+                  Цэвэрлэх
+                </button>
+                <button
+                  onClick={() => setShowMobileFilters(false)}
+                  className="w-full rounded-md border px-4 py-2 text-sm"
+                >
+                  Хаах
+                </button>
+                <button
+                  onClick={() => setShowMobileFilters(false)}
+                  className="w-full rounded-md bg-[#8DC63F] px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Хэрэглэх
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-8 flex items-center justify-center gap-2">
+          <button
+            className="px-3 py-1 rounded-md border text-sm disabled:opacity-50"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+          >
+            Өмнөх
+          </button>
+          <span className="text-sm text-gray-600">
+            {page} / {totalPages}
+          </span>
+          <button
+            className="px-3 py-1 rounded-md border text-sm disabled:opacity-50"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+          >
+            Дараах
+          </button>
+        </div>
       </div>
     </main>
   );
 }
-

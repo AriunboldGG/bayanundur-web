@@ -34,7 +34,7 @@ export default function Header() {
 
           {/* Right: Contact Info */}
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-gray-700">
+            <a href="mailto:info@bayan-undur.mn" className="flex items-center gap-2 text-gray-700 hover:underline">
               <Image 
                 src="/svg/email-logo.svg" 
                 alt="Email" 
@@ -42,9 +42,9 @@ export default function Header() {
                 height={24}
                 className="w-6 h-6"
               />
-              <span className="text-sm">bayan-undur@gmail.com</span>
-            </div>
-            <div className="flex items-center gap-2 text-gray-700">
+              <span className="text-sm">info@bayan-undur.mn</span>
+            </a>
+            <a href="tel:70118585" className="flex items-center gap-2 text-gray-700 hover:underline">
               <Image 
                 src="/svg/phone-logo.svg" 
                 alt="Phone" 
@@ -52,8 +52,8 @@ export default function Header() {
                 height={24}
                 className="w-6 h-6"
               />
-              <span className="text-sm">+976 99999999</span>
-            </div>
+              <span className="text-sm">70118585</span>
+            </a>
           </div>
         </div>
       </div>
