@@ -2,6 +2,7 @@
 import Header from "@/components/Header";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Shield, LifeBuoy, Wrench } from "lucide-react";
 
@@ -90,10 +91,6 @@ export default function ProductsPage() {
   const [selectedStock, setSelectedStock] = useState<Array<Product["stock"]>>([]);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const minPrice = useMemo(() => Math.min(...ALL_PRODUCTS.map((p) => p.priceNum)), []);
-  const maxPrice = useMemo(() => Math.max(...ALL_PRODUCTS.map((p) => p.priceNum)), []);
-  const [priceFrom, setPriceFrom] = useState<number>(minPrice);
-  const [priceTo, setPriceTo] = useState<number>(maxPrice);
 
   const categories = [
     { id: "all" as const, label: "Бүгд", icon: null, count: ALL_PRODUCTS.length },
@@ -139,9 +136,8 @@ export default function ProductsPage() {
     if (selectedSizes.length) base = base.filter(p => selectedSizes.includes(p.size));
     if (selectedStock.length) base = base.filter(p => selectedStock.includes(p.stock));
     if (selectedThemes.length) base = base.filter(p => selectedThemes.includes(p.theme));
-    base = base.filter((p) => p.priceNum >= priceFrom && p.priceNum <= priceTo);
     return base;
-  }, [selectedCat, selectedSub, selectedLeaf, selectedColors, selectedBrands, selectedSizes, selectedStock, selectedThemes, priceFrom, priceTo]);
+  }, [selectedCat, selectedSub, selectedLeaf, selectedColors, selectedBrands, selectedSizes, selectedStock, selectedThemes]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageItems = useMemo(() => {
@@ -347,53 +343,16 @@ export default function ProductsPage() {
               </div>
             </div>
 
-
-
-            {/* Price filter */}
-            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-              <div className="text-sm font-semibold text-gray-800 mb-2">Үнэ</div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  className="w-full rounded-md border px-2 py-1 text-sm"
-                  value={priceFrom}
-                  min={minPrice}
-                  max={priceTo}
-                  onChange={(e) => {
-                    setPage(1);
-                    setPriceFrom(Number(e.target.value || minPrice));
-                  }}
-                />
-                <span className="text-xs text-gray-500">-</span>
-                <input
-                  type="number"
-                  className="w-full rounded-md border px-2 py-1 text-sm"
-                  value={priceTo}
-                  min={priceFrom}
-                  max={maxPrice}
-                  onChange={(e) => {
-                    setPage(1);
-                    setPriceTo(Number(e.target.value || maxPrice));
-                  }}
-                />
-              </div>
-              <div className="mt-2 flex justify-between text-xs text-gray-500">
-                <span>Мин: {minPrice.toLocaleString()}₮</span>
-                <span>Макс: {maxPrice.toLocaleString()}₮</span>
-              </div>
-            </div>
-
             {/* Clear filters */}
             <button
               onClick={() => {
                 setSelectedSub(null);
+                setSelectedLeaf([]);
                 setSelectedColors([]);
                 setSelectedBrands([]);
                 setSelectedSizes([]);
                 setSelectedStock([]);
                 setSelectedThemes([]);
-                setPriceFrom(minPrice);
-                setPriceTo(maxPrice);
                 setPage(1);
               }}
               className="w-full rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
@@ -405,7 +364,8 @@ export default function ProductsPage() {
           {/* Products grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
           {pageItems.map((p) => (
-            <Card key={p.id} className="overflow-hidden flex flex-col h-full">
+            <Card key={p.id} className="group overflow-hidden flex flex-col h-full relative cursor-pointer">
+              <Link href={`/products/${p.id}`} aria-label={`View ${p.name}`} className="absolute inset-0 z-[1]"></Link>
               <div className="relative h-40 w-full">
                 <Image
                   src={p.img}
@@ -414,6 +374,12 @@ export default function ProductsPage() {
                   className="object-contain bg-white"
                   sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
                 />
+                <Link
+                  href={`/products/${p.id}`}
+                  className="absolute bottom-2 right-2 z-[2] opacity-0 group-hover:opacity-100 transition-opacity rounded-md bg-black/70 text-white text-xs px-3 py-1"
+                >
+                  Харах
+                </Link>
               </div>
               <CardContent className="p-3 flex flex-col grow">
                   <div className="flex items-center justify-between text-xs text-gray-500">
@@ -433,7 +399,6 @@ export default function ProductsPage() {
                     Брэнд: <span className="font-medium">{p.brand}</span> • Өнгө: {p.color} •
                     Хэмжээ: {p.size} • Загвар: {p.theme}
                   </div>
-                  <div className="mt-auto pt-2 text-sm font-semibold text-gray-900">{p.price}</div>
               </CardContent>
             </Card>
           ))}
@@ -602,40 +567,6 @@ export default function ProductsPage() {
                 </div>
               </div>
 
-              {/* Price */}
-              <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-                <div className="text-sm font-semibold text-gray-800 mb-2">Үнэ</div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    className="w-full rounded-md border px-2 py-1 text-sm"
-                    value={priceFrom}
-                    min={minPrice}
-                    max={priceTo}
-                    onChange={(e) => {
-                      setPage(1);
-                      setPriceFrom(Number(e.target.value || minPrice));
-                    }}
-                  />
-                  <span className="text-xs text-gray-500">-</span>
-                  <input
-                    type="number"
-                    className="w-full rounded-md border px-2 py-1 text-sm"
-                    value={priceTo}
-                    min={priceFrom}
-                    max={maxPrice}
-                    onChange={(e) => {
-                      setPage(1);
-                      setPriceTo(Number(e.target.value || maxPrice));
-                    }}
-                  />
-                </div>
-                <div className="mt-2 flex justify-between text-xs text-gray-500">
-                  <span>Мин: {minPrice.toLocaleString()}₮</span>
-                  <span>Макс: {maxPrice.toLocaleString()}₮</span>
-                </div>
-              </div>
-
               <div className="flex gap-2">
                 <button
                   onClick={() => {
@@ -646,8 +577,6 @@ export default function ProductsPage() {
                     setSelectedSizes([]);
                     setSelectedStock([]);
                     setSelectedThemes([]);
-                    setPriceFrom(minPrice);
-                    setPriceTo(maxPrice);
                     setPage(1);
                   }}
                   className="w-full rounded-md border px-4 py-2 text-sm"

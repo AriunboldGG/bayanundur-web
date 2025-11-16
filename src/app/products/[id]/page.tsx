@@ -2,9 +2,10 @@
 import Header from "@/components/Header";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo } from "react";
+ import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+ import { useCart } from "@/context/CartContext";
 
 type Product = {
   id: number;
@@ -83,6 +84,16 @@ export default function ProductDetailPage() {
   const router = useRouter();
   const products = useMemo(() => generateProducts(), []);
   const product = products.find((p) => p.id === Number(params.id));
+  const related = useMemo(() => {
+    if (!product) return [];
+    return products
+      .filter(
+        (p) =>
+          p.id !== product.id &&
+          (p.subleaf ? p.subleaf === product.subleaf : p.subcategory === product.subcategory)
+      )
+      .slice(0, 5);
+  }, [products, product]);
 
   if (!product) {
     return (
@@ -102,6 +113,14 @@ export default function ProductDetailPage() {
     <main className="min-h-screen bg-white">
       <Header />
       <div className="container mx-auto px-4 py-8">
+        {/* Breadcrumb */}
+        <nav className="mb-6 text-xs text-gray-500 flex items-center gap-2">
+          <Link href="/" className="hover:text-[#8DC63F]">Нүүр</Link>
+          <span>/</span>
+          <Link href="/products" className="hover:text-[#8DC63F]">Бүтээгдэхүүн</Link>
+          <span>/</span>
+          <span className="truncate">{product.name}</span>
+        </nav>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Image */}
           <div className="rounded-xl border p-4 bg-white">
@@ -124,7 +143,17 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="mt-6 flex gap-3">
-              <Button className="bg-[#8DC63F] hover:bg-[#7AB82E]">Сагсанд нэмэх</Button>
+              <AddToCartButton
+                id={product.id}
+                name={product.name}
+                priceNum={product.priceNum}
+                price={product.price}
+                img={product.img}
+                color={product.color}
+                size={product.size}
+                brand={product.brand}
+                theme={product.theme}
+              />
               <Link href="/products" className="rounded-md border px-4 py-2 text-sm flex items-center">
                 Буцах
               </Link>
@@ -133,14 +162,94 @@ export default function ProductDetailPage() {
             <div className="mt-6">
               <h2 className="text-sm font-semibold text-gray-800 mb-2">Тайлбар</h2>
               <p className="text-sm text-gray-600 leading-6">
-                Энэхүү бүтээгдэхүүний мэдээлэл нь жишээ/mock өгөгдөл дээр суурилсан. Жинхэнэ өгөгдөлтэй холбох
-                үед танай API-гаас ачаалж, үзүүлэлтүүдийг дэлгэрэнгүйгээр харуулах боломжтой.
+                Tailbar
               </p>
             </div>
           </div>
         </div>
+
+        {/* Related products */}
+        {related.length > 0 && (
+          <div className="mt-10">
+            <h3 className="text-sm font-semibold text-gray-800 mb-3">Төстэй бүтээгдэхүүнүүд</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {related.map((rp) => (
+                <Link
+                  key={rp.id}
+                  href={`/products/${rp.id}`}
+                  className="group rounded-xl border bg-white p-3 hover:shadow-sm transition-shadow"
+                >
+                  <div className="relative w-full h-28">
+                    <Image
+                      src={rp.img}
+                      alt={rp.name}
+                      fill
+                      className="object-contain bg-white"
+                    />
+                  </div>
+                  <div className="mt-2 text-xs text-gray-600 line-clamp-2 group-hover:text-gray-800">
+                    {rp.name}
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-gray-900">{rp.price}</div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </main>
+  );
+}
+
+function AddToCartButton(props: {
+  id: number;
+  name: string;
+  priceNum: number;
+  price: string;
+  img: string;
+  color?: string;
+  size?: string;
+  brand?: string;
+  theme?: string;
+}) {
+  const cart = useCart();
+  const [qty, setQty] = useState(1);
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex items-center rounded-md border">
+        <button
+          className="px-2 py-1 text-sm"
+          onClick={() => setQty((q: number) => Math.max(1, q - 1))}
+        >
+          -
+        </button>
+        <span className="px-3 text-sm">{qty}</span>
+        <button className="px-2 py-1 text-sm" onClick={() => setQty((q: number) => q + 1)}>
+          +
+        </button>
+      </div>
+      <Button
+        className="bg-[#8DC63F] hover:bg-[#7AB82E]"
+        onClick={() =>
+          cart.addItem(
+            {
+              id: props.id,
+              name: props.name,
+              priceNum: props.priceNum,
+              price: props.price,
+              img: props.img,
+              color: props.color,
+              size: props.size,
+              brand: props.brand,
+              theme: props.theme,
+            },
+            qty,
+          )
+        }
+      >
+        Сагсанд нэмэх
+      </Button>
+    </div>
   );
 }
 
