@@ -75,13 +75,7 @@ export default function CartPage() {
                           </div>
                         </div>
 
-                        {/* Size Dropdown */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-600">Сонголт:</span>
-                          <select className="text-xs border border-gray-200 rounded px-2 py-1">
-                            <option>Size: One size</option>
-                          </select>
-                        </div>
+                       
 
                         {/* Quantity and Actions */}
                         <div className="flex items-center justify-between flex-wrap gap-2">
@@ -145,15 +139,7 @@ export default function CartPage() {
                     </div>
                   </div>
 
-                  {/* Send Offer Button */}
-                  <Button
-                    className="w-full bg-red-600 hover:bg-red-700 text-white"
-                    size="lg"
-                    type="button"
-                    onClick={() => setShowQuote(true)}
-                  >
-                    Үнийн санал авах
-                  </Button>
+                 
                 </CardContent>
               </Card>
             </div>
