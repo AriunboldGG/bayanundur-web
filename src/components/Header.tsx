@@ -2,11 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import { Menu, X } from "lucide-react";
 import NavLink from "./NavLink";
 import { useCart } from "@/context/CartContext";
 
 export default function Header() {
   const { count } = useCart();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   return (
     <header className="w-full bg-white">
       {/* Top Header Bar */}
@@ -83,30 +86,70 @@ export default function Header() {
             />
           </Link>
 
-          {/* Middle: Navigation Links */}
+          {/* Middle: Navigation Links - Desktop */}
           <nav className="hidden md:flex items-center gap-8">
             <NavLink href="/">НҮҮР</NavLink>
             <NavLink href="/products">БҮТЭЭГДЭХҮҮН</NavLink>
             <NavLink href="/news">МЭДЭЭ</NavLink>
             <NavLink href="/about">БИДНИЙ ТУХАЙ</NavLink>
+            <NavLink href="/contact">ХОЛБОО БАРИХ</NavLink>
           </nav>
 
-          {/* Right: Shopping Cart */}
-          <div className="relative">
-            <Link href="/cart" className="relative">
-              <Image 
-                src="/svg/bag-logo.svg" 
-                alt="Shopping Cart" 
-                width={24} 
-                height={24}
-                className="w-6 h-6"
-              />
-              <span className="absolute -top-2 -right-2 bg-[#8DC63F] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                {count}
-              </span>
-            </Link>
+          {/* Right: Shopping Cart and Burger Menu */}
+          <div className="flex items-center gap-4">
+            {/* Shopping Cart */}
+            <div className="relative">
+              <Link href="/cart" className="relative">
+                <Image 
+                  src="/svg/bag-logo.svg" 
+                  alt="Shopping Cart" 
+                  width={24} 
+                  height={24}
+                  className="w-6 h-6"
+                />
+                <span className="absolute -top-2 -right-2 bg-[#8DC63F] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  {count}
+                </span>
+              </Link>
+            </div>
+
+            {/* Burger Menu Button - Mobile Only */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="md:hidden p-2 text-gray-800 hover:text-[#8DC63F] transition-colors"
+              aria-label="Toggle menu"
+            >
+              {isMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 bg-white">
+            <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
+              <NavLink href="/" onClick={() => setIsMenuOpen(false)}>
+                НҮҮР
+              </NavLink>
+              <NavLink href="/products" onClick={() => setIsMenuOpen(false)}>
+                БҮТЭЭГДЭХҮҮН
+              </NavLink>
+              <NavLink href="/news" onClick={() => setIsMenuOpen(false)}>
+                МЭДЭЭ
+              </NavLink>
+              <NavLink href="/about" onClick={() => setIsMenuOpen(false)}>
+                БИДНИЙ ТУХАЙ
+              </NavLink>
+              <NavLink href="/contact" onClick={() => setIsMenuOpen(false)}>
+                ХОЛБОО БАРИХ
+              </NavLink>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );

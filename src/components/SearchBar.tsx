@@ -9,7 +9,27 @@ export default function SearchBar() {
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [hoveredCat, setHoveredCat] = useState<number | null>(0);
   const [hoveredSub, setHoveredSub] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Detect mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth >= 768) {
+        // Reset to default on desktop
+        setHoveredCat(0);
+        setHoveredSub(null);
+      } else {
+        // Reset to show categories on mobile
+        setHoveredCat(null);
+        setHoveredSub(null);
+      }
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Demo category tree for first-level, second-level (sub), and third-level (sub-sub)
   const categoryTree: Array<{
@@ -185,8 +205,16 @@ export default function SearchBar() {
             <div className="flex items-center bg-white rounded-lg overflow-hidden shadow-sm h-12">
               {/* Category Dropdown */}
               <button
-                onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                className="flex items-center gap-2 px-4 md:px-5 py-3 border-r border-gray-200 hover:bg-gray-50 transition-colors whitespace-nowrap h-full"
+                onClick={() => {
+                  const newState = !isCategoryOpen;
+                  setIsCategoryOpen(newState);
+                  if (newState && isMobile) {
+                    // Reset to show categories on mobile when opening
+                    setHoveredCat(null);
+                    setHoveredSub(null);
+                  }
+                }}
+                className="flex items-center gap-2 px-4 md:px-5 py-3 border-r border-gray-200 hover:bg-gray-50 transition-colors whitespace-nowrap h-full cursor-pointer"
               >
                 <span className="text-gray-700 font-normal text-sm">Ангилал</span>
                 <Image
@@ -206,7 +234,7 @@ export default function SearchBar() {
               />
 
               {/* Search Icon Button */}
-              <button className="px-4 md:px-5 py-3 border-l border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center h-full">
+              <button className="px-4 md:px-5 py-3 border-l border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center h-full cursor-pointer">
                 <Image
                   src="/svg/search.svg"
                   alt="Search"
@@ -220,15 +248,17 @@ export default function SearchBar() {
             {/* Category Dropdown Menu with sub and sub-sub */}
             {isCategoryOpen && (
               <div
-                className="absolute top-full left-0 mt-1 w-[760px] bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+                className="absolute top-full left-0 mt-1 w-full md:w-[760px] max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[80vh] md:max-h-none overflow-y-auto md:overflow-y-visible"
                 onMouseLeave={() => {
-                  setHoveredCat(0);
-                  setHoveredSub(null);
+                  if (!isMobile) {
+                    setHoveredCat(0);
+                    setHoveredSub(null);
+                  }
                 }}
               >
-                <div className="flex">
-                  {/* First column */}
-                  <div className="w-64 border-r">
+                <div className="flex flex-col md:flex-row">
+                  {/* First column - Show on mobile only when no category selected, always on desktop */}
+                  <div className={`w-full md:w-64 border-b md:border-b-0 md:border-r ${isMobile && hoveredCat !== null ? 'hidden md:block' : ''}`}>
                     <ul className="py-2">
                       {categoryTree.map((cat, idx) => (
                         <li
@@ -237,17 +267,25 @@ export default function SearchBar() {
                             setHoveredCat(idx);
                             setHoveredSub(null);
                           }}
+                          onClick={(e) => {
+                            // On mobile, clicking a category shows its subcategories
+                            if (isMobile) {
+                              e.preventDefault();
+                              setHoveredCat(idx);
+                              setHoveredSub(null);
+                            }
+                          }}
                         >
                           <button
-                            className={`w-full text-left px-4 py-2 transition-colors ${
+                            className={`w-full text-left px-4 py-2 transition-colors cursor-pointer ${
                               hoveredCat === idx
                                 ? "bg-[#8DC63F]/10 text-[#8DC63F]"
                                 : "text-gray-700 hover:bg-gray-50"
                             }`}
                           >
-                            <span className="inline-flex items-center gap-2">
-                              <cat.icon className="h-5 w-5 text-[#8DC63F]" />
-                              {cat.name}
+                            <span className="inline-flex items-center gap-2 text-sm md:text-base">
+                              <cat.icon className="h-4 w-4 md:h-5 md:w-5 text-[#8DC63F] flex-shrink-0" />
+                              <span className="break-words">{cat.name}</span>
                             </span>
                           </button>
                         </li>
@@ -255,49 +293,83 @@ export default function SearchBar() {
                     </ul>
                   </div>
 
-                  {/* Second column (subs) */}
-                  <div className="w-64 border-r">
-                    <ul className="py-2">
-                      {(categoryTree[hoveredCat ?? 0]?.children ?? []).map(
-                        (sub, sIdx) => (
-                          <li
-                            key={sub.slug}
-                            onMouseEnter={() => setHoveredSub(sIdx)}
-                          >
-                            <button
-                              className={`w-full text-left px-4 py-2 transition-colors ${
-                                hoveredSub === sIdx
-                                  ? "bg-[#8DC63F]/10 text-[#8DC63F]"
-                                  : "text-gray-700 hover:bg-gray-50"
-                              }`}
-                            >
-                              {sub.name}
-                            </button>
-                          </li>
-                        )
-                      )}
-                    </ul>
-                  </div>
-
-                  {/* Third column (sub-subs) */}
-                  <div className="flex-1">
-                    <div className="py-3 px-4 grid grid-cols-2 gap-2">
-                      {(
-                        categoryTree[hoveredCat ?? 0]?.children?.[
-                          hoveredSub ?? 0
-                        ]?.children ?? []
-                      ).map((leaf) => (
-                        <Link
-                          key={leaf.slug}
-                          href={`/products?category=${leaf.slug}`}
-                          className="text-sm text-gray-700 hover:text-[#8DC63F]"
-                          onClick={() => setIsCategoryOpen(false)}
+                  {/* Second column (subs) - Show on mobile when category is selected */}
+                  {hoveredCat !== null && (
+                    <div className={`w-full md:w-64 border-b md:border-b-0 md:border-r ${isMobile && hoveredSub !== null ? 'hidden md:block' : ''}`}>
+                      {/* Mobile back button */}
+                      <div className="md:hidden border-b px-4 py-2">
+                        <button
+                          onClick={() => {
+                            setHoveredCat(null);
+                            setHoveredSub(null);
+                          }}
+                          className="text-sm text-[#8DC63F] hover:text-[#7AB82E] flex items-center gap-2 cursor-pointer"
                         >
-                          {leaf.name}
-                        </Link>
-                      ))}
+                          ← Буцах
+                        </button>
+                      </div>
+                      <ul className="py-2">
+                        {(categoryTree[hoveredCat ?? 0]?.children ?? []).map(
+                          (sub, sIdx) => (
+                            <li
+                              key={sub.slug}
+                              onMouseEnter={() => setHoveredSub(sIdx)}
+                              onClick={(e) => {
+                                // On mobile, clicking a subcategory shows its children
+                                if (isMobile) {
+                                  e.preventDefault();
+                                  setHoveredSub(sIdx);
+                                }
+                              }}
+                            >
+                              <button
+                                className={`w-full text-left px-4 py-2 transition-colors cursor-pointer ${
+                                  hoveredSub === sIdx
+                                    ? "bg-[#8DC63F]/10 text-[#8DC63F]"
+                                    : "text-gray-700 hover:bg-gray-50"
+                                }`}
+                              >
+                                <span className="text-sm md:text-base break-words">{sub.name}</span>
+                              </button>
+                            </li>
+                          )
+                        )}
+                      </ul>
                     </div>
-                  </div>
+                  )}
+
+                  {/* Third column (sub-subs) - Show on mobile when subcategory is selected */}
+                  {hoveredCat !== null && hoveredSub !== null && (
+                    <div className="w-full md:flex-1">
+                      {/* Mobile back button */}
+                      <div className="md:hidden border-b px-4 py-2">
+                        <button
+                          onClick={() => {
+                            setHoveredSub(null);
+                          }}
+                          className="text-sm text-[#8DC63F] hover:text-[#7AB82E] flex items-center gap-2 cursor-pointer"
+                        >
+                          ← Буцах
+                        </button>
+                      </div>
+                      <div className="py-3 px-4 grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-2">
+                        {(
+                          categoryTree[hoveredCat ?? 0]?.children?.[
+                            hoveredSub ?? 0
+                          ]?.children ?? []
+                        ).map((leaf) => (
+                          <Link
+                            key={leaf.slug}
+                            href={`/products?category=${leaf.slug}`}
+                            className="text-xs md:text-sm text-gray-700 hover:text-[#8DC63F] break-words py-1 cursor-pointer"
+                            onClick={() => setIsCategoryOpen(false)}
+                          >
+                            {leaf.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -307,19 +379,14 @@ export default function SearchBar() {
           <div className="flex items-center justify-center md:justify-start gap-4 md:gap-6 lg:gap-8 flex-shrink-0">
             <Link
               href="/delivery"
-              className="text-white uppercase font-semibold hover:text-gray-100 transition-colors text-xs md:text-sm whitespace-nowrap"
+              className="text-white uppercase font-semibold hover:text-gray-100 transition-colors text-xs md:text-sm whitespace-nowrap cursor-pointer"
             >
               ХҮРГЭЛТ
             </Link>
-            <Link
-              href="/return"
-              className="text-white uppercase font-semibold hover:text-gray-100 transition-colors text-xs md:text-sm whitespace-nowrap"
-            >
-              БУЦААЛТ
-            </Link>
+            
             <Link
               href="/order"
-              className="text-white uppercase font-semibold hover:text-gray-100 transition-colors text-xs md:text-sm whitespace-nowrap"
+              className="text-white uppercase font-semibold hover:text-gray-100 transition-colors text-xs md:text-sm whitespace-nowrap cursor-pointer"
             >
               ЗАХИАЛГА
             </Link>

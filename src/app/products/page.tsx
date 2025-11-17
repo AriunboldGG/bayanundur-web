@@ -3,7 +3,8 @@ import Header from "@/components/Header";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Shield, LifeBuoy, Wrench } from "lucide-react";
 
 type Product = {
@@ -79,7 +80,8 @@ const ALL_PRODUCTS: Product[] = Array.from({ length: 200 }).map((_, i) => {
   };
 });
 
-export default function ProductsPage() {
+function ProductsPageContent() {
+  const searchParams = useSearchParams();
   const pageSize = 50;
   const [page, setPage] = useState(1);
   const [selectedCat, setSelectedCat] = useState<"all" | Product["category"]>("all");
@@ -91,6 +93,17 @@ export default function ProductsPage() {
   const [selectedStock, setSelectedStock] = useState<Array<Product["stock"]>>([]);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+  // Read category from URL query params on mount
+  useEffect(() => {
+    const categoryParam = searchParams.get("category");
+    if (categoryParam && ["ppe", "rescue", "workplace"].includes(categoryParam)) {
+      setSelectedCat(categoryParam as Product["category"]);
+      setPage(1);
+      setSelectedSub(null);
+      setSelectedLeaf([]);
+    }
+  }, [searchParams]);
 
   const categories = [
     { id: "all" as const, label: "Бүгд", icon: null, count: ALL_PRODUCTS.length },
@@ -621,5 +634,20 @@ export default function ProductsPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-white">
+        <Header />
+        <div className="container mx-auto px-4 py-12">
+          <div className="text-center">Ачааллаж байна...</div>
+        </div>
+      </main>
+    }>
+      <ProductsPageContent />
+    </Suspense>
   );
 }
