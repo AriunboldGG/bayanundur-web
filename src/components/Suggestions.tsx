@@ -35,7 +35,7 @@ export default function Suggestions() {
     <div className="rounded-xl border border-gray-200 shadow-sm p-4 md:p-5">
       <div className="mb-4 flex items-center justify-between">
         <div className="text-sm font-semibold text-[#1E293B]">
-          ТАНЫГ САНАЛ БОЛГОХ
+          ТАНЬД САНАЛ БОЛГОХ
         </div>
         <Link
           href="/suggestions"

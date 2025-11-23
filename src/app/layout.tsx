@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import Footer from "@/components/Footer";
+import FacebookMessenger from "@/components/FacebookMessenger";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -28,6 +29,7 @@ export default function RootLayout({
           {children}
         </CartProvider>
         <Footer />
+        <FacebookMessenger />
       </body>
     </html>
   );

@@ -78,7 +78,7 @@ export function QuoteModal({ open, onClose, items }: QuoteModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+            className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 cursor-pointer"
           >
             <span className="sr-only">Хаах</span>
             ✕
@@ -164,7 +164,7 @@ export function QuoteModal({ open, onClose, items }: QuoteModalProps) {
             <Button
               type="button"
               variant="outline"
-              className="text-sm"
+              className="text-sm cursor-pointer"
               onClick={onClose}
               disabled={submitting}
             >
@@ -172,7 +172,7 @@ export function QuoteModal({ open, onClose, items }: QuoteModalProps) {
             </Button>
             <Button
               type="submit"
-              className="bg-[#8DC63F] hover:bg-[#7AB82E] text-sm"
+              className="bg-[#8DC63F] hover:bg-[#7AB82E] text-sm cursor-pointer"
               disabled={submitting}
             >
               {submitting ? "Илгээж байна..." : "Илгээх"}

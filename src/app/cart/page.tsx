@@ -22,7 +22,7 @@ export default function CartPage() {
         {items.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-gray-600 text-lg mb-4">Таны сагс хоосон байна</p>
-            <Button className="bg-[#8DC63F] hover:bg-[#7AB82E]" asChild>
+            <Button className="bg-[#8DC63F] hover:bg-[#7AB82E] cursor-pointer" asChild>
               <a href="/products">Бүтээгдэхүүн харах</a>
             </Button>
           </div>
@@ -68,7 +68,7 @@ export default function CartPage() {
                          
                             <button
                               onClick={() => removeItem(item.id)}
-                              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                              className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
                             >
                               <X className="h-4 w-4 text-gray-600" />
                             </button>
@@ -84,7 +84,7 @@ export default function CartPage() {
                             <div className="flex items-center border border-gray-200 rounded">
                               <button
                                 onClick={() => updateQty(item.id, item.qty - 1)}
-                                className="px-2 py-1 hover:bg-gray-50 text-gray-600"
+                                className="px-2 py-1 hover:bg-gray-50 text-gray-600 cursor-pointer"
                               >
                                 -
                               </button>
@@ -93,7 +93,7 @@ export default function CartPage() {
                               </span>
                               <button
                                 onClick={() => updateQty(item.id, item.qty + 1)}
-                                className="px-2 py-1 hover:bg-gray-50 text-gray-600"
+                                className="px-2 py-1 hover:bg-gray-50 text-gray-600 cursor-pointer"
                               >
                                 +
                               </button>
@@ -120,13 +120,13 @@ export default function CartPage() {
             <div className="lg:sticky lg:top-4 h-fit">
               <Card className="rounded-xl border border-gray-200 shadow-sm sticky top-4">
                 <CardContent className="p-4 space-y-4">
-                  <h2 className="text-lg font-semibold text-gray-800">Төлбөрийн мэдээлэл</h2>
+                  <h2 className="text-lg font-semibold text-gray-800">Сагсны мэдээлэл</h2>
 
                   {/* Clear Cart Button */}
                   <Button
                     variant="outline"
                     onClick={clear}
-                    className="w-full justify-start gap-2"
+                    className="w-full justify-start gap-2 cursor-pointer"
                   >
                     <Trash2 className="h-4 w-4" />
                     Сагс хоослох
@@ -139,7 +139,13 @@ export default function CartPage() {
                     </div>
                   </div>
 
-                 
+                  {/* Send Quote Button */}
+                  <Button
+                    onClick={() => setShowQuote(true)}
+                    className="w-full bg-[#8DC63F] hover:bg-[#7AB82E] text-white cursor-pointer"
+                  >
+                    Үнийн санал авах
+                  </Button>
                 </CardContent>
               </Card>
             </div>
