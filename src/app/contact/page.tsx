@@ -149,13 +149,13 @@ export default function ContactPage() {
                     name="subject"
                     required
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8DC63F] focus:border-transparent"
-                    placeholder="Мессежийн сэдэв"
+                    placeholder="Сэдэв"
                   />
               </div>
 
               <div>
                 <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                  Мессеж *
+                  Санал хүсэлт *
                 </label>
                 <textarea
                   id="message"
@@ -163,7 +163,7 @@ export default function ContactPage() {
                   required
                   rows={5}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8DC63F] focus:border-transparent resize-none"
-                  placeholder="Таны мессеж..."
+                  placeholder="Санал хүсэлт ээ бичнэ үү..."
                 />
               </div>
 

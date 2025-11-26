@@ -62,7 +62,14 @@ export default function CartPage() {
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <div className="text-sm font-semibold text-gray-800">{item.name}</div>
-                            <div className="text-xs text-gray-500 mt-1">Size: One size</div>
+                            <div className="mt-1">
+                              <div className="text-[10px] text-gray-500">Бүтээгдэхүүний код</div>
+                              <div className="text-xs font-semibold text-[#1f632b]">{item.modelNumber}</div>
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {item.size && `Хэмжээ: ${item.size}`}
+                              {item.color && ` • Өнгө: ${item.color}`}
+                            </div>
                           </div>
                           <div className="flex gap-2">
                          

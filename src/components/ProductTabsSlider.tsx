@@ -15,6 +15,7 @@ type Product = {
   title: string;
   img: string;
   price: string;
+  modelNumber: string;
   saveTag?: string;
   shipping?: string;
   status?: string;
@@ -27,6 +28,7 @@ const products: Product[] = [
     title: "BOSO 2 Wireless On Ear Headphone",
     img: "/images/product1.jpg",
     price: "129.000₮",
+    modelNumber: "MC375xx/A",
     saveTag: "SAVE $19.00",
     shipping: "Хүргэлттэй",
     status: "Агуулахад үлдсэн",
@@ -37,6 +39,7 @@ const products: Product[] = [
     title: "O'Pad Pro 12.9 inch M1 2023",
     img: "/images/product2.jpg",
     price: "899.000₮",
+    modelNumber: "SP376xx/B",
     saveTag: "SAVE $189.00",
     shipping: "Хүргэлттэй",
     status: "Захиалгаар ирнэ",
@@ -46,6 +49,7 @@ const products: Product[] = [
     title: "Xenon Mini Case 2.0 512GB",
     img: "/images/product3.jpg",
     price: "59.000₮",
+    modelNumber: "WP377xx/C",
     saveTag: "SAVE $5.00",
     shipping: "Хүргэлттэй",
     status: "Агуулахад үлдсэн",
@@ -53,17 +57,80 @@ const products: Product[] = [
   },
 ];
 
-function ProductsCarousel() {
+const suggestedProducts: Product[] = [
+  {
+    id: "s1",
+    title: "Өвлийн бээлий",
+    img: "/images/prod1.jpg",
+    price: "45.000₮",
+    modelNumber: "RS378xx/D",
+    shipping: "Хүргэлттэй",
+    status: "Агуулахад үлдсэн",
+    stockCount: 15,
+  },
+  {
+    id: "s2",
+    title: "Амь олс",
+    img: "/images/prod2.jpg",
+    price: "120.000₮",
+    modelNumber: "AE379xx/E",
+    shipping: "Хүргэлттэй",
+    status: "Агуулахад үлдсэн",
+    stockCount: 8,
+  },
+  {
+    id: "s3",
+    title: "Хамгаалалтын нүдний шил",
+    img: "/images/prod3.jpg",
+    price: "25.000₮",
+    modelNumber: "MC380xx/F",
+    saveTag: "ШИНЭ",
+    shipping: "Хүргэлттэй",
+    status: "Агуулахад үлдсэн",
+    stockCount: 20,
+  },
+  {
+    id: "s4",
+    title: "Өндрийн олс",
+    img: "/images/prod4.jpg",
+    price: "85.000₮",
+    modelNumber: "SP381xx/G",
+    shipping: "Хүргэлттэй",
+    status: "Захиалгаар ирнэ",
+  },
+  {
+    id: "s5",
+    title: "Хамгаалалтын малгай",
+    img: "/images/product1.jpg",
+    price: "35.000₮",
+    modelNumber: "WP382xx/H",
+    shipping: "Хүргэлттэй",
+    status: "Агуулахад үлдсэн",
+    stockCount: 12,
+  },
+  {
+    id: "s6",
+    title: "Ажлын бээлий",
+    img: "/images/product2.jpg",
+    price: "28.000₮",
+    modelNumber: "RS383xx/A",
+    shipping: "Хүргэлттэй",
+    status: "Агуулахад үлдсэн",
+    stockCount: 25,
+  },
+];
+
+function ProductsCarousel({ productsToShow = products }: { productsToShow?: Product[] }) {
   return (
     <Carousel className="w-full">
       <CarouselContent>
-        {products.map((p) => (
+        {productsToShow.map((p) => (
           <CarouselItem key={p.id} className="basis-full sm:basis-1/2 lg:basis-1/3">
             <Card className="overflow-hidden">
               <CardContent className="p-4 flex flex-col gap-3">
                 {/* Save badge */}
                 {p.saveTag && (
-                  <div className="self-start rounded-full bg-[#8DC63F] px-2 py-0.5 text-[10px] font-semibold text-white">
+                  <div className="self-start rounded-full bg-[#1f632b] px-2 py-0.5 text-[10px] font-semibold text-white">
                     {p.saveTag}
                   </div>
                 )}
@@ -74,6 +141,11 @@ function ProductsCarousel() {
                 {/* Title */}
                 <div className="text-xs text-gray-700 line-clamp-2 min-h-[32px]">
                   {p.title}
+                </div>
+                {/* Model Number */}
+                <div>
+                  <div className="text-[10px] text-gray-500">Бүтээгдэхүүний код</div>
+                  <div className="text-xs font-semibold text-[#1f632b]">{p.modelNumber}</div>
                 </div>
                 {/* Price */}
                 <div className="text-sm font-semibold text-gray-900">{p.price}</div>
@@ -109,27 +181,33 @@ export default function ProductTabsSlider() {
           <TabsList className="bg-transparent p-1 rounded-full border border-gray-200 inline-flex whitespace-nowrap gap-1">
             <TabsTrigger
               value="best"
-              className="rounded-full data-[state=active]:bg-[#8DC63F] data-[state=active]:text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2"
+              className="rounded-full data-[state=active]:bg-[#1f632b] data-[state=active]:text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 cursor-pointer"
             >
               BEST SELLER
             </TabsTrigger>
             <TabsTrigger
               value="new"
-              className="rounded-full data-[state=active]:bg-[#8DC63F] data-[state=active]:text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2"
+              className="rounded-full data-[state=active]:bg-[#1f632b] data-[state=active]:text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 cursor-pointer"
             >
               ШИНЭ
             </TabsTrigger>
             <TabsTrigger
               value="discount"
-              className="rounded-full data-[state=active]:bg-[#8DC63F] data-[state=active]:text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2"
+              className="rounded-full data-[state=active]:bg-[#1f632b] data-[state=active]:text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 cursor-pointer"
             >
               ХЯМДРАЛТАЙ
             </TabsTrigger>
             <TabsTrigger
               value="promo"
-              className="rounded-full data-[state=active]:bg-[#8DC63F] data-[state=active]:text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2"
+              className="rounded-full data-[state=active]:bg-[#1f632b] data-[state=active]:text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 cursor-pointer"
             >
               ПРОМОУШН
+            </TabsTrigger>
+            <TabsTrigger
+              value="suggest"
+              className="rounded-full data-[state=active]:bg-[#1f632b] data-[state=active]:text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 cursor-pointer"
+            >
+              САНАЛ БОЛГОХ
             </TabsTrigger>
           </TabsList>
           </div>
@@ -148,6 +226,9 @@ export default function ProductTabsSlider() {
       </TabsContent>
       <TabsContent value="promo">
         <ProductsCarousel />
+      </TabsContent>
+      <TabsContent value="suggest">
+        <ProductsCarousel productsToShow={suggestedProducts} />
       </TabsContent>
       </div>
     </Tabs>

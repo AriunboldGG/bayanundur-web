@@ -279,12 +279,12 @@ export default function SearchBar() {
                           <button
                             className={`w-full text-left px-4 py-2 transition-colors cursor-pointer ${
                               hoveredCat === idx
-                                ? "bg-[#8DC63F]/10 text-[#8DC63F]"
+                                ? "bg-[#1f632b]/10 text-[#1f632b]"
                                 : "text-gray-700 hover:bg-gray-50"
                             }`}
                           >
                             <span className="inline-flex items-center gap-2 text-sm md:text-base">
-                              <cat.icon className="h-4 w-4 md:h-5 md:w-5 text-[#8DC63F] flex-shrink-0" />
+                              <cat.icon className="h-4 w-4 md:h-5 md:w-5 text-[#1f632b] flex-shrink-0" />
                               <span className="break-words">{cat.name}</span>
                             </span>
                           </button>
@@ -303,7 +303,7 @@ export default function SearchBar() {
                             setHoveredCat(null);
                             setHoveredSub(null);
                           }}
-                          className="text-sm text-[#8DC63F] hover:text-[#7AB82E] flex items-center gap-2 cursor-pointer"
+                          className="text-sm text-[#1f632b] hover:text-[#16451e] flex items-center gap-2 cursor-pointer"
                         >
                           ← Буцах
                         </button>
@@ -325,7 +325,7 @@ export default function SearchBar() {
                               <button
                                 className={`w-full text-left px-4 py-2 transition-colors cursor-pointer ${
                                   hoveredSub === sIdx
-                                    ? "bg-[#8DC63F]/10 text-[#8DC63F]"
+                                    ? "bg-[#1f632b]/10 text-[#1f632b]"
                                     : "text-gray-700 hover:bg-gray-50"
                                 }`}
                               >
@@ -347,7 +347,7 @@ export default function SearchBar() {
                           onClick={() => {
                             setHoveredSub(null);
                           }}
-                          className="text-sm text-[#8DC63F] hover:text-[#7AB82E] flex items-center gap-2 cursor-pointer"
+                          className="text-sm text-[#1f632b] hover:text-[#16451e] flex items-center gap-2 cursor-pointer"
                         >
                           ← Буцах
                         </button>
@@ -361,7 +361,7 @@ export default function SearchBar() {
                           <Link
                             key={leaf.slug}
                             href={`/products?category=${leaf.slug}`}
-                            className="text-xs md:text-sm text-gray-700 hover:text-[#8DC63F] break-words py-1 cursor-pointer"
+                            className="text-xs md:text-sm text-gray-700 hover:text-[#1f632b] break-words py-1 cursor-pointer"
                             onClick={() => setIsCategoryOpen(false)}
                           >
                             {leaf.name}

@@ -33,11 +33,11 @@ export default function TopCategories({
           <Link
             key={c.id}
             href={`/products?category=${c.id}`}
-            className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 hover:border-[#8DC63F] transition-colors cursor-pointer"
+            className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2 hover:border-[#1f632b] transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#8DC63F]/10">
-                <c.icon className="h-4 w-4 text-[#8DC63F]" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[#1f632b]/10">
+                <c.icon className="h-4 w-4 text-[#1f632b]" />
               </div>
               <span className="text-sm text-gray-700">{c.title}</span>
             </div>

@@ -93,6 +93,7 @@ export default function Header() {
             <NavLink href="/news">МЭДЭЭ</NavLink>
             <NavLink href="/about">БИДНИЙ ТУХАЙ</NavLink>
             <NavLink href="/contact">ХОЛБОО БАРИХ</NavLink>
+            <NavLink href="/special-order">ТУСГАЙ ЗАХИАЛГА</NavLink>
           </nav>
 
           {/* Right: Shopping Cart and Burger Menu */}
@@ -146,6 +147,9 @@ export default function Header() {
               </NavLink>
               <NavLink href="/contact" onClick={() => setIsMenuOpen(false)}>
                 ХОЛБОО БАРИХ
+              </NavLink>
+              <NavLink href="/special-order" onClick={() => setIsMenuOpen(false)}>
+                ТУСГАЙ ЗАХИАЛГА
               </NavLink>
             </nav>
           </div>

@@ -12,6 +12,7 @@ type Product = {
   name: string;
   price: string;
   img: string;
+  modelNumber: string;
   category: "ppe" | "rescue" | "workplace";
   subcategory: string;
   subleaf: string;
@@ -58,6 +59,13 @@ const ALL_PRODUCTS: Product[] = Array.from({ length: 200 }).map((_, i) => {
   const sizes = ["S", "M", "L", "XL"];
   const themes = ["Classic", "Sport", "Pro", "Eco"];
   const priceNum = Math.floor(Math.random() * 900) + 100; // 100-999
+  
+  // Generate unique model number (format: MC375xx/A, MC376xx/B, etc.)
+  const modelPrefix = ["MC", "SP", "WP", "RS", "AE"];
+  const modelNum = String(375 + (i % 1000)).padStart(3, "0");
+  const modelSuffix = ["xx/A", "xx/B", "xx/C", "xx/D", "xx/E", "xx/F", "xx/G", "xx/H"];
+  const modelNumber = `${modelPrefix[i % modelPrefix.length]}${modelNum}${modelSuffix[i % modelSuffix.length]}`;
+  
   return {
     id: i + 1,
     name: `Sample Product ${i + 1}`,
@@ -68,6 +76,7 @@ const ALL_PRODUCTS: Product[] = Array.from({ length: 200 }).map((_, i) => {
         : idx === 2
         ? "/images/product2.jpg"
         : "/images/product3.jpg",
+    modelNumber,
     category: cat,
     subcategory: sub,
     subleaf,
@@ -94,7 +103,7 @@ function ProductsPageContent() {
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-  // Read category from URL query params on mount
+  // Read category and brand from URL query params on mount
   useEffect(() => {
     const categoryParam = searchParams.get("category");
     if (categoryParam && ["ppe", "rescue", "workplace"].includes(categoryParam)) {
@@ -102,6 +111,15 @@ function ProductsPageContent() {
       setPage(1);
       setSelectedSub(null);
       setSelectedLeaf([]);
+    }
+    
+    const brandParam = searchParams.get("brand");
+    if (brandParam) {
+      const availableBrands = Array.from(new Set(ALL_PRODUCTS.map((p) => p.brand)));
+      if (availableBrands.includes(brandParam)) {
+        setSelectedBrands([brandParam]);
+        setPage(1);
+      }
     }
   }, [searchParams]);
 
@@ -395,8 +413,11 @@ function ProductsPageContent() {
                 </Link>
               </div>
               <CardContent className="p-3 flex flex-col grow">
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>ID: {p.id}</span>
+                  <div className="flex items-center justify-between text-xs">
+                    <div>
+                      <div className="text-gray-500 text-[10px]">Бүтээгдэхүүний код</div>
+                      <span className="font-semibold text-[#1f632b]">{p.modelNumber}</span>
+                    </div>
                     <span
                       className={`rounded-full px-2 py-0.5 ${
                         p.stock === "in_stock"

@@ -31,9 +31,9 @@ export default function Home() {
       <section className="container mx-auto px-4 mt-6 md:mt-8">
         <PromoBanner />
       </section>
-      <section className="container mx-auto px-4 mt-6 md:mt-8">
+      {/* <section className="container mx-auto px-4 mt-6 md:mt-8">
         <Suggestions />
-      </section>
+      </section> */}
     </main>
   );
 }

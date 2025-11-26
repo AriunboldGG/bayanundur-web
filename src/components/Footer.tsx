@@ -16,12 +16,10 @@ export default function Footer() {
             >
               70118585
             </a>
-            <div className="text-xs font-semibold text-gray-800 mb-1">ХАЯГ</div>
-            <div className="text-xs text-gray-500 mb-1">Улаанбаатар хот, Хан-Уул дүүрэг, 20р хороо, Мишээл систи, М-1 тауэр, 11 давхарт 7,8 оффис</div>
             <div className="text-xs font-semibold text-gray-800 mb-1">Имэйл хаяг</div>
             <a
               href="mailto:info@bayan-undur.mn"
-              className="text-sm text-gray-700 hover:underline"
+              className="text-sm text-gray-700 hover:underline mb-4 inline-block"
             >
               info@bayan-undur.mn
             </a>
@@ -35,13 +33,22 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Popular Categories */}
+          {/* Address with Map */}
           <div>
-            <h4 className="text-sm font-semibold text-gray-800 mb-4">ЭРЭЛТТЭЙ БҮТЭЭГДЭХҮҮН</h4>
-            <ul className="space-y-2 text-sm text-gray-600">
-              <li><Link href="#">Laptops</Link></li>
-             
-            </ul>
+            <h4 className="text-sm font-semibold text-gray-800 mb-4">ХАЯГ</h4>
+            <div className="text-xs text-gray-500 mb-4">Улаанбаатар хот, Хан-Уул дүүрэг, 20р хороо, Мишээл систи, М-1 тауэр, 11 давхарт 7,8 оффис</div>
+            <div className="w-full overflow-hidden rounded-lg">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1443.9520251627903!2d106.88475281061318!3d47.894673195821106!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5d96930010cf9007%3A0xc7910f0df8d73ee!2sM1%20Tower!5e0!3m2!1sen!2smn!4v1764166660404!5m2!1sen!2smn"
+                width="400"
+                height="300"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="w-full h-auto min-h-[250px] md:min-h-[300px]"
+              />
+            </div>
           </div>
 
           {/* About */}
