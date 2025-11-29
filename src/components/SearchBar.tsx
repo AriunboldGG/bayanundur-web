@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
-import { Shield, LifeBuoy, Wrench, type LucideIcon } from "lucide-react";
+import { Shield, LifeBuoy, Wrench, Package, type LucideIcon } from "lucide-react";
 
 export default function SearchBar() {
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
@@ -169,6 +169,37 @@ export default function SearchBar() {
           children: [
             { name: "Тоосны маск", slug: "dust-mask" },
             { name: "Чихний хамгаалалт", slug: "ear-protect" },
+          ],
+        },
+      ],
+    },
+    {
+      name: "Бусад",
+      slug: "other",
+      icon: Package,
+      children: [
+        {
+          name: "Бусад бүтээгдэхүүн",
+          slug: "other-products",
+          children: [
+            { name: "Бусад", slug: "other" },
+            { name: "Нэмэлт", slug: "additional" },
+          ],
+        },
+        {
+          name: "Нэмэлт хэрэгсэл",
+          slug: "additional-tools",
+          children: [
+            { name: "Хэрэгсэл", slug: "tools" },
+            { name: "Тоног төхөөрөмж", slug: "equipment" },
+          ],
+        },
+        {
+          name: "Сэлбэг хэрэгсэл",
+          slug: "spare-parts",
+          children: [
+            { name: "Сэлбэг", slug: "spare" },
+            { name: "Дагалдах хэрэгсэл", slug: "accessories" },
           ],
         },
       ],

@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Shield, LifeBuoy, Wrench } from "lucide-react";
+import { Shield, LifeBuoy, Wrench, Package } from "lucide-react";
+import { useStock } from "@/context/StockContext";
 
 type Product = {
   id: number;
@@ -13,7 +14,7 @@ type Product = {
   price: string;
   img: string;
   modelNumber: string;
-  category: "ppe" | "rescue" | "workplace";
+  category: "ppe" | "rescue" | "workplace" | "other";
   subcategory: string;
   subleaf: string;
   color: string;
@@ -21,16 +22,18 @@ type Product = {
   size: string;
   priceNum: number;
   stock: "in_stock" | "preorder";
+  stockCount: number;
   theme: string;
 };
 
 const ALL_PRODUCTS: Product[] = Array.from({ length: 200 }).map((_, i) => {
-  const idx = (i % 3) + 1;
-  const cat: Product["category"] = i % 3 === 0 ? "ppe" : i % 3 === 1 ? "rescue" : "workplace";
+  const idx = (i % 4) + 1;
+  const cat: Product["category"] = i % 4 === 0 ? "ppe" : i % 4 === 1 ? "rescue" : i % 4 === 2 ? "workplace" : "other";
   const subByCat: Record<Product["category"], string[]> = {
     ppe: ["Толгойн хамгаалалт", "Хамгаалалтын хувцас", "Гар хамгаалалт", "Хөл хамгаалалт"],
     rescue: ["Аюулгүйн цоож пайз", "Цахилгааны хамгаалалтын багаж", "Тэмдэг тэмдэглэгээ", "Гэрэл, чийдэн", "Осолын үеийн багаж хэрэгсэл"],
     workplace: ["Дуу чимээ, тоосжилт"],
+    other: ["Бусад бүтээгдэхүүн", "Нэмэлт хэрэгсэл", "Сэлбэг хэрэгсэл"],
   };
   const subs = subByCat[cat];
   const sub = subs[i % subs.length];
@@ -59,6 +62,7 @@ const ALL_PRODUCTS: Product[] = Array.from({ length: 200 }).map((_, i) => {
   const sizes = ["S", "M", "L", "XL"];
   const themes = ["Classic", "Sport", "Pro", "Eco"];
   const priceNum = Math.floor(Math.random() * 900) + 100; // 100-999
+  const stockCount = i % 4 === 0 ? 0 : Math.floor(Math.random() * 50) + 5; // 5-54 for in_stock, 0 for preorder
   
   // Generate unique model number (format: MC375xx/A, MC376xx/B, etc.)
   const modelPrefix = ["MC", "SP", "WP", "RS", "AE"];
@@ -85,12 +89,14 @@ const ALL_PRODUCTS: Product[] = Array.from({ length: 200 }).map((_, i) => {
     size: sizes[i % sizes.length],
     priceNum,
     stock: i % 4 === 0 ? "preorder" : "in_stock",
+    stockCount,
     theme: themes[i % themes.length],
   };
 });
 
 function ProductsPageContent() {
   const searchParams = useSearchParams();
+  const { setInitialStock, getStock } = useStock();
   const pageSize = 50;
   const [page, setPage] = useState(1);
   const [selectedCat, setSelectedCat] = useState<"all" | Product["category"]>("all");
@@ -103,10 +109,17 @@ function ProductsPageContent() {
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
+  // Initialize stock counts
+  useEffect(() => {
+    ALL_PRODUCTS.forEach((product) => {
+      setInitialStock(product.id, product.stockCount);
+    });
+  }, [setInitialStock]);
+
   // Read category and brand from URL query params on mount
   useEffect(() => {
     const categoryParam = searchParams.get("category");
-    if (categoryParam && ["ppe", "rescue", "workplace"].includes(categoryParam)) {
+    if (categoryParam && ["ppe", "rescue", "workplace", "other"].includes(categoryParam)) {
       setSelectedCat(categoryParam as Product["category"]);
       setPage(1);
       setSelectedSub(null);
@@ -128,12 +141,14 @@ function ProductsPageContent() {
     { id: "ppe" as const, label: "ХАБ хувцас хэрэгсэл", icon: Shield, count: ALL_PRODUCTS.filter(p => p.category === "ppe").length },
     { id: "rescue" as const, label: "Аврах хамгаалах", icon: LifeBuoy, count: ALL_PRODUCTS.filter(p => p.category === "rescue").length },
     { id: "workplace" as const, label: "Ажлын байр", icon: Wrench, count: ALL_PRODUCTS.filter(p => p.category === "workplace").length },
+    { id: "other" as const, label: "Бусад", icon: Package, count: ALL_PRODUCTS.filter(p => p.category === "other").length },
   ];
 
   const subcats: Record<Product["category"], string[]> = {
     ppe: ["Толгойн хамгаалалт", "Хамгаалалтын хувцас", "Гар хамгаалалт", "Хөл хамгаалалт"],
     rescue: ["Аюулгүйн цоож пайз", "Цахилгааны хамгаалалтын багаж", "Тэмдэг тэмдэглэгээ", "Гэрэл, чийдэн", "Осолын үеийн багаж хэрэгсэл"],
     workplace: ["Дуу чимээ, тоосжилт"],
+    other: ["Бусад бүтээгдэхүүн", "Нэмэлт хэрэгсэл", "Сэлбэг хэрэгсэл"],
   };
   const leafcats: Record<Product["category"], Record<string, string[]>> = {
     ppe: {
@@ -151,6 +166,11 @@ function ProductsPageContent() {
     },
     workplace: {
       "Дуу чимээ, тоосжилт": ["Тоосны маск", "Чихний хамгаалалт"],
+    },
+    other: {
+      "Бусад бүтээгдэхүүн": ["Бусад", "Нэмэлт"],
+      "Нэмэлт хэрэгсэл": ["Хэрэгсэл", "Тоног төхөөрөмж"],
+      "Сэлбэг хэрэгсэл": ["Сэлбэг", "Дагалдах хэрэгсэл"],
     },
   };
 
@@ -198,8 +218,8 @@ function ProductsPageContent() {
                 }}
                 className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs md:text-sm transition-colors ${
                   selectedCat === c.id
-                    ? "border-[#8DC63F] bg-[#8DC63F] text-white"
-                    : "border-gray-200 bg-white text-gray-700 hover:border-[#8DC63F]"
+                    ? "border-[#1f632b] bg-[#1f632b] text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-[#1f632b] hover:bg-[#1f632b]/10"
                 }`}
               >
                 {c.icon ? <c.icon className="h-4 w-4" /> : null}
@@ -214,7 +234,7 @@ function ProductsPageContent() {
         <div className="mb-4 md:hidden">
           <button
             onClick={() => setShowMobileFilters(true)}
-            className="w-full rounded-lg border px-4 py-2 text-sm font-medium"
+            className="w-full rounded-lg border px-4 py-2 text-sm font-medium hover:bg-[#1f632b]/10 hover:text-[#1f632b] hover:border-[#1f632b] transition-colors"
           >
             Шүүлтүүрүүд
           </button>
@@ -236,7 +256,7 @@ function ProductsPageContent() {
                         setPage(1);
                       }}
                       className={`w-full text-left rounded-md px-2 py-2 text-sm transition-colors ${
-                        s === selectedSub ? "bg-[#8DC63F]/10 text-[#8DC63F]" : "hover:bg-gray-50"
+                        s === selectedSub ? "bg-[#1f632b]/10 text-[#1f632b]" : "hover:bg-[#1f632b]/10 hover:text-[#1f632b]"
                       }`}
                     >
                       {s}
@@ -335,8 +355,8 @@ function ProductsPageContent() {
                           active ? prev.filter((x) => x !== s) : [...prev, s]
                         );
                       }}
-                      className={`rounded-md border px-2 py-1 text-sm ${
-                        active ? "border-[#8DC63F] text-[#8DC63F]" : "border-gray-200"
+                      className={`rounded-md border px-2 py-1 text-sm transition-colors ${
+                        active ? "border-[#1f632b] text-[#1f632b] bg-[#1f632b]/10" : "border-gray-200 hover:border-[#1f632b] hover:text-[#1f632b]"
                       }`}
                     >
                       {s}
@@ -386,7 +406,7 @@ function ProductsPageContent() {
                 setSelectedThemes([]);
                 setPage(1);
               }}
-              className="w-full rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
+              className="w-full rounded-md border px-3 py-2 text-sm hover:bg-[#1f632b]/10 hover:text-[#1f632b] hover:border-[#1f632b] transition-colors"
             >
               Шүүлтүүр цэвэрлэх
             </button>
@@ -395,7 +415,7 @@ function ProductsPageContent() {
           {/* Products grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
           {pageItems.map((p) => (
-            <Card key={p.id} className="group overflow-hidden flex flex-col h-full relative cursor-pointer">
+            <Card key={p.id} className="group overflow-hidden flex flex-col h-full relative cursor-pointer hover:border-[#1f632b] transition-colors">
               <Link href={`/products/${p.id}`} aria-label={`View ${p.name}`} className="absolute inset-0 z-[1]"></Link>
               <div className="relative h-40 w-full">
                 <Image
@@ -407,7 +427,7 @@ function ProductsPageContent() {
                 />
                 <Link
                   href={`/products/${p.id}`}
-                  className="absolute bottom-2 right-2 z-[2] opacity-0 group-hover:opacity-100 transition-opacity rounded-md bg-black/70 text-white text-xs px-3 py-1"
+                  className="absolute bottom-2 right-2 z-[2] opacity-0 group-hover:opacity-100 transition-opacity rounded-md bg-[#1f632b] hover:bg-[#16451e] text-white text-xs px-3 py-1"
                 >
                   Харах
                 </Link>
@@ -418,15 +438,22 @@ function ProductsPageContent() {
                       <div className="text-gray-500 text-[10px]">Бүтээгдэхүүний код</div>
                       <span className="font-semibold text-[#1f632b]">{p.modelNumber}</span>
                     </div>
-                    <span
-                      className={`rounded-full px-2 py-0.5 ${
-                        p.stock === "in_stock"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {p.stock === "in_stock" ? "Бэлэн" : "Захиалгаар"}
-                    </span>
+                    <div className="flex flex-col items-end gap-1">
+                      <span
+                        className={`rounded-full px-2 py-0.5 ${
+                          p.stock === "in_stock"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {p.stock === "in_stock" ? "Бэлэн" : "Захиалгаар"}
+                      </span>
+                      {p.stock === "in_stock" && (
+                        <span className="text-[10px] text-gray-600">
+                          Үлдэгдэл: {getStock(p.id)}ш
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="mt-1 text-sm font-medium text-gray-800 line-clamp-2">{p.name}</div>
                   <div className="mt-1 text-xs text-gray-600">
@@ -462,7 +489,7 @@ function ProductsPageContent() {
                           setPage(1);
                         }}
                         className={`w-full text-left rounded-md px-2 py-2 text-sm transition-colors ${
-                          s === selectedSub ? "bg-[#8DC63F]/10 text-[#8DC63F]" : "hover:bg-gray-50"
+                          s === selectedSub ? "bg-[#1f632b]/10 text-[#1f632b]" : "hover:bg-[#1f632b]/10 hover:text-[#1f632b]"
                         }`}
                       >
                         {s}
@@ -537,8 +564,8 @@ function ProductsPageContent() {
                             active ? prev.filter((x) => x !== s) : [...prev, s]
                           );
                         }}
-                        className={`rounded-md border px-2 py-1 text-sm ${
-                          active ? "border-[#8DC63F] text-[#8DC63F]" : "border-gray-200"
+                        className={`rounded-md border px-2 py-1 text-sm transition-colors ${
+                          active ? "border-[#1f632b] text-[#1f632b] bg-[#1f632b]/10" : "border-gray-200 hover:border-[#1f632b] hover:text-[#1f632b]"
                         }`}
                       >
                         {s}
@@ -613,19 +640,19 @@ function ProductsPageContent() {
                     setSelectedThemes([]);
                     setPage(1);
                   }}
-                  className="w-full rounded-md border px-4 py-2 text-sm"
+                  className="w-full rounded-md border px-4 py-2 text-sm hover:bg-[#1f632b]/10 hover:text-[#1f632b] hover:border-[#1f632b] transition-colors"
                 >
                   Цэвэрлэх
                 </button>
                 <button
                   onClick={() => setShowMobileFilters(false)}
-                  className="w-full rounded-md border px-4 py-2 text-sm"
+                  className="w-full rounded-md border px-4 py-2 text-sm hover:bg-[#1f632b]/10 hover:text-[#1f632b] hover:border-[#1f632b] transition-colors"
                 >
                   Хаах
                 </button>
                 <button
                   onClick={() => setShowMobileFilters(false)}
-                  className="w-full rounded-md bg-[#8DC63F] px-4 py-2 text-sm font-semibold text-white"
+                  className="w-full rounded-md bg-[#1f632b] hover:bg-[#16451e] px-4 py-2 text-sm font-semibold text-white transition-colors cursor-pointer"
                 >
                   Хэрэглэх
                 </button>
@@ -636,7 +663,7 @@ function ProductsPageContent() {
 
         <div className="mt-8 flex items-center justify-center gap-2">
           <button
-            className="px-3 py-1 rounded-md border text-sm disabled:opacity-50"
+            className="px-3 py-1 rounded-md border text-sm disabled:opacity-50 hover:bg-[#1f632b]/10 hover:text-[#1f632b] hover:border-[#1f632b] transition-colors"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
           >
@@ -646,7 +673,7 @@ function ProductsPageContent() {
             {page} / {totalPages}
           </span>
           <button
-            className="px-3 py-1 rounded-md border text-sm disabled:opacity-50"
+            className="px-3 py-1 rounded-md border text-sm disabled:opacity-50 hover:bg-[#1f632b]/10 hover:text-[#1f632b] hover:border-[#1f632b] transition-colors"
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
           >

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { LucideIcon } from "lucide-react";
-import { Shield, LifeBuoy, Wrench } from "lucide-react";
+import { Shield, LifeBuoy, Wrench, Package } from "lucide-react";
 
 interface CategoryItem {
   id: string;
@@ -16,6 +16,7 @@ const DEFAULT_CATEGORIES: CategoryItem[] = [
   { id: "ppe", title: "Хувь хүнийг хамгаалах хувцас хэрэгсэл", icon: Shield, count: 5 },
   { id: "rescue", title: "Аврах хамгаалах багаж хэрэгсэл", icon: LifeBuoy, count: 2 },
   { id: "workplace", title: "Ажлын байрны хэвийн ажиллагааг хангах", icon: Wrench, count: 3 },
+  { id: "other", title: "Бусад", icon: Package, count: 4 },
 ];
 
 export default function TopCategories({

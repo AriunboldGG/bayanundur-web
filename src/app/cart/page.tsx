@@ -107,14 +107,7 @@ export default function CartPage() {
                             </div>
                           </div>
 
-                          {/* Stock and Delivery */}
-                          <div className="flex items-center gap-4 text-xs text-gray-600">
-                            <span>Үлдэгдэл: {Math.floor(Math.random() * 10) + 5}</span>
-                            <a href="#" className="flex items-center gap-1 text-[#8DC63F] hover:underline">
-                              <Package className="h-3 w-3" />
-                              Хүргэлтийн нөхцөл →
-                            </a>
-                          </div>
+                         
                         </div>
                       </div>
                     </div>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
+import { StockProvider } from "@/context/StockContext";
 import Footer from "@/components/Footer";
 import FacebookMessenger from "@/components/FacebookMessenger";
 
@@ -26,7 +27,9 @@ export default function RootLayout({
         className={`${inter.variable} font-sans antialiased`}
       >
         <CartProvider>
-          {children}
+          <StockProvider>
+            {children}
+          </StockProvider>
         </CartProvider>
         <Footer />
         <FacebookMessenger />

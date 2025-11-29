@@ -6,6 +6,14 @@ import { useMemo, useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useStock } from "@/context/StockContext";
 
 type Product = {
   id: number;
@@ -14,7 +22,7 @@ type Product = {
   img: string;
   images?: string[]; // Multiple images for gallery
   modelNumber: string;
-  category: "ppe" | "rescue" | "workplace";
+  category: "ppe" | "rescue" | "workplace" | "other";
   subcategory: string;
   subleaf: string;
   color: string;
@@ -22,18 +30,20 @@ type Product = {
   size: string;
   priceNum: number;
   stock: "in_stock" | "preorder";
+  stockCount: number;
   theme: string;
 };
 
 function generateProducts(): Product[] {
   const arr: Product[] = [];
   for (let i = 0; i < 200; i++) {
-    const idx = (i % 3) + 1;
-    const cat: Product["category"] = i % 3 === 0 ? "ppe" : i % 3 === 1 ? "rescue" : "workplace";
+    const idx = (i % 4) + 1;
+    const cat: Product["category"] = i % 4 === 0 ? "ppe" : i % 4 === 1 ? "rescue" : i % 4 === 2 ? "workplace" : "other";
     const subByCat: Record<Product["category"], string[]> = {
       ppe: ["Толгойн хамгаалалт", "Хамгаалалтын хувцас", "Гар хамгаалалт", "Хөл хамгаалалт"],
       rescue: ["Аюулгүйн цоож пайз", "Цахилгааны хамгаалалтын багаж", "Тэмдэг тэмдэглэгээ", "Гэрэл, чийдэн", "Осолын үеийн багаж хэрэгсэл"],
       workplace: ["Дуу чимээ, тоосжилт"],
+      other: ["Бусад бүтээгдэхүүн", "Нэмэлт хэрэгсэл", "Сэлбэг хэрэгсэл"],
     };
     const subs = subByCat[cat];
     const sub = subs[i % subs.length];
@@ -54,6 +64,11 @@ function generateProducts(): Product[] {
       workplace: {
         "Дуу чимээ, тоосжилт": ["Тоосны маск", "Чихний хамгаалалт"],
       },
+      other: {
+        "Бусад бүтээгдэхүүн": ["Бусад", "Нэмэлт"],
+        "Нэмэлт хэрэгсэл": ["Хэрэгсэл", "Тоног төхөөрөмж"],
+        "Сэлбэг хэрэгсэл": ["Сэлбэг", "Дагалдах хэрэгсэл"],
+      },
     };
     const leaves = (leafByCat[cat][sub] ?? []);
     const subleaf = leaves.length ? leaves[i % leaves.length] : "";
@@ -62,6 +77,7 @@ function generateProducts(): Product[] {
     const sizes = ["S", "M", "L", "XL"];
     const themes = ["Classic", "Sport", "Pro", "Eco"];
     const priceNum = Math.floor(Math.random() * 900) + 100;
+    const stockCount = i % 4 === 0 ? 0 : Math.floor(Math.random() * 50) + 5; // 5-54 for in_stock, 0 for preorder
     const mainImg = idx === 1 ? "/images/product1.jpg" : idx === 2 ? "/images/product2.jpg" : "/images/product3.jpg";
     
     // Generate unique model number (format: MC375xx/A, MC376xx/B, etc.)
@@ -95,6 +111,7 @@ function generateProducts(): Product[] {
       size: sizes[i % sizes.length],
       priceNum,
       stock: i % 4 === 0 ? "preorder" : "in_stock",
+      stockCount,
       theme: themes[i % themes.length],
     });
   }
@@ -104,6 +121,7 @@ function generateProducts(): Product[] {
 export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const { setInitialStock, getStock } = useStock();
   const products = useMemo(() => generateProducts(), []);
   const product = products.find((p) => p.id === Number(params.id));
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -112,6 +130,16 @@ export default function ProductDetailPage() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [selectedSize, setSelectedSize] = useState<string>("");
+  const [selectedColor, setSelectedColor] = useState<string>("");
+  const [selectedTheme, setSelectedTheme] = useState<string>("");
+
+  // Initialize stock count for this product
+  useEffect(() => {
+    if (product) {
+      setInitialStock(product.id, product.stockCount);
+    }
+  }, [product, setInitialStock]);
   
   // Get all images for the product (use main img if no images array, or combine them)
   const productImages = useMemo(() => {
@@ -138,7 +166,25 @@ export default function ProductDetailPage() {
     setSelectedImageIndex(0);
     setZoom(1);
     setPosition({ x: 0, y: 0 });
-  }, [product?.id]);
+    if (product) {
+      setSelectedSize(product.size);
+      setSelectedColor(product.color);
+      setSelectedTheme(product.theme);
+    }
+  }, [product?.id, product]);
+
+  // Get available options for this product (from all products in same category/subcategory)
+  const availableOptions = useMemo(() => {
+    if (!product) return { sizes: [], colors: [], themes: [] };
+    const sameCategoryProducts = products.filter(
+      (p) => p.category === product.category && p.subcategory === product.subcategory
+    );
+    return {
+      sizes: Array.from(new Set(sameCategoryProducts.map((p) => p.size))).sort(),
+      colors: Array.from(new Set(sameCategoryProducts.map((p) => p.color))).sort(),
+      themes: Array.from(new Set(sameCategoryProducts.map((p) => p.theme))).sort(),
+    };
+  }, [product, products]);
   
   // Handle navigation
   const goToPrevious = () => {
@@ -364,21 +410,86 @@ export default function ProductDetailPage() {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{product.name}</h1>
             <div className="mt-2 flex items-center gap-3">
-              <div className="text-2xl font-semibold text-gray-900">{product.price}</div>
               <div className="bg-[#1f632b]/10 px-3 py-1 rounded-md">
                 <div className="text-[10px] text-gray-500">Бүтээгдэхүүний код</div>
                 <div className="text-sm font-semibold text-[#1f632b]">{product.modelNumber}</div>
               </div>
             </div>
             <div className="mt-3 text-sm text-gray-600 space-y-1">
-              <div>Бүтээгдэхүүний код: <span className="font-semibold text-gray-800">{product.modelNumber}</span></div>
               <div>Ангилал: {product.category} / {product.subcategory}{product.subleaf ? ` / ${product.subleaf}` : ""}</div>
               <div>Брэнд: {product.brand}</div>
-              <div>Өнгө: {product.color}</div>
-              <div>Хэмжээ: {product.size}</div>
-              <div>Загвар: {product.theme}</div>
-              <div>Нөөц: {product.stock === "in_stock" ? "Бэлэн" : "Захиалгаар"}</div>
+              <div>
+                Нөөц: {product.stock === "in_stock" ? "Бэлэн" : "Захиалгаар"}
+                {product.stock === "in_stock" && (
+                  <span className="ml-2 font-semibold text-gray-800">
+                    (Үлдэгдэл: {getStock(product.id)}ш)
+                  </span>
+                )}
+              </div>
             </div>
+
+            {/* Size Selection */}
+            {availableOptions.sizes.length > 1 && (
+              <div className="mt-6">
+                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  Хэмжээ <span className="text-red-500">*</span>
+                </label>
+                <Select value={selectedSize} onValueChange={setSelectedSize}>
+                  <SelectTrigger className="w-auto min-w-[120px]">
+                    <SelectValue placeholder="Хэмжээ сонгох" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableOptions.sizes.map((size) => (
+                      <SelectItem key={size} value={size}>
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Color Selection */}
+            {availableOptions.colors.length > 1 && (
+              <div className="mt-4">
+                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  Өнгө <span className="text-red-500">*</span>
+                </label>
+                <Select value={selectedColor} onValueChange={setSelectedColor}>
+                  <SelectTrigger className="w-auto min-w-[120px]">
+                    <SelectValue placeholder="Өнгө сонгох" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableOptions.colors.map((color) => (
+                      <SelectItem key={color} value={color}>
+                        {color}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Type/Theme Selection */}
+            {availableOptions.themes.length > 1 && (
+              <div className="mt-4">
+                <label className="block text-sm font-semibold text-gray-800 mb-2">
+                  Загвар <span className="text-red-500">*</span>
+                </label>
+                <Select value={selectedTheme} onValueChange={setSelectedTheme}>
+                  <SelectTrigger className="w-auto min-w-[120px]">
+                    <SelectValue placeholder="Загвар сонгох" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableOptions.themes.map((theme) => (
+                      <SelectItem key={theme} value={theme}>
+                        {theme}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="mt-6 flex gap-3">
               <AddToCartButton
@@ -388,10 +499,10 @@ export default function ProductDetailPage() {
                 price={product.price}
                 img={product.img}
                 modelNumber={product.modelNumber}
-                color={product.color}
-                size={product.size}
+                color={selectedColor}
+                size={selectedSize}
                 brand={product.brand}
-                theme={product.theme}
+                theme={selectedTheme}
               />
               <Link href="/products" className="rounded-md border px-4 py-2 text-sm flex items-center">
                 Буцах
@@ -526,7 +637,6 @@ export default function ProductDetailPage() {
                     <div className="text-[10px] text-gray-500">Бүтээгдэхүүний код</div>
                     <div className="text-xs font-semibold text-[#1f632b]">{rp.modelNumber}</div>
                   </div>
-                  <div className="mt-1 text-sm font-semibold text-gray-900">{rp.price}</div>
                 </Link>
               ))}
             </div>
@@ -550,7 +660,31 @@ function AddToCartButton(props: {
   theme?: string;
 }) {
   const cart = useCart();
+  const { decreaseStock, getStock } = useStock();
   const [qty, setQty] = useState(1);
+  const stockCount = getStock(props.id);
+
+  const handleAddToCart = () => {
+    if (stockCount >= qty) {
+      cart.addItem(
+        {
+          id: props.id,
+          name: props.name,
+          priceNum: props.priceNum,
+          price: props.price,
+          img: props.img,
+          modelNumber: props.modelNumber,
+          color: props.color,
+          size: props.size,
+          brand: props.brand,
+          theme: props.theme,
+        },
+        qty,
+      );
+      decreaseStock(props.id, qty);
+    }
+  };
+
   return (
     <div className="flex items-center gap-2">
       <div className="flex items-center rounded-md border">
@@ -561,32 +695,27 @@ function AddToCartButton(props: {
           -
         </button>
         <span className="px-3 text-sm">{qty}</span>
-        <button className="px-2 py-1 text-sm cursor-pointer" onClick={() => setQty((q: number) => q + 1)}>
+        <button 
+          className="px-2 py-1 text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" 
+          onClick={() => setQty((q: number) => Math.min(stockCount, q + 1))}
+          disabled={qty >= stockCount}
+        >
           +
         </button>
       </div>
       <Button
-        className="bg-[#1f632b] hover:bg-[#16451e] cursor-pointer"
-        onClick={() =>
-          cart.addItem(
-            {
-              id: props.id,
-              name: props.name,
-              priceNum: props.priceNum,
-              price: props.price,
-              img: props.img,
-              modelNumber: props.modelNumber,
-              color: props.color,
-              size: props.size,
-              brand: props.brand,
-              theme: props.theme,
-            },
-            qty,
-          )
-        }
+        className="bg-[#1f632b] hover:bg-[#16451e] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        onClick={handleAddToCart}
+        disabled={stockCount < qty || stockCount === 0}
       >
         Сагсанд нэмэх
       </Button>
+      {stockCount < qty && stockCount > 0 && (
+        <span className="text-xs text-red-600">Үлдэгдэл хүрэлцэхгүй байна</span>
+      )}
+      {stockCount === 0 && (
+        <span className="text-xs text-red-600">Бараа дууссан</span>
+      )}
     </div>
   );
 }

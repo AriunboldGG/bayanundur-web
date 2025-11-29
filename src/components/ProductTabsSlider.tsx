@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,33 +25,33 @@ type Product = {
 
 const products: Product[] = [
   {
-    id: "p1",
+    id: "1",
     title: "BOSO 2 Wireless On Ear Headphone",
     img: "/images/product1.jpg",
     price: "129.000₮",
     modelNumber: "MC375xx/A",
-    saveTag: "SAVE $19.00",
+    saveTag: "SAVE 19.000₮",
     shipping: "Хүргэлттэй",
     status: "Агуулахад үлдсэн",
     stockCount: 10,
   },
   {
-    id: "p2",
+    id: "2",
     title: "O'Pad Pro 12.9 inch M1 2023",
     img: "/images/product2.jpg",
     price: "899.000₮",
     modelNumber: "SP376xx/B",
-    saveTag: "SAVE $189.00",
+    saveTag: "SAVE 189.000₮",
     shipping: "Хүргэлттэй",
     status: "Захиалгаар ирнэ",
   },
   {
-    id: "p3",
+    id: "3",
     title: "Xenon Mini Case 2.0 512GB",
     img: "/images/product3.jpg",
     price: "59.000₮",
     modelNumber: "WP377xx/C",
-    saveTag: "SAVE $5.00",
+      saveTag: "SAVE 5.000₮",
     shipping: "Хүргэлттэй",
     status: "Агуулахад үлдсэн",
     stockCount: 6,
@@ -59,7 +60,7 @@ const products: Product[] = [
 
 const suggestedProducts: Product[] = [
   {
-    id: "s1",
+    id: "4",
     title: "Өвлийн бээлий",
     img: "/images/prod1.jpg",
     price: "45.000₮",
@@ -69,7 +70,7 @@ const suggestedProducts: Product[] = [
     stockCount: 15,
   },
   {
-    id: "s2",
+    id: "5",
     title: "Амь олс",
     img: "/images/prod2.jpg",
     price: "120.000₮",
@@ -79,7 +80,7 @@ const suggestedProducts: Product[] = [
     stockCount: 8,
   },
   {
-    id: "s3",
+    id: "6",
     title: "Хамгаалалтын нүдний шил",
     img: "/images/prod3.jpg",
     price: "25.000₮",
@@ -90,7 +91,7 @@ const suggestedProducts: Product[] = [
     stockCount: 20,
   },
   {
-    id: "s4",
+    id: "7",
     title: "Өндрийн олс",
     img: "/images/prod4.jpg",
     price: "85.000₮",
@@ -99,7 +100,7 @@ const suggestedProducts: Product[] = [
     status: "Захиалгаар ирнэ",
   },
   {
-    id: "s5",
+    id: "8",
     title: "Хамгаалалтын малгай",
     img: "/images/product1.jpg",
     price: "35.000₮",
@@ -109,7 +110,7 @@ const suggestedProducts: Product[] = [
     stockCount: 12,
   },
   {
-    id: "s6",
+    id: "9",
     title: "Ажлын бээлий",
     img: "/images/product2.jpg",
     price: "28.000₮",
@@ -126,43 +127,43 @@ function ProductsCarousel({ productsToShow = products }: { productsToShow?: Prod
       <CarouselContent>
         {productsToShow.map((p) => (
           <CarouselItem key={p.id} className="basis-full sm:basis-1/2 lg:basis-1/3">
-            <Card className="overflow-hidden">
-              <CardContent className="p-4 flex flex-col gap-3">
-                {/* Save badge */}
-                {p.saveTag && (
-                  <div className="self-start rounded-full bg-[#1f632b] px-2 py-0.5 text-[10px] font-semibold text-white">
-                    {p.saveTag}
+            <Link href={`/products/${p.id}`} className="block">
+              <Card className="overflow-hidden hover:border-[#1f632b] transition-colors cursor-pointer h-full">
+                <CardContent className="p-4 flex flex-col gap-3">
+                  {/* Save badge */}
+                  {p.saveTag && (
+                    <div className="self-start rounded-full bg-[#1f632b] px-2 py-0.5 text-[10px] font-semibold text-white">
+                      {p.saveTag}
+                    </div>
+                  )}
+                  {/* Image */}
+                  <div className="relative h-32 w-full">
+                    <Image src={p.img} alt={p.title} fill className="object-contain" />
                   </div>
-                )}
-                {/* Image */}
-                <div className="relative h-32 w-full">
-                  <Image src={p.img} alt={p.title} fill className="object-contain" />
-                </div>
-                {/* Title */}
-                <div className="text-xs text-gray-700 line-clamp-2 min-h-[32px]">
-                  {p.title}
-                </div>
-                {/* Model Number */}
-                <div>
-                  <div className="text-[10px] text-gray-500">Бүтээгдэхүүний код</div>
-                  <div className="text-xs font-semibold text-[#1f632b]">{p.modelNumber}</div>
-                </div>
-                {/* Price */}
-                <div className="text-sm font-semibold text-gray-900">{p.price}</div>
-                {/* Meta rows */}
-                <div className="mt-1 grid grid-cols-2 gap-2 text-[10px]">
-                  <div className="rounded-md border px-2 py-1 text-gray-600">
-                    {p.shipping}
+                  {/* Title */}
+                  <div className="text-xs text-gray-700 line-clamp-2 min-h-[32px]">
+                    {p.title}
                   </div>
-                  <div className="rounded-md border px-2 py-1 text-gray-600">
-                    {p.status}
-                    {p.status?.includes("Агуулахад үлдсэн") && typeof p.stockCount === "number"
-                      ? ` - ${p.stockCount}ш`
-                      : null}
+                  {/* Model Number */}
+                  <div>
+                    <div className="text-[10px] text-gray-500">Бүтээгдэхүүний код</div>
+                    <div className="text-xs font-semibold text-[#1f632b]">{p.modelNumber}</div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                  {/* Meta rows */}
+                  <div className="mt-1 grid grid-cols-2 gap-2 text-[10px]">
+                    <div className="rounded-md border px-2 py-1 text-gray-600">
+                      {p.shipping}
+                    </div>
+                    <div className="rounded-md border px-2 py-1 text-gray-600">
+                      {p.status}
+                      {p.status?.includes("Агуулахад үлдсэн") && typeof p.stockCount === "number"
+                        ? ` - ${p.stockCount}ш`
+                        : null}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           </CarouselItem>
         ))}
       </CarouselContent>
