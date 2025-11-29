@@ -54,8 +54,13 @@ const ALL_PRODUCTS: Product[] = Array.from({ length: 200 }).map((_, i) => {
     workplace: {
       "Дуу чимээ, тоосжилт": ["Тоосны маск", "Чихний хамгаалалт"],
     },
+    other: {
+      "Бусад бүтээгдэхүүн": ["Бусад", "Нэмэлт"],
+      "Нэмэлт хэрэгсэл": ["Хэрэгсэл", "Тоног төхөөрөмж"],
+      "Сэлбэг хэрэгсэл": ["Сэлбэг", "Дагалдах хэрэгсэл"],
+    },
   };
-  const leaves = (leafByCat[cat][sub] ?? []);
+  const leaves = (leafByCat[cat]?.[sub] ?? []);
   const subleaf = leaves.length ? leaves[i % leaves.length] : "";
   const colors = ["Улаан", "Цэнхэр", "Хар", "Цагаан", "Ногоон"];
   const brands = ["Swootech", "Nike", "Aegis", "SafePro", "WorkWear"];

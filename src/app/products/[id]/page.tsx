@@ -70,7 +70,7 @@ function generateProducts(): Product[] {
         "Сэлбэг хэрэгсэл": ["Сэлбэг", "Дагалдах хэрэгсэл"],
       },
     };
-    const leaves = (leafByCat[cat][sub] ?? []);
+    const leaves = (leafByCat[cat]?.[sub] ?? []);
     const subleaf = leaves.length ? leaves[i % leaves.length] : "";
     const colors = ["Улаан", "Цэнхэр", "Хар", "Цагаан", "Ногоон"];
     const brands = ["Swootech", "Nike", "Aegis", "SafePro", "WorkWear"];
