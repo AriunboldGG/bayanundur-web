@@ -126,6 +126,8 @@ export default function SpecialOrderPage() {
                       id="phone"
                       name="phone"
                       required
+                      pattern="[0-9]*"
+                      inputMode="numeric"
                       value={formData.phone}
                       onChange={handleChange}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1f632b] focus:border-transparent"
@@ -193,28 +195,15 @@ export default function SpecialOrderPage() {
                         Тоо ширхэг <span className="text-red-500">*</span>
                       </label>
                       <input
-                        type="text"
+                        type="number"
                         id="quantity"
                         name="quantity"
                         required
+                        min="1"
                         value={formData.quantity}
                         onChange={handleChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1f632b] focus:border-transparent"
-                        placeholder="Жишээ: 10ш, 50ш"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="deliveryDate" className="block text-sm font-medium text-gray-700 mb-2">
-                        Хүргэх огноо
-                      </label>
-                      <input
-                        type="date"
-                        id="deliveryDate"
-                        name="deliveryDate"
-                        value={formData.deliveryDate}
-                        onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1f632b] focus:border-transparent"
+                        placeholder="Жишээ: 10, 50"
                       />
                     </div>
                   </div>
