@@ -376,7 +376,7 @@ function ProductsPageContent() {
               <div className="text-sm font-semibold text-gray-800 mb-2">Нөөц</div>
               <div className="space-y-2 text-sm">
                 {[
-                  { id: "in_stock" as const, label: "Агуулахад байна" },
+                  { id: "in_stock" as const, label: "Бэлэн байгаа" },
                   { id: "preorder" as const, label: "Захиалгаар" },
                 ].map((s) => {
                   const checked = selectedStock.includes(s.id);
@@ -585,7 +585,7 @@ function ProductsPageContent() {
                 <div className="text-sm font-semibold text-gray-800 mb-2">Нөөц</div>
                 <div className="space-y-2 text-sm">
                   {[
-                    { id: "in_stock" as const, label: "Агуулахад байна" },
+                    { id: "in_stock" as const, label: "Бэлэн байгаа" },
                     { id: "preorder" as const, label: "Захиалгаар" },
                   ].map((s) => {
                     const checked = selectedStock.includes(s.id);

@@ -660,29 +660,27 @@ function AddToCartButton(props: {
   theme?: string;
 }) {
   const cart = useCart();
-  const { decreaseStock, getStock } = useStock();
+  const { getStock } = useStock();
   const [qty, setQty] = useState(1);
   const stockCount = getStock(props.id);
 
   const handleAddToCart = () => {
-    if (stockCount >= qty) {
-      cart.addItem(
-        {
-          id: props.id,
-          name: props.name,
-          priceNum: props.priceNum,
-          price: props.price,
-          img: props.img,
-          modelNumber: props.modelNumber,
-          color: props.color,
-          size: props.size,
-          brand: props.brand,
-          theme: props.theme,
-        },
-        qty,
-      );
-      decreaseStock(props.id, qty);
-    }
+    cart.addItem(
+      {
+        id: props.id,
+        name: props.name,
+        priceNum: props.priceNum,
+        price: props.price,
+        img: props.img,
+        modelNumber: props.modelNumber,
+        color: props.color,
+        size: props.size,
+        brand: props.brand,
+        theme: props.theme,
+      },
+      qty,
+    );
+    // Stock count is static - only admins can change it
   };
 
   return (
@@ -696,25 +694,20 @@ function AddToCartButton(props: {
         </button>
         <span className="px-3 text-sm">{qty}</span>
         <button 
-          className="px-2 py-1 text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" 
-          onClick={() => setQty((q: number) => Math.min(stockCount, q + 1))}
-          disabled={qty >= stockCount}
+          className="px-2 py-1 text-sm cursor-pointer" 
+          onClick={() => setQty((q: number) => q + 1)}
         >
           +
         </button>
       </div>
       <Button
-        className="bg-[#1f632b] hover:bg-[#16451e] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        className="bg-[#1f632b] hover:bg-[#16451e] cursor-pointer"
         onClick={handleAddToCart}
-        disabled={stockCount < qty || stockCount === 0}
       >
         Сагсанд нэмэх
       </Button>
-      {stockCount < qty && stockCount > 0 && (
-        <span className="text-xs text-red-600">Үлдэгдэл хүрэлцэхгүй байна</span>
-      )}
       {stockCount === 0 && (
-        <span className="text-xs text-red-600">Бараа дууссан</span>
+        <span className="text-xs text-red-600">Захиалгаар</span>
       )}
     </div>
   );

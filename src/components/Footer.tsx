@@ -23,6 +23,7 @@ export default function Footer() {
             >
               info@bayan-undur.mn
             </a>
+            <div className="text-xs font-semibold text-gray-800 mb-1">Сошиал хаяг</div>
             <div className="mt-4 flex items-center gap-3">
               <Link href="#" className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
                 <Image src="/svg/fb-footer.svg" alt="Facebook" width={9} height={14} />
@@ -55,7 +56,7 @@ export default function Footer() {
           <div>
             <h4 className="text-sm font-semibold text-gray-800 mb-4">БИДНИЙ ТУХАЙ</h4>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li><Link href="#">About Swoo</Link></li>
+              <li><Link href="/about" className="hover:underline">Бидний тухай</Link></li>
 
             </ul>
           </div>
