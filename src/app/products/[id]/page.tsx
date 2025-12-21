@@ -503,6 +503,7 @@ export default function ProductDetailPage() {
                 size={selectedSize}
                 brand={product.brand}
                 theme={selectedTheme}
+                stock={product.stock}
               />
               <Link href="/products" className="rounded-md border px-4 py-2 text-sm flex items-center">
                 Буцах
@@ -658,13 +659,23 @@ function AddToCartButton(props: {
   size?: string;
   brand?: string;
   theme?: string;
+  stock: "in_stock" | "preorder";
 }) {
   const cart = useCart();
   const { getStock } = useStock();
   const [qty, setQty] = useState(1);
   const stockCount = getStock(props.id);
+  
+  // For in_stock items with available stock, limit quantity. For preorder/out-of-stock, allow unlimited.
+  const isInStock = props.stock === "in_stock" && stockCount > 0;
+  const maxQuantity = isInStock ? stockCount : Infinity;
 
   const handleAddToCart = () => {
+    // Validate stock availability for in-stock items
+    if (isInStock && qty > stockCount) {
+      return; // Don't add if quantity exceeds available stock
+    }
+    
     cart.addItem(
       {
         id: props.id,
@@ -694,19 +705,38 @@ function AddToCartButton(props: {
         </button>
         <span className="px-3 text-sm">{qty}</span>
         <button 
-          className="px-2 py-1 text-sm cursor-pointer" 
-          onClick={() => setQty((q: number) => q + 1)}
+          className={`px-2 py-1 text-sm ${
+            isInStock && qty >= stockCount
+              ? "cursor-not-allowed opacity-50"
+              : "cursor-pointer"
+          }`}
+          onClick={() => {
+            if (isInStock) {
+              setQty((q: number) => Math.min(stockCount, q + 1));
+            } else {
+              setQty((q: number) => q + 1);
+            }
+          }}
+          disabled={isInStock && qty >= stockCount}
         >
           +
         </button>
       </div>
       <Button
-        className="bg-[#1f632b] hover:bg-[#16451e] cursor-pointer"
+        className={`bg-[#1f632b] hover:bg-[#16451e] ${
+          isInStock && qty > stockCount
+            ? "cursor-not-allowed opacity-50"
+            : "cursor-pointer"
+        }`}
         onClick={handleAddToCart}
+        disabled={isInStock && qty > stockCount}
       >
         Сагсанд нэмэх
       </Button>
-      {stockCount === 0 && (
+      {isInStock && qty > stockCount && (
+        <span className="text-xs text-red-600">Үлдэгдэл хүрэлцэхгүй байна</span>
+      )}
+      {!isInStock && (
         <span className="text-xs text-red-600">Захиалгаар</span>
       )}
     </div>
