@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { CartItem } from "@/context/CartContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { saveQuoteToFirestore } from "@/lib/quotes";
 
 type QuoteModalProps = {
   open: boolean;
@@ -12,12 +13,25 @@ type QuoteModalProps = {
 
 export function QuoteModal({ open, onClose, items }: QuoteModalProps) {
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  // Log items when modal opens or items change
+  useEffect(() => {
+    if (open) {
+      console.log("🔍 QuoteModal opened with items:", items.length, "items");
+      console.log("🔍 Items:", items);
+    }
+  }, [open, items]);
 
   if (!open) return null;
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSubmitting(true);
+    setError(null);
+    setSuccess(false);
+
     const formData = new FormData(e.currentTarget);
 
     const firstName = (formData.get("firstName") as string) ?? "";
@@ -28,46 +42,45 @@ export function QuoteModal({ open, onClose, items }: QuoteModalProps) {
     const position = (formData.get("position") as string) ?? "";
     const company = (formData.get("company") as string) ?? "";
 
-    const subject = "Үнийн санал хүсэлт";
+    try {
+      // Log items before sending
+      console.log("📋 Quote form submitted with items:", items.length, "items");
+      console.log("📋 Items array:", items);
+      
+      // Ensure items is an array and create a copy
+      const itemsToSave = Array.isArray(items) ? [...items] : [];
+      
+      if (itemsToSave.length === 0) {
+        setError("Сагсанд бүтээгдэхүүн байхгүй байна.");
+        setSubmitting(false);
+        return;
+      }
 
-    const lines: string[] = [];
-    lines.push("Хувийн мэдээлэл");
-    lines.push(`Нэр: ${firstName}`);
-    lines.push(`Овог: ${lastName}`);
-    lines.push(`И-мэйл: ${email}`);
-    lines.push(`Утас: ${phone}`);
-    lines.push(`Албан тушаал: ${position}`);
-    lines.push(`Компани: ${company}`);
-    lines.push("");
-    lines.push("Нэмэлт мэдээлэл");
-    lines.push(note);
-    lines.push("");
-    lines.push("Сагсанд буй бүтээгдэхүүнүүд");
-
-    if (items.length === 0) {
-      lines.push("Сагс хоосон байна.");
-    } else {
-      items.forEach((item, idx) => {
-        const parts: string[] = [];
-        parts.push(`${idx + 1}) ID: ${item.id}`);
-        parts.push(`Нэр: ${item.name}`);
-        if (item.brand) parts.push(`Брэнд: ${item.brand}`);
-        if (item.color) parts.push(`Өнгө: ${item.color}`);
-        if (item.size) parts.push(`Хэмжээ: ${item.size}`);
-        if (item.theme) parts.push(`Загвар: ${item.theme}`);
-        parts.push(`Тоо ширхэг: ${item.qty}`);
-        lines.push(parts.join(" | "));
+      // Save to Firestore
+      await saveQuoteToFirestore({
+        firstName,
+        lastName,
+        email,
+        phone,
+        note,
+        position,
+        company,
+        items: itemsToSave,
       });
+
+      setSuccess(true);
+      
+      // Close modal after 2 seconds
+      setTimeout(() => {
+        onClose();
+        setSuccess(false);
+      }, 2000);
+    } catch (err: any) {
+      console.error("Error saving quote:", err);
+      setError(err.message || "Алдаа гарлаа. Дахин оролдоно уу.");
+    } finally {
+      setSubmitting(false);
     }
-
-    const body = encodeURIComponent(lines.join("\n"));
-    const mailto = `mailto:ganbatariunbold8@gmail.com?subject=${encodeURIComponent(
-      subject
-    )}&body=${body}`;
-
-    window.location.href = mailto;
-    setSubmitting(false);
-    onClose();
   }
 
   return (
@@ -85,6 +98,16 @@ export function QuoteModal({ open, onClose, items }: QuoteModalProps) {
           </button>
         </div>
         <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 max-h-[80vh] overflow-y-auto">
+          {error && (
+            <div className="rounded-md bg-red-50 border border-red-200 p-3">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+          {success && (
+            <div className="rounded-md bg-green-50 border border-green-200 p-3">
+              <p className="text-sm text-green-800">✅ Үнийн санал амжилттай илгээгдлээ!</p>
+            </div>
+          )}
           <div className="grid grid-cols-1 gap-4">
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-700">

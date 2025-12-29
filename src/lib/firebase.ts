@@ -1,4 +1,6 @@
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
+import { getFirestore, Firestore } from "firebase/firestore";
+import { getStorage, FirebaseStorage } from "firebase/storage";
 
 // Validate required environment variables
 const requiredEnvVars = {
@@ -34,6 +36,8 @@ const firebaseConfig = {
 
 // Initialize Firebase only if config is valid
 let app: FirebaseApp | null = null;
+let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
 
 if (firebaseConfig.apiKey && firebaseConfig.projectId) {
   try {
@@ -42,10 +46,15 @@ if (firebaseConfig.apiKey && firebaseConfig.projectId) {
     } else {
       app = getApps()[0];
     }
+    // Initialize Firestore
+    db = getFirestore(app);
+    // Initialize Storage
+    storage = getStorage(app);
   } catch (error) {
     console.error("Firebase initialization error:", error);
   }
 }
 
 export default app;
+export { db, storage };
 

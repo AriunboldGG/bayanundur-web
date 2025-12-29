@@ -3,15 +3,21 @@
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import Image from "next/image";
+import FirebaseImage from "@/components/FirebaseImage";
 import { useCart } from "@/context/CartContext";
 import { X, Package, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { QuoteModal } from "@/components/QuoteModal";
 
 export default function CartPage() {
   const { items, removeItem, clear, updateQty } = useCart();
   const [showQuote, setShowQuote] = useState(false);
+
+  // Debug: Log items to see what's in cart
+  useEffect(() => {
+    console.log("🛒 Cart items:", items.length, "items");
+    console.log("🛒 Items details:", items);
+  }, [items]);
 
   return (
     <main className="min-h-screen bg-white">
@@ -42,14 +48,14 @@ export default function CartPage() {
               </Card>
 
               {/* Cart Items */}
-              {items.map((item) => (
-                <Card key={item.id} className="rounded-xl border border-gray-200 shadow-sm">
+              {items.map((item, index) => (
+                <Card key={`${item.id}-${item.size || ''}-${item.color || ''}-${item.theme || ''}-${index}`} className="rounded-xl border border-gray-200 shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex flex-col md:flex-row gap-4">
                       {/* Image */}
                       <div className="relative w-full md:w-24 h-32 md:h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                        <Image
-                          src={item.img}
+                        <FirebaseImage
+                          src={item.img || ""}
                           alt={item.name}
                           fill
                           className="object-contain"
@@ -72,9 +78,8 @@ export default function CartPage() {
                             </div>
                           </div>
                           <div className="flex gap-2">
-                         
                             <button
-                              onClick={() => removeItem(item.id)}
+                              onClick={() => removeItem(item.id, item)}
                               className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
                             >
                               <X className="h-4 w-4 text-gray-600" />
@@ -90,7 +95,7 @@ export default function CartPage() {
                             <span className="text-xs text-gray-600">Тоо ширхэг:</span>
                             <div className="flex items-center border border-gray-200 rounded">
                               <button
-                                onClick={() => updateQty(item.id, item.qty - 1)}
+                                onClick={() => updateQty(item.id, item.qty - 1, item)}
                                 className="px-2 py-1 hover:bg-gray-50 text-gray-600 cursor-pointer"
                               >
                                 -
@@ -99,7 +104,7 @@ export default function CartPage() {
                                 {item.qty}
                               </span>
                               <button
-                                onClick={() => updateQty(item.id, item.qty + 1)}
+                                onClick={() => updateQty(item.id, item.qty + 1, item)}
                                 className="px-2 py-1 hover:bg-gray-50 text-gray-600 cursor-pointer"
                               >
                                 +
@@ -152,7 +157,11 @@ export default function CartPage() {
           </div>
         )}
       </div>
-      <QuoteModal open={showQuote} onClose={() => setShowQuote(false)} items={items} />
+      <QuoteModal 
+        open={showQuote} 
+        onClose={() => setShowQuote(false)} 
+        items={items.length > 0 ? [...items] : []} 
+      />
     </main>
   );
 }

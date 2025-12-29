@@ -1,0 +1,348 @@
+{
+	"info": {
+		"_postman_id": "firestore-products-api",
+		"name": "Firestore Products API",
+		"description": "Postman collection for testing Firebase Firestore Products collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Get Access Token (Anonymous)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.idToken) {",
+									"        pm.environment.set(\"firebase_access_token\", jsonData.idToken);",
+									"        console.log(\"Access token saved to environment\");",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"returnSecureToken\": true\n}"
+						},
+						"url": {
+							"raw": "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={{firebase_api_key}}",
+							"protocol": "https",
+							"host": [
+								"identitytoolkit",
+								"googleapis",
+								"com"
+							],
+							"path": [
+								"v1",
+								"accounts:signUp"
+							],
+							"query": [
+								{
+									"key": "key",
+									"value": "{{firebase_api_key}}",
+									"description": "Your Firebase API Key"
+								}
+							]
+						},
+						"description": "Get an anonymous access token for Firestore. This uses Firebase Authentication REST API."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Access Token (Email/Password)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.idToken) {",
+									"        pm.environment.set(\"firebase_access_token\", jsonData.idToken);",
+									"        console.log(\"Access token saved to environment\");",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{user_email}}\",\n    \"password\": \"{{user_password}}\",\n    \"returnSecureToken\": true\n}"
+						},
+						"url": {
+							"raw": "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={{firebase_api_key}}",
+							"protocol": "https",
+							"host": [
+								"identitytoolkit",
+								"googleapis",
+								"com"
+							],
+							"path": [
+								"v1",
+								"accounts:signInWithPassword"
+							],
+							"query": [
+								{
+									"key": "key",
+									"value": "{{firebase_api_key}}"
+								}
+							]
+						},
+						"description": "Sign in with email and password to get an access token."
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints to get Firebase access tokens"
+		},
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "Get All Products",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 403) {",
+									"    console.log(\"403 Error: Permission Denied\");",
+									"    console.log(\"Possible causes:\");",
+									"    console.log(\"1. Firestore rules not deployed - run: firebase deploy --only firestore:rules\");",
+									"    console.log(\"2. Anonymous auth not enabled in Firebase Console\");",
+									"    console.log(\"3. Invalid or expired access token - get a new one\");",
+									"    console.log(\"4. Wrong project_id or api_key\");",
+									"    pm.test(\"Check console for troubleshooting steps\", false);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{firebase_access_token}}",
+								"type": "text",
+								"description": "Required: Get access token from Authentication endpoints first"
+							}
+						],
+						"url": {
+							"raw": "https://firestore.googleapis.com/v1/projects/{{firebase_project_id}}/databases/(default)/documents/products",
+							"protocol": "https",
+							"host": [
+								"firestore",
+								"googleapis",
+								"com"
+							],
+							"path": [
+								"v1",
+								"projects",
+								"{{firebase_project_id}}",
+								"databases",
+								"(default)",
+								"documents",
+								"products"
+							],
+							"description": "Get all products from the products collection"
+						},
+						"description": "Fetches all documents from the products collection in Firestore.\n\n⚠️ If you get 403 error:\n1. Deploy firestore.rules: firebase deploy --only firestore:rules\n2. Enable Anonymous auth in Firebase Console\n3. Get a fresh access token"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{firebase_access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://firestore.googleapis.com/v1/projects/{{firebase_project_id}}/databases/(default)/documents/products/{{product_id}}",
+							"protocol": "https",
+							"host": [
+								"firestore",
+								"googleapis",
+								"com"
+							],
+							"path": [
+								"v1",
+								"projects",
+								"{{firebase_project_id}}",
+								"databases",
+								"(default)",
+								"documents",
+								"products",
+								"{{product_id}}"
+							],
+							"description": "Get a specific product by its document ID"
+						},
+						"description": "Fetches a single product document by its ID from Firestore."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Products by Category",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{firebase_access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"structuredQuery\": {\n        \"from\": [{\n            \"collectionId\": \"products\"\n        }],\n        \"where\": {\n            \"fieldFilter\": {\n                \"field\": {\n                    \"fieldPath\": \"category\"\n                },\n                \"op\": \"EQUAL\",\n                \"value\": {\n                    \"stringValue\": \"{{category}}\"\n                }\n            }\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "https://firestore.googleapis.com/v1/projects/{{firebase_project_id}}/databases/(default)/documents:runQuery",
+							"protocol": "https",
+							"host": [
+								"firestore",
+								"googleapis",
+								"com"
+							],
+							"path": [
+								"v1",
+								"projects",
+								"{{firebase_project_id}}",
+								"databases",
+								"(default)",
+								"documents:runQuery"
+							],
+							"description": "Query products by category (ppe, rescue, workplace, other)"
+						},
+						"description": "Queries products filtered by category using Firestore's runQuery endpoint."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Product (Test)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{firebase_access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"fields\": {\n        \"id\": {\n            \"integerValue\": \"1\"\n        },\n        \"name\": {\n            \"stringValue\": \"Test Product\"\n        },\n        \"price\": {\n            \"stringValue\": \"10000₮\"\n        },\n        \"priceNum\": {\n            \"integerValue\": \"10000\"\n        },\n        \"img\": {\n            \"stringValue\": \"/images/product1.jpg\"\n        },\n        \"modelNumber\": {\n            \"stringValue\": \"MC001xx/A\"\n        },\n        \"category\": {\n            \"stringValue\": \"ppe\"\n        },\n        \"subcategory\": {\n            \"stringValue\": \"Толгойн хамгаалалт\"\n        },\n        \"subleaf\": {\n            \"stringValue\": \"Малгай, каск\"\n        },\n        \"color\": {\n            \"stringValue\": \"Улаан\"\n        },\n        \"brand\": {\n            \"stringValue\": \"Swootech\"\n        },\n        \"size\": {\n            \"stringValue\": \"M\"\n        },\n        \"stock\": {\n            \"stringValue\": \"in_stock\"\n        },\n        \"stockCount\": {\n            \"integerValue\": \"10\"\n        },\n        \"theme\": {\n            \"stringValue\": \"Classic\"\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "https://firestore.googleapis.com/v1/projects/{{firebase_project_id}}/databases/(default)/documents/products?documentId={{product_id}}",
+							"protocol": "https",
+							"host": [
+								"firestore",
+								"googleapis",
+								"com"
+							],
+							"path": [
+								"v1",
+								"projects",
+								"{{firebase_project_id}}",
+								"databases",
+								"(default)",
+								"documents",
+								"products"
+							],
+							"query": [
+								{
+									"key": "documentId",
+									"value": "{{product_id}}",
+									"description": "Optional: specify document ID"
+								}
+							],
+							"description": "Create a new product document (Note: This will fail if write rules deny writes)"
+						},
+						"description": "Creates a new product document in Firestore. Note: Your security rules currently deny writes, so this will fail unless you update the rules."
+					},
+					"response": []
+				}
+			],
+			"description": "Product-related Firestore operations"
+		}
+	],
+	"variable": [
+		{
+			"key": "firebase_api_key",
+			"value": "YOUR_FIREBASE_API_KEY",
+			"type": "string"
+		},
+		{
+			"key": "firebase_project_id",
+			"value": "YOUR_FIREBASE_PROJECT_ID",
+			"type": "string"
+		},
+		{
+			"key": "firebase_access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "product_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "category",
+			"value": "ppe",
+			"type": "string"
+		},
+		{
+			"key": "user_email",
+			"value": "test@example.com",
+			"type": "string"
+		},
+		{
+			"key": "user_password",
+			"value": "password123",
+			"type": "string"
+		}
+	]
+}
+

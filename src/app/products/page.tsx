@@ -3,101 +3,12 @@ import Header from "@/components/Header";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
+import FirebaseImage from "@/components/FirebaseImage";
 import { useMemo, useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Shield, LifeBuoy, Wrench, Package } from "lucide-react";
 import { useStock } from "@/context/StockContext";
-
-type Product = {
-  id: number;
-  name: string;
-  price: string;
-  img: string;
-  modelNumber: string;
-  category: "ppe" | "rescue" | "workplace" | "other";
-  subcategory: string;
-  subleaf: string;
-  color: string;
-  brand: string;
-  size: string;
-  priceNum: number;
-  stock: "in_stock" | "preorder";
-  stockCount: number;
-  theme: string;
-};
-
-const ALL_PRODUCTS: Product[] = Array.from({ length: 200 }).map((_, i) => {
-  const idx = (i % 4) + 1;
-  const cat: Product["category"] = i % 4 === 0 ? "ppe" : i % 4 === 1 ? "rescue" : i % 4 === 2 ? "workplace" : "other";
-  const subByCat: Record<Product["category"], string[]> = {
-    ppe: ["Толгойн хамгаалалт", "Хамгаалалтын хувцас", "Гар хамгаалалт", "Хөл хамгаалалт"],
-    rescue: ["Аюулгүйн цоож пайз", "Цахилгааны хамгаалалтын багаж", "Тэмдэг тэмдэглэгээ", "Гэрэл, чийдэн", "Осолын үеийн багаж хэрэгсэл"],
-    workplace: ["Дуу чимээ, тоосжилт"],
-    other: ["Бусад бүтээгдэхүүн", "Нэмэлт хэрэгсэл", "Сэлбэг хэрэгсэл"],
-  };
-  const subs = subByCat[cat];
-  const sub = subs[i % subs.length];
-  const leafByCat: Record<Product["category"], Record<string, string[]>> = {
-    ppe: {
-      "Толгойн хамгаалалт": ["Малгай, каск", "Нүүрний хамгаалалт, нүдний шил", "Гагнуурын баг", "Амьсгалын маск", "Чихэвч", "Баг шүүлтүүр"],
-      "Хамгаалалтын хувцас": ["Зуны хувцас", "Өвлийн хувцас", "Цахилгаан, нуман ниргэлтээс", "Гагнуурын хувцас", "Халуунаас хамгаалах", "Хими, цацрагаас"],
-      "Гар хамгаалалт": ["Ажлын бээлий", "Цахилгааны бээлий", "Гагнуурын/халуун бээлий", "Хими, шүлт, цацрагаас"],
-      "Хөл хамгаалалт": ["Ажлын гутал", "Гагнуурын гутал", "Хүчил шүлтнээс", "Усны гутал"],
-    },
-    rescue: {
-      "Аюулгүйн цоож пайз": ["Цоож", "Түгжээ", "Хайрцаг/стайшин", "Пайз", "Иж бүрдэл"],
-      "Цахилгааны хамгаалалтын багаж": ["Хөндийрүүлэгч штанг", "Зөөврийн газардуулга", "Хүчдэл хэмжигч", "Тусгаарлагч материал", "Зөөврийн хайс/шат"],
-      "Тэмдэг тэмдэглэгээ": ["Анхааруулах палакат", "Тууз/наалт/скоч", "Замын тэмдэг", "Тумбо/шон", "Туг дарцаг"],
-      "Гэрэл, чийдэн": ["Духны гэрэл", "Баттерей", "Зөөврийн гэрэл", "Прожектор гэрэл", "Маяк/дохиолол"],
-      "Осолын үеийн багаж хэрэгсэл": ["Химийн асгаралтын иж бүрдэл", "Галын анхан шатны хэрэгсэл", "Түргэн тусламжийн хэрэгсэл"],
-    },
-    workplace: {
-      "Дуу чимээ, тоосжилт": ["Тоосны маск", "Чихний хамгаалалт"],
-    },
-    other: {
-      "Бусад бүтээгдэхүүн": ["Бусад", "Нэмэлт"],
-      "Нэмэлт хэрэгсэл": ["Хэрэгсэл", "Тоног төхөөрөмж"],
-      "Сэлбэг хэрэгсэл": ["Сэлбэг", "Дагалдах хэрэгсэл"],
-    },
-  };
-  const leaves = (leafByCat[cat]?.[sub] ?? []);
-  const subleaf = leaves.length ? leaves[i % leaves.length] : "";
-  const colors = ["Улаан", "Цэнхэр", "Хар", "Цагаан", "Ногоон"];
-  const brands = ["Swootech", "Nike", "Aegis", "SafePro", "WorkWear"];
-  const sizes = ["S", "M", "L", "XL"];
-  const themes = ["Classic", "Sport", "Pro", "Eco"];
-  const priceNum = Math.floor(Math.random() * 900) + 100; // 100-999
-  const stockCount = i % 4 === 0 ? 0 : Math.floor(Math.random() * 50) + 5; // 5-54 for in_stock, 0 for preorder
-  
-  // Generate unique model number (format: MC375xx/A, MC376xx/B, etc.)
-  const modelPrefix = ["MC", "SP", "WP", "RS", "AE"];
-  const modelNum = String(375 + (i % 1000)).padStart(3, "0");
-  const modelSuffix = ["xx/A", "xx/B", "xx/C", "xx/D", "xx/E", "xx/F", "xx/G", "xx/H"];
-  const modelNumber = `${modelPrefix[i % modelPrefix.length]}${modelNum}${modelSuffix[i % modelSuffix.length]}`;
-  
-  return {
-    id: i + 1,
-    name: `Sample Product ${i + 1}`,
-    price: `${priceNum.toLocaleString()}₮`,
-    img:
-      idx === 1
-        ? "/images/product1.jpg"
-        : idx === 2
-        ? "/images/product2.jpg"
-        : "/images/product3.jpg",
-    modelNumber,
-    category: cat,
-    subcategory: sub,
-    subleaf,
-    color: colors[i % colors.length],
-    brand: brands[i % brands.length],
-    size: sizes[i % sizes.length],
-    priceNum,
-    stock: i % 4 === 0 ? "preorder" : "in_stock",
-    stockCount,
-    theme: themes[i % themes.length],
-  };
-});
+import { getAllProducts, type Product } from "@/lib/products";
 
 function ProductsPageContent() {
   const searchParams = useSearchParams();
@@ -113,16 +24,50 @@ function ProductsPageContent() {
   const [selectedStock, setSelectedStock] = useState<Array<Product["stock"]>>([]);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFromFirestore, setIsFromFirestore] = useState(false);
+
+  // Fetch products from Firestore on mount - ONLY from Firebase, no fallback
+  useEffect(() => {
+    async function fetchProducts() {
+      setIsLoading(true);
+      try {
+        console.log("🔄 Fetching products from Firebase Firestore...");
+        const products = await getAllProducts();
+        if (products.length > 0) {
+          console.log(`✅ Successfully loaded ${products.length} products from Firestore`);
+          setAllProducts(products);
+          setIsFromFirestore(true);
+        } else {
+          console.warn("⚠️ No products found in Firestore");
+          setAllProducts([]);
+          setIsFromFirestore(false);
+        }
+      } catch (error) {
+        console.error("❌ Error fetching products from Firestore:", error);
+        setAllProducts([]);
+        setIsFromFirestore(false);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchProducts();
+  }, []);
 
   // Initialize stock counts
   useEffect(() => {
-    ALL_PRODUCTS.forEach((product) => {
-      setInitialStock(product.id, product.stockCount);
-    });
-  }, [setInitialStock]);
+    if (allProducts.length > 0) {
+      allProducts.forEach((product) => {
+        setInitialStock(product.id, product.stockCount);
+      });
+    }
+  }, [allProducts, setInitialStock]);
 
   // Read category and brand from URL query params on mount
   useEffect(() => {
+    if (allProducts.length === 0) return;
+    
     const categoryParam = searchParams.get("category");
     if (categoryParam && ["ppe", "rescue", "workplace", "other"].includes(categoryParam)) {
       setSelectedCat(categoryParam as Product["category"]);
@@ -133,20 +78,20 @@ function ProductsPageContent() {
     
     const brandParam = searchParams.get("brand");
     if (brandParam) {
-      const availableBrands = Array.from(new Set(ALL_PRODUCTS.map((p) => p.brand)));
+      const availableBrands = Array.from(new Set(allProducts.map((p) => p.brand)));
       if (availableBrands.includes(brandParam)) {
         setSelectedBrands([brandParam]);
         setPage(1);
       }
     }
-  }, [searchParams]);
+  }, [searchParams, allProducts]);
 
   const categories = [
-    { id: "all" as const, label: "Бүгд", icon: null, count: ALL_PRODUCTS.length },
-    { id: "ppe" as const, label: "ХАБ хувцас хэрэгсэл", icon: Shield, count: ALL_PRODUCTS.filter(p => p.category === "ppe").length },
-    { id: "rescue" as const, label: "Аврах хамгаалах", icon: LifeBuoy, count: ALL_PRODUCTS.filter(p => p.category === "rescue").length },
-    { id: "workplace" as const, label: "Ажлын байр", icon: Wrench, count: ALL_PRODUCTS.filter(p => p.category === "workplace").length },
-    { id: "other" as const, label: "Бусад", icon: Package, count: ALL_PRODUCTS.filter(p => p.category === "other").length },
+    { id: "all" as const, label: "Бүгд", icon: null, count: allProducts.length },
+    { id: "ppe" as const, label: "ХАБ хувцас хэрэгсэл", icon: Shield, count: allProducts.filter(p => p.category === "ppe").length },
+    { id: "rescue" as const, label: "Аврах хамгаалах", icon: LifeBuoy, count: allProducts.filter(p => p.category === "rescue").length },
+    { id: "workplace" as const, label: "Ажлын байр", icon: Wrench, count: allProducts.filter(p => p.category === "workplace").length },
+    { id: "other" as const, label: "Бусад", icon: Package, count: allProducts.filter(p => p.category === "other").length },
   ];
 
   const subcats: Record<Product["category"], string[]> = {
@@ -180,7 +125,8 @@ function ProductsPageContent() {
   };
 
   const filtered = useMemo(() => {
-    let base = selectedCat === "all" ? ALL_PRODUCTS : ALL_PRODUCTS.filter(p => p.category === selectedCat);
+    if (allProducts.length === 0) return [];
+    let base = selectedCat === "all" ? allProducts : allProducts.filter(p => p.category === selectedCat);
     if (selectedCat !== "all" && selectedSub) {
       base = base.filter(p => p.subcategory === selectedSub);
     }
@@ -193,7 +139,7 @@ function ProductsPageContent() {
     if (selectedStock.length) base = base.filter(p => selectedStock.includes(p.stock));
     if (selectedThemes.length) base = base.filter(p => selectedThemes.includes(p.theme));
     return base;
-  }, [selectedCat, selectedSub, selectedLeaf, selectedColors, selectedBrands, selectedSizes, selectedStock, selectedThemes]);
+  }, [allProducts, selectedCat, selectedSub, selectedLeaf, selectedColors, selectedBrands, selectedSizes, selectedStock, selectedThemes]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageItems = useMemo(() => {
@@ -201,13 +147,35 @@ function ProductsPageContent() {
     return filtered.slice(start, start + pageSize);
   }, [page, filtered]);
 
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-white">
+        <Header />
+        <div className="container mx-auto px-4 py-12">
+          <div className="text-center">Ачааллаж байна...</div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-white">
       <Header />
       <div className="container mx-auto px-4 py-12">
         <div className="mb-4 flex items-end justify-between gap-3">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">БҮТЭЭГДЭХҮҮН</h1>
-         
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">БҮТЭЭГДЭХҮҮН</h1>
+            {isFromFirestore && allProducts.length > 0 && (
+              <p className="text-sm text-green-600 mt-1">
+                ✅ {allProducts.length} бүтээгдэхүүн Firebase-аас ачааллаж байна
+              </p>
+            )}
+            {!isFromFirestore && allProducts.length === 0 && !isLoading && (
+              <p className="text-sm text-amber-600 mt-1">
+                ⚠️ Firestore-д бүтээгдэхүүн олдсонгүй
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Top category filter bar */}
@@ -299,7 +267,7 @@ function ProductsPageContent() {
             <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
               <div className="text-sm font-semibold text-gray-800 mb-2">Өнгө</div>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                {Array.from(new Set(ALL_PRODUCTS.map((p) => p.color))).map((c) => {
+                {Array.from(new Set(allProducts.map((p) => p.color))).map((c) => {
                   const checked = selectedColors.includes(c);
                   return (
                     <label key={c} className="flex items-center gap-2">
@@ -324,7 +292,7 @@ function ProductsPageContent() {
             <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
               <div className="text-sm font-semibold text-gray-800 mb-2">Брэнд</div>
               <div className="space-y-2 text-sm">
-                {Array.from(new Set(ALL_PRODUCTS.map((p) => p.brand))).map((b) => {
+                {Array.from(new Set(allProducts.map((p) => p.brand))).map((b) => {
                   const checked = selectedBrands.includes(b);
                   return (
                     <label key={b} className="flex items-center gap-2">
@@ -349,7 +317,7 @@ function ProductsPageContent() {
             <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
               <div className="text-sm font-semibold text-gray-800 mb-2">Хэмжээ</div>
               <div className="flex flex-wrap gap-2">
-                {Array.from(new Set(ALL_PRODUCTS.map((p) => p.size))).map((s) => {
+                {Array.from(new Set(allProducts.map((p) => p.size))).map((s) => {
                   const active = selectedSizes.includes(s);
                   return (
                     <button
@@ -418,20 +386,26 @@ function ProductsPageContent() {
           </aside>
 
           {/* Products grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-          {pageItems.map((p) => (
-            <Card key={p.id} className="group overflow-hidden flex flex-col h-full relative cursor-pointer hover:border-[#1f632b] transition-colors">
-              <Link href={`/products/${p.id}`} aria-label={`View ${p.name}`} className="absolute inset-0 z-[1]"></Link>
+          {allProducts.length === 0 && !isLoading ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-gray-600 text-lg mb-2">Бүтээгдэхүүн олдсонгүй</p>
+              <p className="text-gray-500 text-sm">Firestore-д бүтээгдэхүүн нэмнэ үү</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+            {pageItems.map((p) => (
+            <Card key={p.firestoreId || `product-${p.id}`} className="group overflow-hidden flex flex-col h-full relative cursor-pointer hover:border-[#1f632b] transition-colors">
+              <Link href={`/products/${p.firestoreId || p.id}`} aria-label={`View ${p.name}`} className="absolute inset-0 z-[1]"></Link>
               <div className="relative h-40 w-full">
-                <Image
-                  src={p.img}
+                <FirebaseImage
+                  src={p.images && p.images.length > 0 ? p.images[0] : p.img}
                   alt={p.name}
                   fill
                   className="object-contain bg-white"
                   sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
                 />
                 <Link
-                  href={`/products/${p.id}`}
+                  href={`/products/${p.firestoreId || p.id}`}
                   className="absolute bottom-2 right-2 z-[2] opacity-0 group-hover:opacity-100 transition-opacity rounded-md bg-[#1f632b] hover:bg-[#16451e] text-white text-xs px-3 py-1"
                 >
                   Харах
@@ -469,6 +443,7 @@ function ProductsPageContent() {
             </Card>
           ))}
           </div>
+          )}
         </div>
 
         {/* Mobile filters bottom sheet */}
@@ -508,7 +483,7 @@ function ProductsPageContent() {
               <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
                 <div className="text-sm font-semibold text-gray-800 mb-2">Өнгө</div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  {Array.from(new Set(ALL_PRODUCTS.map((p) => p.color))).map((c) => {
+                  {Array.from(new Set(allProducts.map((p) => p.color))).map((c) => {
                     const checked = selectedColors.includes(c);
                     return (
                       <label key={c} className="flex items-center gap-2">
@@ -533,7 +508,7 @@ function ProductsPageContent() {
               <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
                 <div className="text-sm font-semibold text-gray-800 mb-2">Брэнд</div>
                 <div className="space-y-2 text-sm">
-                  {Array.from(new Set(ALL_PRODUCTS.map((p) => p.brand))).map((b) => {
+                  {Array.from(new Set(allProducts.map((p) => p.brand))).map((b) => {
                     const checked = selectedBrands.includes(b);
                     return (
                       <label key={b} className="flex items-center gap-2">
@@ -558,7 +533,7 @@ function ProductsPageContent() {
               <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
                 <div className="text-sm font-semibold text-gray-800 mb-2">Хэмжээ</div>
                 <div className="flex flex-wrap gap-2">
-                  {Array.from(new Set(ALL_PRODUCTS.map((p) => p.size))).map((s) => {
+                  {Array.from(new Set(allProducts.map((p) => p.size))).map((s) => {
                     const active = selectedSizes.includes(s);
                     return (
                       <button
@@ -612,7 +587,7 @@ function ProductsPageContent() {
               <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
                 <div className="text-sm font-semibold text-gray-800 mb-2">Загвар (Theme)</div>
                 <div className="space-y-2 text-sm">
-                  {Array.from(new Set(ALL_PRODUCTS.map((p) => p.theme))).map((t) => {
+                  {Array.from(new Set(allProducts.map((p) => p.theme))).map((t) => {
                     const checked = selectedThemes.includes(t);
                     return (
                       <label key={t} className="flex items-center gap-2">

@@ -18,7 +18,7 @@ export default function PromoBanner() {
       {/* Center product image */}
       <div className="relative h-20 md:h-auto md:w-24 flex items-center justify-center">
         <Image
-          src="/images/product1.jpg"
+          src=""
           alt="Promo product"
           fill
           className="object-contain"

@@ -2,6 +2,7 @@
 import Header from "@/components/Header";
 import Image from "next/image";
 import Link from "next/link";
+import FirebaseImage from "@/components/FirebaseImage";
 import { useMemo, useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -14,116 +15,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useStock } from "@/context/StockContext";
-
-type Product = {
-  id: number;
-  name: string;
-  price: string;
-  img: string;
-  images?: string[]; // Multiple images for gallery
-  modelNumber: string;
-  category: "ppe" | "rescue" | "workplace" | "other";
-  subcategory: string;
-  subleaf: string;
-  color: string;
-  brand: string;
-  size: string;
-  priceNum: number;
-  stock: "in_stock" | "preorder";
-  stockCount: number;
-  theme: string;
-};
-
-function generateProducts(): Product[] {
-  const arr: Product[] = [];
-  for (let i = 0; i < 200; i++) {
-    const idx = (i % 4) + 1;
-    const cat: Product["category"] = i % 4 === 0 ? "ppe" : i % 4 === 1 ? "rescue" : i % 4 === 2 ? "workplace" : "other";
-    const subByCat: Record<Product["category"], string[]> = {
-      ppe: ["Толгойн хамгаалалт", "Хамгаалалтын хувцас", "Гар хамгаалалт", "Хөл хамгаалалт"],
-      rescue: ["Аюулгүйн цоож пайз", "Цахилгааны хамгаалалтын багаж", "Тэмдэг тэмдэглэгээ", "Гэрэл, чийдэн", "Осолын үеийн багаж хэрэгсэл"],
-      workplace: ["Дуу чимээ, тоосжилт"],
-      other: ["Бусад бүтээгдэхүүн", "Нэмэлт хэрэгсэл", "Сэлбэг хэрэгсэл"],
-    };
-    const subs = subByCat[cat];
-    const sub = subs[i % subs.length];
-    const leafByCat: Record<Product["category"], Record<string, string[]>> = {
-      ppe: {
-        "Толгойн хамгаалалт": ["Малгай, каск", "Нүүрний хамгаалалт, нүдний шил", "Гагнуурын баг", "Амьсгалын маск", "Чихэвч", "Баг шүүлтүүр"],
-        "Хамгаалалтын хувцас": ["Зуны хувцас", "Өвлийн хувцас", "Цахилгаан, нуман ниргэлтээс", "Гагнуурын хувцас", "Халуунаас хамгаалах", "Хими, цацрагаас"],
-        "Гар хамгаалалт": ["Ажлын бээлий", "Цахилгааны бээлий", "Гагнуурын/халуун бээлий", "Хими, шүлт, цацрагаас"],
-        "Хөл хамгаалалт": ["Ажлын гутал", "Гагнуурын гутал", "Хүчил шүлтнээс", "Усны гутал"],
-      },
-      rescue: {
-        "Аюулгүйн цоож пайз": ["Цоож", "Түгжээ", "Хайрцаг/стайшин", "Пайз", "Иж бүрдэл"],
-        "Цахилгааны хамгаалалтын багаж": ["Хөндийрүүлэгч штанг", "Зөөврийн газардуулга", "Хүчдэл хэмжигч", "Тусгаарлагч материал", "Зөөврийн хайс/шат"],
-        "Тэмдэг тэмдэглэгээ": ["Анхааруулах палакат", "Тууз/наалт/скоч", "Замын тэмдэг", "Тумбо/шон", "Туг дарцаг"],
-        "Гэрэл, чийдэн": ["Духны гэрэл", "Баттерей", "Зөөврийн гэрэл", "Прожектор гэрэл", "Маяк/дохиолол"],
-        "Осолын үеийн багаж хэрэгсэл": ["Химийн асгаралтын иж бүрдэл", "Галын анхан шатны хэрэгсэл", "Түргэн тусламжийн хэрэгсэл"],
-      },
-      workplace: {
-        "Дуу чимээ, тоосжилт": ["Тоосны маск", "Чихний хамгаалалт"],
-      },
-      other: {
-        "Бусад бүтээгдэхүүн": ["Бусад", "Нэмэлт"],
-        "Нэмэлт хэрэгсэл": ["Хэрэгсэл", "Тоног төхөөрөмж"],
-        "Сэлбэг хэрэгсэл": ["Сэлбэг", "Дагалдах хэрэгсэл"],
-      },
-    };
-    const leaves = (leafByCat[cat]?.[sub] ?? []);
-    const subleaf = leaves.length ? leaves[i % leaves.length] : "";
-    const colors = ["Улаан", "Цэнхэр", "Хар", "Цагаан", "Ногоон"];
-    const brands = ["Swootech", "Nike", "Aegis", "SafePro", "WorkWear"];
-    const sizes = ["S", "M", "L", "XL"];
-    const themes = ["Classic", "Sport", "Pro", "Eco"];
-    const priceNum = Math.floor(Math.random() * 900) + 100;
-    const stockCount = i % 4 === 0 ? 0 : Math.floor(Math.random() * 50) + 5; // 5-54 for in_stock, 0 for preorder
-    const mainImg = idx === 1 ? "/images/product1.jpg" : idx === 2 ? "/images/product2.jpg" : "/images/product3.jpg";
-    
-    // Generate unique model number (format: MC375xx/A, MC376xx/B, etc.)
-    const modelPrefix = ["MC", "SP", "WP", "RS", "AE"];
-    const modelNum = String(375 + (i % 1000)).padStart(3, "0");
-    const modelSuffix = ["xx/A", "xx/B", "xx/C", "xx/D", "xx/E", "xx/F", "xx/G", "xx/H"];
-    const modelNumber = `${modelPrefix[i % modelPrefix.length]}${modelNum}${modelSuffix[i % modelSuffix.length]}`;
-    
-    // Generate multiple images for gallery (using available product images)
-    const productImages = [
-      mainImg,
-      idx === 1 ? "/images/product2.jpg" : idx === 2 ? "/images/product3.jpg" : "/images/product1.jpg",
-      idx === 1 ? "/images/product3.jpg" : idx === 2 ? "/images/product1.jpg" : "/images/product2.jpg",
-      "/images/prod1.jpg",
-      "/images/prod2.jpg",
-      "/images/prod3.jpg",
-    ].filter(Boolean);
-    
-    arr.push({
-      id: i + 1,
-      name: `Sample Product ${i + 1}`,
-      price: `${priceNum.toLocaleString()}₮`,
-      img: mainImg,
-      images: productImages, // Multiple images for gallery
-      modelNumber,
-      category: cat,
-      subcategory: sub,
-      subleaf,
-      color: colors[i % colors.length],
-      brand: brands[i % brands.length],
-      size: sizes[i % sizes.length],
-      priceNum,
-      stock: i % 4 === 0 ? "preorder" : "in_stock",
-      stockCount,
-      theme: themes[i % themes.length],
-    });
-  }
-  return arr;
-}
+import { getProductById, getAllProducts, getImageUrl, getImageUrls, type Product } from "@/lib/products";
 
 export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { setInitialStock, getStock } = useStock();
-  const products = useMemo(() => generateProducts(), []);
-  const product = products.find((p) => p.id === Number(params.id));
+  const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -134,57 +35,85 @@ export default function ProductDetailPage() {
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedTheme, setSelectedTheme] = useState<string>("");
 
-  // Initialize stock count for this product
+  // Fetch product from Firestore
   useEffect(() => {
-    if (product) {
-      setInitialStock(product.id, product.stockCount);
+    async function fetchProduct() {
+      setIsLoading(true);
+      try {
+        const fetchedProduct = await getProductById(params.id);
+        if (fetchedProduct) {
+          setProduct(fetchedProduct);
+          setInitialStock(fetchedProduct.id, fetchedProduct.stockCount);
+          setSelectedSize(fetchedProduct.size);
+          setSelectedColor(fetchedProduct.color);
+          setSelectedTheme(fetchedProduct.theme);
+
+          // Load images from Firebase Storage
+          const imagesToLoad = fetchedProduct.images && fetchedProduct.images.length > 0 
+            ? fetchedProduct.images 
+            : [fetchedProduct.img];
+          const urls = await getImageUrls(imagesToLoad);
+          setImageUrls(urls);
+        }
+      } catch (error) {
+        console.error("Error fetching product:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
-  }, [product, setInitialStock]);
-  
-  // Get all images for the product (use main img if no images array, or combine them)
-  const productImages = useMemo(() => {
-    if (!product) return [];
-    if (product.images && product.images.length > 0) {
-      return product.images;
+    fetchProduct();
+  }, [params.id, setInitialStock]);
+
+  // Fetch related products
+  useEffect(() => {
+    async function fetchRelated() {
+      if (!product) return;
+      try {
+        const allProducts = await getAllProducts();
+        const related = allProducts
+          .filter(
+            (p) =>
+              p.firestoreId !== product.firestoreId &&
+              (p.subleaf ? p.subleaf === product.subleaf : p.subcategory === product.subcategory)
+          )
+          .slice(0, 5);
+        setRelatedProducts(related);
+      } catch (error) {
+        console.error("Error fetching related products:", error);
+      }
     }
-    return [product.img];
+    fetchRelated();
   }, [product]);
   
-  const related = useMemo(() => {
-    if (!product) return [];
-    return products
-      .filter(
-        (p) =>
-          p.id !== product.id &&
-          (p.subleaf ? p.subleaf === product.subleaf : p.subcategory === product.subcategory)
-      )
-      .slice(0, 5);
-  }, [products, product]);
+  // Get all images for the product
+  const productImages = useMemo(() => {
+    if (imageUrls.length > 0) return imageUrls;
+    if (product?.images && product.images.length > 0) return product.images;
+    if (product?.img) return [product.img];
+    return [];
+  }, [imageUrls, product]);
   
   // Reset selected image when product changes
   useEffect(() => {
     setSelectedImageIndex(0);
     setZoom(1);
     setPosition({ x: 0, y: 0 });
-    if (product) {
-      setSelectedSize(product.size);
-      setSelectedColor(product.color);
-      setSelectedTheme(product.theme);
-    }
-  }, [product?.id, product]);
+  }, [product?.firestoreId]);
 
-  // Get available options for this product (from all products in same category/subcategory)
+  // Get available options for this product (from related products)
   const availableOptions = useMemo(() => {
     if (!product) return { sizes: [], colors: [], themes: [] };
-    const sameCategoryProducts = products.filter(
+    const sameCategoryProducts = relatedProducts.filter(
       (p) => p.category === product.category && p.subcategory === product.subcategory
     );
+    // Include current product in options
+    const allProducts = [product, ...sameCategoryProducts];
     return {
-      sizes: Array.from(new Set(sameCategoryProducts.map((p) => p.size))).sort(),
-      colors: Array.from(new Set(sameCategoryProducts.map((p) => p.color))).sort(),
-      themes: Array.from(new Set(sameCategoryProducts.map((p) => p.theme))).sort(),
+      sizes: Array.from(new Set(allProducts.map((p) => p.size).filter(Boolean))).sort(),
+      colors: Array.from(new Set(allProducts.map((p) => p.color).filter(Boolean))).sort(),
+      themes: Array.from(new Set(allProducts.map((p) => p.theme).filter(Boolean))).sort(),
     };
-  }, [product, products]);
+  }, [product, relatedProducts]);
   
   // Handle navigation
   const goToPrevious = () => {
@@ -263,6 +192,17 @@ export default function ProductDetailPage() {
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [productImages.length, isFullscreen]);
 
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-white">
+        <Header />
+        <div className="container mx-auto px-4 py-12">
+          <div className="text-center">Ачааллаж байна...</div>
+        </div>
+      </main>
+    );
+  }
+
   if (!product) {
     return (
       <main className="min-h-screen bg-white">
@@ -306,8 +246,8 @@ export default function ProductDetailPage() {
                     transition: isDragging ? "none" : "transform 0.3s ease",
                   }}
                 >
-                  <Image 
-                    src={productImages[selectedImageIndex] || product.img} 
+                  <FirebaseImage 
+                    src={productImages[selectedImageIndex] || product.img || ""} 
                     alt={product.name} 
                     fill 
                     className="object-contain bg-white select-none" 
@@ -394,7 +334,7 @@ export default function ProductDetailPage() {
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
-                    <Image
+                    <FirebaseImage
                       src={img}
                       alt={`${product.name} - Зураг ${index + 1}`}
                       fill
@@ -548,8 +488,8 @@ export default function ProductDetailPage() {
                   transition: isDragging ? "none" : "transform 0.3s ease",
                 }}
               >
-                <Image 
-                  src={productImages[selectedImageIndex] || product.img} 
+                <FirebaseImage 
+                  src={productImages[selectedImageIndex] || product.img || ""} 
                   alt={product.name} 
                   fill 
                   className="object-contain select-none" 
@@ -613,19 +553,19 @@ export default function ProductDetailPage() {
         )}
 
         {/* Related products */}
-        {related.length > 0 && (
+        {relatedProducts.length > 0 && (
           <div className="mt-10">
             <h3 className="text-sm font-semibold text-gray-800 mb-3">Төстэй бүтээгдэхүүнүүд</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-              {related.map((rp) => (
+              {relatedProducts.map((rp) => (
                 <Link
-                  key={rp.id}
-                  href={`/products/${rp.id}`}
+                  key={rp.firestoreId || rp.id}
+                  href={`/products/${rp.firestoreId || rp.id}`}
                   className="group rounded-xl border bg-white p-3 hover:shadow-sm transition-shadow"
                 >
                   <div className="relative w-full h-28">
-                    <Image
-                      src={rp.img}
+                    <FirebaseImage
+                      src={rp.img || ""}
                       alt={rp.name}
                       fill
                       className="object-contain bg-white"

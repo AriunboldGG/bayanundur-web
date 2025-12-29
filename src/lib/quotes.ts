@@ -1,0 +1,78 @@
+import { db } from "./firebase";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { CartItem } from "@/context/CartContext";
+
+export type QuoteData = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  note: string;
+  position: string;
+  company: string;
+  items: CartItem[];
+  createdAt?: any;
+  status?: "pending" | "processed" | "completed";
+};
+
+/**
+ * Save a quote request to Firestore
+ */
+export async function saveQuoteToFirestore(data: QuoteData): Promise<string> {
+  if (!db) {
+    throw new Error("Firebase Firestore is not initialized");
+  }
+
+  try {
+    // Log items to debug
+    console.log("📦 Saving quote with items:", data.items.length, "items");
+    console.log("📦 Items details:", data.items);
+
+    // Ensure we have a proper array and map all items
+    const itemsArray = Array.isArray(data.items) ? data.items : [];
+    
+    const quoteData = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
+      note: data.note,
+      position: data.position,
+      company: data.company,
+      items: itemsArray.map((item, index) => {
+        // Ensure qty is a number and is valid
+        const quantity = typeof item.qty === 'number' && item.qty > 0 ? item.qty : 1;
+        
+        const mappedItem = {
+          id: item.id,
+          name: item.name,
+          priceNum: item.priceNum,
+          price: item.price,
+          img: item.img,
+          modelNumber: item.modelNumber,
+          color: item.color || null,
+          size: item.size || null,
+          brand: item.brand || null,
+          theme: item.theme || null,
+          qty: quantity, // Use validated quantity
+        };
+        console.log(`📦 Item ${index + 1}:`, mappedItem);
+        console.log(`📦 Item ${index + 1} quantity:`, quantity, "(original:", item.qty, ")");
+        return mappedItem;
+      }),
+      status: "pending",
+      createdAt: serverTimestamp(),
+    };
+
+    console.log("📦 Final quote data items count:", quoteData.items.length);
+    
+    const docRef = await addDoc(collection(db, "quotes"), quoteData);
+    console.log("✅ Quote saved to Firestore with ID:", docRef.id);
+    console.log("✅ Total items saved:", quoteData.items.length);
+    return docRef.id;
+  } catch (error) {
+    console.error("❌ Error saving quote to Firestore:", error);
+    throw error;
+  }
+}
+

@@ -18,8 +18,8 @@ export type CartItem = {
 type CartContextValue = {
   items: CartItem[];
   addItem: (item: Omit<CartItem, "qty">, qty?: number) => void;
-  updateQty: (id: number, qty: number) => void;
-  removeItem: (id: number) => void;
+  updateQty: (id: number, qty: number, item?: CartItem) => void;
+  removeItem: (id: number, item?: CartItem) => void;
   clear: () => void;
   count: number;
   total: number;
@@ -43,26 +43,54 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, [items]);
 
+  // Helper function to create unique cart item key
+  const getCartItemKey = (item: CartItem | Omit<CartItem, "qty">): string => {
+    return `${item.id}-${item.size || ''}-${item.color || ''}-${item.theme || ''}-${item.modelNumber || ''}`;
+  };
+
   const addItem = (item: Omit<CartItem, "qty">, qty = 1) => {
     setItems((prev) => {
-      const existing = prev.find((p) => p.id === item.id);
+      const itemKey = getCartItemKey(item);
+      const existing = prev.find((p) => getCartItemKey(p) === itemKey);
       if (existing) {
-        return prev.map((p) => (p.id === item.id ? { ...p, qty: p.qty + qty } : p));
+        // If exact same item (same id, size, color, theme, modelNumber), increase quantity
+        return prev.map((p) => (getCartItemKey(p) === itemKey ? { ...p, qty: p.qty + qty } : p));
       }
+      // Different item, add as new
       return [...prev, { ...item, qty }];
     });
   };
 
-  const updateQty = (id: number, qty: number) => {
+  const updateQty = (id: number, qty: number, item?: CartItem) => {
     if (qty < 1) {
-      removeItem(id);
+      if (item) {
+        // Remove specific item by unique key
+        const itemKey = getCartItemKey(item);
+        setItems((prev) => prev.filter((p) => getCartItemKey(p) !== itemKey));
+      } else {
+        removeItem(id);
+      }
     } else {
-      setItems((prev) => prev.map((p) => (p.id === id ? { ...p, qty } : p)));
+      if (item) {
+        // Update specific item by unique key
+        const itemKey = getCartItemKey(item);
+        setItems((prev) => prev.map((p) => (getCartItemKey(p) === itemKey ? { ...p, qty } : p)));
+      } else {
+        // Fallback: update by id (for backward compatibility)
+        setItems((prev) => prev.map((p) => (p.id === id ? { ...p, qty } : p)));
+      }
     }
   };
 
-  const removeItem = (id: number) => {
-    setItems((prev) => prev.filter((p) => p.id !== id));
+  const removeItem = (id: number, item?: CartItem) => {
+    if (item) {
+      // Remove specific item by unique key
+      const itemKey = getCartItemKey(item);
+      setItems((prev) => prev.filter((p) => getCartItemKey(p) !== itemKey));
+    } else {
+      // Fallback: remove by id (for backward compatibility)
+      setItems((prev) => prev.filter((p) => p.id !== id));
+    }
   };
 
   const clear = () => setItems([]);

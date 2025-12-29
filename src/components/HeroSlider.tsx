@@ -52,7 +52,7 @@ const ALL_NEWS_POSTS: NewsPost[] = [
     date: "2023-02-15",
     category: "Зөвлөгөө",
     href: "https://hsct.mn/posts?category_id=124",
-    img: "/images/product1.jpg",
+    img: "",
   },
   {
     id: "p4",
@@ -60,7 +60,7 @@ const ALL_NEWS_POSTS: NewsPost[] = [
     date: "2022-02-15",
     category: "Зөвлөгөө",
     href: "https://hsct.mn/posts?category_id=124",
-    img: "/images/product2.jpg",
+    img: "",
   },
   {
     id: "p5",
@@ -68,7 +68,7 @@ const ALL_NEWS_POSTS: NewsPost[] = [
     date: "2022-02-15",
     category: "Зөвлөгөө",
     href: "https://hsct.mn/posts?category_id=124",
-    img: "/images/product3.jpg",
+    img: "",
   },
   {
     id: "p6",

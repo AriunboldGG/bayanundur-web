@@ -27,7 +27,7 @@ const products: Product[] = [
   {
     id: "1",
     title: "BOSO 2 Wireless On Ear Headphone",
-    img: "/images/product1.jpg",
+    img: "",
     price: "129.000₮",
     modelNumber: "MC375xx/A",
     saveTag: "SAVE 19.000₮",
@@ -38,7 +38,7 @@ const products: Product[] = [
   {
     id: "2",
     title: "O'Pad Pro 12.9 inch M1 2023",
-    img: "/images/product2.jpg",
+    img: "",
     price: "899.000₮",
     modelNumber: "SP376xx/B",
     saveTag: "SAVE 189.000₮",
@@ -48,7 +48,7 @@ const products: Product[] = [
   {
     id: "3",
     title: "Xenon Mini Case 2.0 512GB",
-    img: "/images/product3.jpg",
+    img: "",
     price: "59.000₮",
     modelNumber: "WP377xx/C",
       saveTag: "SAVE 5.000₮",
@@ -102,7 +102,7 @@ const suggestedProducts: Product[] = [
   {
     id: "8",
     title: "Хамгаалалтын малгай",
-    img: "/images/product1.jpg",
+    img: "",
     price: "35.000₮",
     modelNumber: "WP382xx/H",
     shipping: "Хүргэлттэй",
@@ -112,7 +112,7 @@ const suggestedProducts: Product[] = [
   {
     id: "9",
     title: "Ажлын бээлий",
-    img: "/images/product2.jpg",
+    img: "",
     price: "28.000₮",
     modelNumber: "RS383xx/A",
     shipping: "Хүргэлттэй",
