@@ -35,6 +35,12 @@ export default function ProductDetailPage() {
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedTheme, setSelectedTheme] = useState<string>("");
 
+  // Helper function to parse comma-separated values
+  const parseCommaSeparated = (value: string | undefined | null): string[] => {
+    if (!value || typeof value !== 'string') return [];
+    return value.split(',').map(s => s.trim()).filter(s => s && s.length > 0);
+  };
+
   // Fetch product from Firestore
   useEffect(() => {
     async function fetchProduct() {
@@ -44,9 +50,15 @@ export default function ProductDetailPage() {
         if (fetchedProduct) {
           setProduct(fetchedProduct);
           setInitialStock(fetchedProduct.id, fetchedProduct.stockCount);
-          setSelectedSize(fetchedProduct.size);
-          setSelectedColor(fetchedProduct.color);
-          setSelectedTheme(fetchedProduct.theme);
+          
+          // Parse comma-separated values and select first option
+          const sizes = parseCommaSeparated(fetchedProduct.size);
+          const colors = parseCommaSeparated(fetchedProduct.color);
+          
+          // Set initial selection to first parsed value, or empty if none
+          setSelectedSize(sizes.length > 0 ? sizes[0] : "");
+          setSelectedColor(colors.length > 0 ? colors[0] : "");
+          setSelectedTheme(fetchedProduct.theme || "");
 
           // Load images from Firebase Storage
           const imagesToLoad = fetchedProduct.images && fetchedProduct.images.length > 0 
@@ -108,12 +120,70 @@ export default function ProductDetailPage() {
     );
     // Include current product in options
     const allProducts = [product, ...sameCategoryProducts];
+    
+    // Parse sizes - always parse comma-separated values to get individual items
+    const allSizes = new Set<string>();
+    allProducts.forEach((p) => {
+      if (p.size) {
+        const sizeStr = String(p.size).trim();
+        if (sizeStr) {
+          // Always try to parse as comma-separated first
+          const sizes = parseCommaSeparated(sizeStr);
+          if (sizes.length > 0) {
+            // Add each individual size from the array
+            sizes.forEach(s => allSizes.add(s));
+          } else {
+            // If not comma-separated, add as single value
+            allSizes.add(sizeStr);
+          }
+        }
+      }
+    });
+    
+    // Parse colors - always parse comma-separated values to get individual items
+    const allColors = new Set<string>();
+    allProducts.forEach((p) => {
+      if (p.color) {
+        const colorStr = String(p.color).trim();
+        if (colorStr) {
+          // Always try to parse as comma-separated first
+          const colors = parseCommaSeparated(colorStr);
+          if (colors.length > 0) {
+            // Add each individual color from the array
+            colors.forEach(c => allColors.add(c));
+          } else {
+            // If not comma-separated, add as single value
+            allColors.add(colorStr);
+          }
+        }
+      }
+    });
+    
     return {
-      sizes: Array.from(new Set(allProducts.map((p) => p.size).filter(Boolean))).sort(),
-      colors: Array.from(new Set(allProducts.map((p) => p.color).filter(Boolean))).sort(),
+      sizes: Array.from(allSizes).sort(),
+      colors: Array.from(allColors).sort(),
       themes: Array.from(new Set(allProducts.map((p) => p.theme).filter(Boolean))).sort(),
     };
-  }, [product, relatedProducts]);
+  }, [product, relatedProducts, parseCommaSeparated]);
+
+  // Validate and update selected values to match available options
+  useEffect(() => {
+    if (availableOptions.sizes.length > 0 && selectedSize && !availableOptions.sizes.includes(selectedSize)) {
+      // If selected size is not in available options, select the first one
+      setSelectedSize(availableOptions.sizes[0]);
+    } else if (availableOptions.sizes.length > 0 && !selectedSize) {
+      // If no size selected but options available, select first
+      setSelectedSize(availableOptions.sizes[0]);
+    }
+    
+    if (availableOptions.colors.length > 0 && selectedColor && !availableOptions.colors.includes(selectedColor)) {
+      // If selected color is not in available options, select the first one
+      setSelectedColor(availableOptions.colors[0]);
+    } else if (availableOptions.colors.length > 0 && !selectedColor) {
+      // If no color selected but options available, select first
+      setSelectedColor(availableOptions.colors[0]);
+    }
+  }, [availableOptions, selectedSize, selectedColor]);
   
   // Handle navigation
   const goToPrevious = () => {
@@ -355,27 +425,31 @@ export default function ProductDetailPage() {
                 <div className="text-sm font-semibold text-[#1f632b]">{product.modelNumber || "N/A"}</div>
               </div>
             </div>
-            <div className="mt-3 text-sm text-gray-600 space-y-1">
-              <div>Ангилал: {product.category} / {product.subcategory}{product.subleaf ? ` / ${product.subleaf}` : ""}</div>
-              <div>Брэнд: {product.brand}</div>
-              <div>
-                Нөөц: {product.stock === "in_stock" ? "Бэлэн" : "Захиалгаар"}
-                {product.stock === "in_stock" && (
-                  <span className="ml-2 font-semibold text-gray-800">
-                    (Үлдэгдэл: {getStock(product.id)}ш)
-                  </span>
-                )}
+            <div className="mt-4 space-y-2">
+              <div className="flex items-start gap-3">
+                <span className="text-sm font-bold text-gray-700 min-w-[80px]">Ангилал:</span>
+                <span className="text-sm text-gray-600">{product.category} / {product.subcategory}{product.subleaf ? ` / ${product.subleaf}` : ""}</span>
               </div>
+              <div className="flex items-start gap-3">
+                <span className="text-sm font-bold text-gray-700 min-w-[80px]">Брэнд:</span>
+                <span className="text-sm text-gray-600">{product.brand}</span>
+              </div>
+              {product.material && (
+                <div className="flex items-start gap-3">
+                  <span className="text-sm font-bold text-gray-700 min-w-[80px]">Материал:</span>
+                  <span className="text-sm text-gray-600">{product.material}</span>
+                </div>
+              )}
             </div>
 
             {/* Size Selection */}
-            {availableOptions.sizes.length > 1 && (
+            {availableOptions.sizes.length > 0 && (
               <div className="mt-6">
                 <label className="block text-sm font-semibold text-gray-800 mb-2">
                   Хэмжээ <span className="text-red-500">*</span>
                 </label>
                 <Select value={selectedSize} onValueChange={setSelectedSize}>
-                  <SelectTrigger className="w-auto min-w-[120px]">
+                  <SelectTrigger className="w-auto min-w-[100px] max-w-[200px]">
                     <SelectValue placeholder="Хэмжээ сонгох" />
                   </SelectTrigger>
                   <SelectContent>
@@ -390,13 +464,13 @@ export default function ProductDetailPage() {
             )}
 
             {/* Color Selection */}
-            {availableOptions.colors.length > 1 && (
+            {availableOptions.colors.length > 0 && (
               <div className="mt-4">
                 <label className="block text-sm font-semibold text-gray-800 mb-2">
                   Өнгө <span className="text-red-500">*</span>
                 </label>
                 <Select value={selectedColor} onValueChange={setSelectedColor}>
-                  <SelectTrigger className="w-auto min-w-[120px]">
+                  <SelectTrigger className="w-auto min-w-[100px] max-w-[200px]">
                     <SelectValue placeholder="Өнгө сонгох" />
                   </SelectTrigger>
                   <SelectContent>
@@ -437,8 +511,8 @@ export default function ProductDetailPage() {
                 name={product.name}
                 priceNum={product.priceNum}
                 price={product.price}
-                img={product.img}
-                modelNumber={product.modelNumber}
+                img={product.images && product.images.length > 0 ? product.images[0] : (product.img || "")}
+                modelNumber={product.modelNumber || ""}
                 color={selectedColor}
                 size={selectedSize}
                 brand={product.brand}
@@ -450,12 +524,23 @@ export default function ProductDetailPage() {
               </Link>
             </div>
 
-            <div className="mt-6">
-              <h2 className="text-sm font-semibold text-gray-800 mb-2">Тайлбар</h2>
-              <p className="text-sm text-gray-600 leading-6">
-                Tailbar
-              </p>
-            </div>
+            {product.description && (
+              <div className="mt-6">
+                <h2 className="text-sm font-semibold text-gray-800 mb-2">Тайлбар</h2>
+                <p className="text-sm text-gray-600 leading-6 whitespace-pre-line">
+                  {product.description}
+                </p>
+              </div>
+            )}
+
+            {product.feature && (
+              <div className="mt-6">
+                <h2 className="text-sm font-semibold text-gray-800 mb-2">Онцлог шинж чанар</h2>
+                <p className="text-sm text-gray-600 leading-6 whitespace-pre-line">
+                  {product.feature}
+                </p>
+              </div>
+            )}
           </div>
         </div>
         
@@ -675,9 +760,6 @@ function AddToCartButton(props: {
       </Button>
       {isInStock && qty > stockCount && (
         <span className="text-xs text-red-600">Үлдэгдэл хүрэлцэхгүй байна</span>
-      )}
-      {!isInStock && (
-        <span className="text-xs text-red-600">Захиалгаар</span>
       )}
     </div>
   );

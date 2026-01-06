@@ -48,12 +48,18 @@ export default function CartPage() {
                     <div className="flex flex-col md:flex-row gap-4">
                       {/* Image */}
                       <div className="relative w-full md:w-24 h-32 md:h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                        <FirebaseImage
-                          src={item.img || ""}
-                          alt={item.name}
-                          fill
-                          className="object-contain"
-                        />
+                        {item.img ? (
+                          <FirebaseImage
+                            src={item.img}
+                            alt={item.name}
+                            fill
+                            className="object-contain"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-gray-400 text-xs">Зураг байхгүй</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Info */}
@@ -62,10 +68,12 @@ export default function CartPage() {
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <div className="text-sm font-semibold text-gray-800">{item.name}</div>
-                            <div className="mt-1">
-                              <div className="text-[10px] text-gray-500">Бүтээгдэхүүний код</div>
-                              <div className="text-xs font-semibold text-[#1f632b]">{item.modelNumber || "N/A"}</div>
-                            </div>
+                            {item.modelNumber && (
+                              <div className="mt-1">
+                                <div className="text-[10px] text-gray-500">Бүтээгдэхүүний код</div>
+                                <div className="text-xs font-semibold text-[#1f632b]">{item.modelNumber}</div>
+                              </div>
+                            )}
                             <div className="text-xs text-gray-500 mt-1">
                               {item.size && `Хэмжээ: ${item.size}`}
                               {item.color && ` • Өнгө: ${item.color}`}

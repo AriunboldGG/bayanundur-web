@@ -86,15 +86,21 @@ export default function NewsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {pageItems.map((post) => (
             <Card key={post.id} className="overflow-hidden">
-              <div className="relative h-40 w-full">
-                <Image
-                  src={post.img}
-                  alt={post.title}
-                  fill
-                  className="object-contain bg-white"
-                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                />
-              </div>
+              {post.img && post.img.trim() !== '' ? (
+                <div className="relative h-40 w-full">
+                  <Image
+                    src={post.img}
+                    alt={post.title}
+                    fill
+                    className="object-contain bg-white"
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                  />
+                </div>
+              ) : (
+                <div className="relative h-40 w-full bg-gray-100 flex items-center justify-center">
+                  <span className="text-gray-400 text-sm">Зураг байхгүй</span>
+                </div>
+              )}
               <CardContent className="p-4 flex h-full flex-col justify-between">
                 <div>
                   <div className="text-xs text-gray-500">

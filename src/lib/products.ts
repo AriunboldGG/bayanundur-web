@@ -21,6 +21,10 @@ export type Product = {
   stock: "in_stock" | "preorder";
   stockCount: number;
   theme: string;
+  material?: string;
+  description?: string;
+  feature?: string;
+  productType?: string; // "best", "new", "discount", "promo", "suggest"
 };
 
 /**
@@ -133,6 +137,10 @@ function firestoreDocToProduct(docId: string, data: any): Product {
     stock: (getFirestoreValue(data, "stock") || "preorder") as Product["stock"],
     stockCount: getFirestoreValue(data, "stockCount") || 0,
     theme: getFirestoreValue(data, "theme") || "",
+    material: getFirestoreValue(data, "material") || "",
+    description: getFirestoreValue(data, "description") || "",
+    feature: getFirestoreValue(data, "feature") || "",
+    productType: getFirestoreValue(data, "productType") || getFirestoreValue(data, "product_type") || "",
   };
 }
 

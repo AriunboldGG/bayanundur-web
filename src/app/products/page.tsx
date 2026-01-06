@@ -16,6 +16,7 @@ function ProductsPageContent() {
   const pageSize = 50;
   const [page, setPage] = useState(1);
   const [selectedCat, setSelectedCat] = useState<"all" | string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSub, setSelectedSub] = useState<string | null>(null);
   const [selectedLeaf, setSelectedLeaf] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
@@ -141,68 +142,174 @@ function ProductsPageContent() {
     return [allCat, ...categoryCats];
   }, [allProducts, mainCategoriesFromProducts]);
 
-  // Subcategories from backend or extracted from products - grouped by mainCategory
-  const subcats = useMemo(() => {
-    const subcatsMap: Record<string, string[]> = {};
+  // Categories (category field) from products - grouped by mainCategory
+  const productCategories = useMemo(() => {
+    const categoriesMap: Record<string, string[]> = {};
     
-    // If we have subcategories from backend, use those
-    if (backendSubcategories.length > 0) {
-      backendSubcategories.forEach(sub => {
-        if (sub.category && sub.name) {
-          // Group by mainCategory from products that match this category
-          allProducts.forEach(p => {
-            if (p.category === sub.category && p.mainCategory) {
-              if (!subcatsMap[p.mainCategory]) {
-                subcatsMap[p.mainCategory] = [];
-              }
-              if (!subcatsMap[p.mainCategory]!.includes(sub.name)) {
-                subcatsMap[p.mainCategory]!.push(sub.name);
-              }
-            }
-          });
+    // Extract unique category values from products, grouped by mainCategory
+    allProducts.forEach(p => {
+      if (p.mainCategory && p.category) {
+        // Group by mainCategory
+        if (!categoriesMap[p.mainCategory]) {
+          categoriesMap[p.mainCategory] = [];
         }
-      });
-    } else {
-      // Extract unique subcategories from products, grouped by mainCategory
-      allProducts.forEach(p => {
-        if (p.mainCategory && p.subcategory) {
-          // Group by mainCategory
-          if (!subcatsMap[p.mainCategory]) {
-            subcatsMap[p.mainCategory] = [];
-          }
-          // Add subcategory if it doesn't exist
-          if (!subcatsMap[p.mainCategory]!.includes(p.subcategory)) {
-            subcatsMap[p.mainCategory]!.push(p.subcategory);
-          }
+        // Add category if it doesn't exist
+        if (!categoriesMap[p.mainCategory]!.includes(p.category)) {
+          categoriesMap[p.mainCategory]!.push(p.category);
         }
-      });
-    }
+      }
+    });
+    
+    return categoriesMap;
+  }, [allProducts]);
+
+  // Subcategories (subcategory field) from products - grouped by mainCategory and category
+  const subcats = useMemo(() => {
+    const subcatsMap: Record<string, Record<string, string[]>> = {};
+    
+    // Extract unique subcategory values from products, grouped by mainCategory and category
+    allProducts.forEach(p => {
+      if (p.mainCategory && p.category && p.subcategory) {
+        // Initialize mainCategory if it doesn't exist
+        if (!subcatsMap[p.mainCategory]) {
+          subcatsMap[p.mainCategory] = {};
+        }
+        // Initialize category array if it doesn't exist
+        if (!subcatsMap[p.mainCategory]![p.category]) {
+          subcatsMap[p.mainCategory]![p.category] = [];
+        }
+        // Add subcategory if it doesn't exist
+        if (!subcatsMap[p.mainCategory]![p.category].includes(p.subcategory)) {
+          subcatsMap[p.mainCategory]![p.category].push(p.subcategory);
+        }
+      }
+    });
     
     return subcatsMap;
-  }, [backendSubcategories, allProducts]);
-  // Dynamic leaf categories (subleaf) based on products from Firebase - grouped by mainCategory
+  }, [allProducts]);
+
+  // Subleaf (subleaf field) from products - grouped by mainCategory, category, and subcategory
   const leafcats = useMemo(() => {
-    const leafcatsMap: Record<string, Record<string, string[]>> = {};
+    const leafcatsMap: Record<string, Record<string, Record<string, string[]>>> = {};
     
-    // Extract unique subleaf values from products for each mainCategory and subcategory combination
+    // Extract unique subleaf values from products for each mainCategory, category, and subcategory combination
     allProducts.forEach(p => {
-      if (p.mainCategory && p.subcategory && p.subleaf) {
+      if (p.mainCategory && p.category && p.subcategory && p.subleaf) {
         // Initialize mainCategory if it doesn't exist
         if (!leafcatsMap[p.mainCategory]) {
           leafcatsMap[p.mainCategory] = {};
         }
+        // Initialize category if it doesn't exist
+        if (!leafcatsMap[p.mainCategory]![p.category]) {
+          leafcatsMap[p.mainCategory]![p.category] = {};
+        }
         // Initialize subcategory array if it doesn't exist
-        if (!leafcatsMap[p.mainCategory]![p.subcategory]) {
-          leafcatsMap[p.mainCategory]![p.subcategory] = [];
+        if (!leafcatsMap[p.mainCategory]![p.category]![p.subcategory]) {
+          leafcatsMap[p.mainCategory]![p.category]![p.subcategory] = [];
         }
         // Add subleaf if it doesn't exist
-        if (!leafcatsMap[p.mainCategory]![p.subcategory].includes(p.subleaf)) {
-          leafcatsMap[p.mainCategory]![p.subcategory].push(p.subleaf);
+        if (!leafcatsMap[p.mainCategory]![p.category]![p.subcategory].includes(p.subleaf)) {
+          leafcatsMap[p.mainCategory]![p.category]![p.subcategory].push(p.subleaf);
         }
       }
     });
     
     return leafcatsMap;
+  }, [allProducts]);
+
+  // Helper function to parse comma-separated values into array
+  const parseCommaSeparated = (value: any): string[] => {
+    if (!value) return [];
+    // Convert to string and trim
+    const str = String(value).trim();
+    if (!str) return [];
+    // Split by comma and filter out empty values
+    return str.split(',').map(s => s.trim()).filter(s => s && s.length > 0);
+  };
+
+  // Helper function to check if a product's size contains any selected value
+  const productHasSize = (product: Product, selectedSizes: string[]): boolean => {
+    if (selectedSizes.length === 0) return true;
+    if (!product.size) return false;
+    
+    // Parse product sizes (handles both single values and comma-separated)
+    const productSizes = parseCommaSeparated(product.size);
+    
+    // Check if any of the product's sizes match any selected size
+    return productSizes.some(size => selectedSizes.includes(size));
+  };
+
+  // Helper function to check if a product's color contains any selected value
+  const productHasColor = (product: Product, selectedColors: string[]): boolean => {
+    if (selectedColors.length === 0) return true;
+    if (!product.color) return false;
+    
+    // Parse product colors (handles both single values and comma-separated)
+    const productColors = parseCommaSeparated(product.color);
+    
+    // Check if any of the product's colors match any selected color
+    return productColors.some(color => selectedColors.includes(color));
+  };
+
+  // Helper function to get stock status from stockCount
+  const getStockStatus = (stockCount: number | string | undefined | null): "in_stock" | "preorder" => {
+    // Handle null, undefined, or empty values
+    if (stockCount === null || stockCount === undefined) {
+      return "preorder";
+    }
+    
+    // Convert to number - handle strings with whitespace
+    let numStock: number;
+    if (typeof stockCount === 'string') {
+      const trimmed = stockCount.trim();
+      if (trimmed === '' || trimmed === '0') {
+        return "preorder";
+      }
+      numStock = parseFloat(trimmed);
+    } else {
+      numStock = Number(stockCount);
+    }
+    
+    // Check if it's a valid number and greater than 0
+    if (isNaN(numStock) || numStock <= 0) {
+      return "preorder";
+    }
+    
+    return "in_stock";
+  };
+
+  // Dynamic stock filter options based on available products
+  const stockFilterOptions = useMemo(() => {
+    // Helper to convert stockCount to number
+    const getStockNumber = (stock: number | string | undefined | null): number => {
+      if (stock === null || stock === undefined) return 0;
+      if (typeof stock === 'string') {
+        const trimmed = stock.trim();
+        return parseFloat(trimmed) || 0;
+      }
+      return Number(stock) || 0;
+    };
+    
+    // Check if any product has stockCount > 0 (from API/database)
+    const hasInStock = allProducts.some(p => {
+      const numStock = getStockNumber(p.stockCount);
+      return numStock > 0;
+    });
+    
+    // Check if any product has stockCount <= 0 (from API/database)
+    const hasPreorder = allProducts.some(p => {
+      const numStock = getStockNumber(p.stockCount);
+      return numStock <= 0;
+    });
+    
+    const options: Array<{ id: "in_stock" | "preorder", label: string }> = [];
+    if (hasInStock) {
+      options.push({ id: "in_stock", label: "Бэлэн байгаа" });
+    }
+    if (hasPreorder) {
+      options.push({ id: "preorder", label: "Захиалгаар" });
+    }
+    return options;
   }, [allProducts]);
 
   const filtered = useMemo(() => {
@@ -216,19 +323,21 @@ function ProductsPageContent() {
           return p.mainCategory === selectedCat;
         });
     
-    if (selectedCat !== "all" && selectedSub) {
+    if (selectedCat !== "all" && selectedCategory) {
+      base = base.filter(p => p.category === selectedCategory);
+    }
+    if (selectedCat !== "all" && selectedCategory && selectedSub) {
       base = base.filter(p => p.subcategory === selectedSub);
     }
-    if (selectedCat !== "all" && selectedLeaf.length) {
+    if (selectedCat !== "all" && selectedCategory && selectedSub && selectedLeaf.length) {
       base = base.filter(p => selectedLeaf.includes(p.subleaf));
     }
-    if (selectedColors.length) base = base.filter(p => selectedColors.includes(p.color));
+    if (selectedColors.length) base = base.filter(p => productHasColor(p, selectedColors));
     if (selectedBrands.length) base = base.filter(p => selectedBrands.includes(p.brand));
-    if (selectedSizes.length) base = base.filter(p => selectedSizes.includes(p.size));
-    if (selectedStock.length) base = base.filter(p => selectedStock.includes(p.stock));
+    if (selectedSizes.length) base = base.filter(p => productHasSize(p, selectedSizes));
     if (selectedThemes.length) base = base.filter(p => selectedThemes.includes(p.theme));
     return base;
-  }, [allProducts, selectedCat, selectedSub, selectedLeaf, selectedColors, selectedBrands, selectedSizes, selectedStock, selectedThemes]);
+  }, [allProducts, selectedCat, selectedCategory, selectedSub, selectedLeaf, selectedColors, selectedBrands, selectedSizes, selectedThemes]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageItems = useMemo(() => {
@@ -267,7 +376,9 @@ function ProductsPageContent() {
                 onClick={() => {
                   setSelectedCat(c.id);
                   setPage(1);
+                  setSelectedCategory(null);
                   setSelectedSub(null);
+                  setSelectedLeaf([]);
                 }}
                 className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs md:text-sm transition-colors ${
                   selectedCat === c.id
@@ -298,37 +409,63 @@ function ProductsPageContent() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-6">
-          {/* Left filters: show subcats only when main selected */}
+          {/* Left filters: show categories first, then subcategories when category is selected */}
           <aside className="hidden md:block space-y-4">
-            {selectedCat !== "all" && subcats[selectedCat] ? (
+            {/* Categories (category field) - shown when main category is selected */}
+            {selectedCat !== "all" && productCategories[selectedCat] ? (
               <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-                <div className="text-sm font-semibold text-gray-800 mb-2">Дэд ангилал</div>
+                <div className="text-sm font-semibold text-gray-800 mb-2">Ангилал</div>
                 <div className="space-y-2">
-                  {subcats[selectedCat]!.map((s) => (
+                  {productCategories[selectedCat]!.map((cat) => (
                     <button
-                      key={s}
+                      key={cat}
                       onClick={() => {
-                        setSelectedSub(s === selectedSub ? null : s);
+                        setSelectedCategory(cat === selectedCategory ? null : cat);
+                        setSelectedSub(null);
                         setSelectedLeaf([]);
                         setPage(1);
                       }}
                       className={`w-full text-left rounded-md px-2 py-2 text-sm transition-colors ${
-                        s === selectedSub ? "bg-[#1f632b]/10 text-[#1f632b]" : "hover:bg-[#1f632b]/10 hover:text-[#1f632b]"
+                        cat === selectedCategory ? "bg-[#1f632b]/10 text-[#1f632b]" : "hover:bg-[#1f632b]/10 hover:text-[#1f632b]"
                       }`}
                     >
-                      {s}
+                      {cat}
                     </button>
                   ))}
                 </div>
               </div>
             ) : null}
 
-            {/* Sub-sub categories */}
-            {selectedCat !== "all" && selectedSub && leafcats[selectedCat] && leafcats[selectedCat]![selectedSub] ? (
+            {/* Subcategories (subcategory field) - shown when a category is selected */}
+            {selectedCat !== "all" && selectedCategory && subcats[selectedCat] && subcats[selectedCat]![selectedCategory] ? (
+              <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                <div className="text-sm font-semibold text-gray-800 mb-2">Дэд ангилал</div>
+                <div className="space-y-2">
+                  {subcats[selectedCat]![selectedCategory]!.map((sub) => (
+                    <button
+                      key={sub}
+                      onClick={() => {
+                        setSelectedSub(sub === selectedSub ? null : sub);
+                        setSelectedLeaf([]);
+                        setPage(1);
+                      }}
+                      className={`w-full text-left rounded-md px-2 py-2 text-sm transition-colors ${
+                        sub === selectedSub ? "bg-[#1f632b]/10 text-[#1f632b]" : "hover:bg-[#1f632b]/10 hover:text-[#1f632b]"
+                      }`}
+                    >
+                      {sub}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Subleaf (subleaf field) - shown when a subcategory is selected */}
+            {selectedCat !== "all" && selectedCategory && selectedSub && leafcats[selectedCat] && leafcats[selectedCat]![selectedCategory] && leafcats[selectedCat]![selectedCategory]![selectedSub] ? (
               <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
                 <div className="text-sm font-semibold text-gray-800 mb-2">Нарийвчилсан ангилал</div>
                 <div className="space-y-2 text-sm">
-                  {leafcats[selectedCat]![selectedSub]!.map((leaf) => (
+                  {leafcats[selectedCat]![selectedCategory]![selectedSub]!.map((leaf) => (
                     <label key={leaf} className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -350,25 +487,43 @@ function ProductsPageContent() {
             {/* Color filter */}
             <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
               <div className="text-sm font-semibold text-gray-800 mb-2">Өнгө</div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                {Array.from(new Set(allProducts.map((p) => p.color))).map((c) => {
-                  const checked = selectedColors.includes(c);
-                  return (
-                    <label key={c} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(e) => {
-                          setPage(1);
-                          setSelectedColors((prev) =>
-                            e.target.checked ? [...prev, c] : prev.filter((x) => x !== c)
-                          );
-                        }}
-                      />
-                      {c}
-                    </label>
+              <div className="space-y-2 text-sm">
+                {(() => {
+                  const allColors = new Set<string>();
+                  allProducts.forEach((p) => {
+                    if (p.color) {
+                      const colorStr = String(p.color).trim();
+                      if (colorStr) {
+                        // Split by comma and add each color
+                        const colors = colorStr.split(',').map(c => c.trim()).filter(c => c && c.length > 0);
+                        colors.forEach(c => allColors.add(c));
+                      }
+                    }
+                  });
+                  const sortedColors = Array.from(allColors).sort();
+                  return sortedColors.length > 0 ? (
+                    sortedColors.map((c) => {
+                      const checked = selectedColors.includes(c);
+                      return (
+                        <label key={c} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              setPage(1);
+                              setSelectedColors((prev) =>
+                                e.target.checked ? [...prev, c] : prev.filter((x) => x !== c)
+                              );
+                            }}
+                          />
+                          {c}
+                        </label>
+                      );
+                    })
+                  ) : (
+                    <div className="text-xs text-gray-400">Өнгө олдсонгүй</div>
                   );
-                })}
+                })()}
               </div>
             </div>
 
@@ -376,7 +531,7 @@ function ProductsPageContent() {
             <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
               <div className="text-sm font-semibold text-gray-800 mb-2">Брэнд</div>
               <div className="space-y-2 text-sm">
-                {Array.from(new Set(allProducts.map((p) => p.brand))).map((b) => {
+                {Array.from(new Set(allProducts.map((p) => p.brand).filter(b => b && b.trim() !== ''))).sort().map((b) => {
                   const checked = selectedBrands.includes(b);
                   return (
                     <label key={b} className="flex items-center gap-2">
@@ -400,66 +555,55 @@ function ProductsPageContent() {
             {/* Size filter */}
             <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
               <div className="text-sm font-semibold text-gray-800 mb-2">Хэмжээ</div>
-              <div className="flex flex-wrap gap-2">
-                {Array.from(new Set(allProducts.map((p) => p.size))).map((s) => {
-                  const active = selectedSizes.includes(s);
-                  return (
-                    <button
-                      key={s}
-                      onClick={() => {
-                        setPage(1);
-                        setSelectedSizes((prev) =>
-                          active ? prev.filter((x) => x !== s) : [...prev, s]
-                        );
-                      }}
-                      className={`rounded-md border px-2 py-1 text-sm transition-colors ${
-                        active ? "border-[#1f632b] text-[#1f632b] bg-[#1f632b]/10" : "border-gray-200 hover:border-[#1f632b] hover:text-[#1f632b]"
-                      }`}
-                    >
-                      {s}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Stock filter */}
-            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-              <div className="text-sm font-semibold text-gray-800 mb-2">Нөөц</div>
               <div className="space-y-2 text-sm">
-                {[
-                  { id: "in_stock" as const, label: "Бэлэн байгаа" },
-                  { id: "preorder" as const, label: "Захиалгаар" },
-                ].map((s) => {
-                  const checked = selectedStock.includes(s.id);
-                  return (
-                    <label key={s.id} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(e) => {
-                          setPage(1);
-                          setSelectedStock((prev) =>
-                            e.target.checked ? [...prev, s.id] : prev.filter((x) => x !== s.id)
-                          );
-                        }}
-                      />
-                      {s.label}
-                    </label>
+                {(() => {
+                  const allSizes = new Set<string>();
+                  allProducts.forEach((p) => {
+                    if (p.size) {
+                      const sizeStr = String(p.size).trim();
+                      if (sizeStr) {
+                        // Split by comma and add each size
+                        const sizes = sizeStr.split(',').map(s => s.trim()).filter(s => s && s.length > 0);
+                        sizes.forEach(s => allSizes.add(s));
+                      }
+                    }
+                  });
+                  const sortedSizes = Array.from(allSizes).sort();
+                  return sortedSizes.length > 0 ? (
+                    sortedSizes.map((s) => {
+                      const checked = selectedSizes.includes(s);
+                      return (
+                        <label key={s} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              setPage(1);
+                              setSelectedSizes((prev) =>
+                                e.target.checked ? [...prev, s] : prev.filter((x) => x !== s)
+                              );
+                            }}
+                          />
+                          {s}
+                        </label>
+                      );
+                    })
+                  ) : (
+                    <div className="text-xs text-gray-400">Хэмжээ олдсонгүй</div>
                   );
-                })}
+                })()}
               </div>
             </div>
 
             {/* Clear filters */}
             <button
               onClick={() => {
+                setSelectedCategory(null);
                 setSelectedSub(null);
                 setSelectedLeaf([]);
                 setSelectedColors([]);
                 setSelectedBrands([]);
                 setSelectedSizes([]);
-                setSelectedStock([]);
                 setSelectedThemes([]);
                 setPage(1);
               }}
@@ -495,33 +639,43 @@ function ProductsPageContent() {
                   Харах
                 </Link>
               </div>
-              <CardContent className="p-3 flex flex-col grow">
-                  <div className="flex items-center justify-between text-xs">
-                    <div>
-                      <div className="text-gray-500 text-[10px]">Бүтээгдэхүүний код</div>
-                      <span className="font-semibold text-[#1f632b]">{p.modelNumber || "N/A"}</span>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span
-                        className={`rounded-full px-2 py-0.5 ${
-                          p.stock === "in_stock"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        {p.stock === "in_stock" ? "Бэлэн" : "Захиалгаар"}
-                      </span>
-                      {p.stock === "in_stock" && (
-                        <span className="text-[10px] text-gray-600">
-                          Үлдэгдэл: {getStock(p.id)}ш
-                        </span>
-                      )}
-                    </div>
+              <CardContent className="p-3 flex flex-col">
+                  <div>
+                    <div className="text-[10px] text-gray-500 font-medium">Бүтээгдэхүүний код</div>
+                    <div className="text-xs font-bold text-[#1f632b]">{p.modelNumber || "N/A"}</div>
                   </div>
-                  <div className="mt-1 text-sm font-medium text-gray-800 line-clamp-2">{p.name}</div>
-                  <div className="mt-1 text-xs text-gray-600">
-                    Брэнд: <span className="font-medium">{p.brand}</span> • Өнгө: {p.color} •
-                    Хэмжээ: {p.size} • Загвар: {p.theme}
+                  <div className="mt-1">
+                    <div className="text-sm font-bold text-gray-800 line-clamp-2">{p.name}</div>
+                  </div>
+                  <div className="mt-1 space-y-0.5 text-xs">
+                    <div className="flex items-start gap-2">
+                      <span className="font-bold text-gray-700 min-w-[60px]">Брэнд:</span>
+                      <span className="text-gray-600">{p.brand || "-"}</span>
+                    </div>
+                    {p.color && (
+                      <div className="flex items-start gap-2">
+                        <span className="font-bold text-gray-700 min-w-[60px]">Өнгө:</span>
+                        <span className="text-gray-600">{p.color}</span>
+                      </div>
+                    )}
+                    {p.size && (
+                      <div className="flex items-start gap-2">
+                        <span className="font-bold text-gray-700 min-w-[60px]">Хэмжээ:</span>
+                        <span className="text-gray-600">{p.size}</span>
+                      </div>
+                    )}
+                    {p.theme && (
+                      <div className="flex items-start gap-2">
+                        <span className="font-bold text-gray-700 min-w-[60px]">Загвар:</span>
+                        <span className="text-gray-600">{p.theme}</span>
+                      </div>
+                    )}
+                    {p.material && (
+                      <div className="flex items-start gap-2">
+                        <span className="font-bold text-gray-700 min-w-[60px]">Материал:</span>
+                        <span className="text-gray-600">{p.material}</span>
+                      </div>
+                    )}
                   </div>
               </CardContent>
             </Card>
@@ -541,23 +695,74 @@ function ProductsPageContent() {
             <div className="absolute bottom-0 left-0 right-0 max-h-[80%] overflow-y-auto rounded-t-2xl bg-white p-4 space-y-4">
               <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-gray-300" />
 
-              {selectedCat !== "all" && subcats[selectedCat] ? (
+              {/* Categories (category field) - shown when main category is selected */}
+              {selectedCat !== "all" && productCategories[selectedCat] ? (
                 <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-                  <div className="text-sm font-semibold text-gray-800 mb-2">Дэд ангилал</div>
+                  <div className="text-sm font-semibold text-gray-800 mb-2">Ангилал</div>
                   <div className="space-y-2">
-                    {subcats[selectedCat]!.map((s) => (
+                    {productCategories[selectedCat]!.map((cat) => (
                       <button
-                        key={s}
+                        key={cat}
                         onClick={() => {
-                          setSelectedSub(s === selectedSub ? null : s);
+                          setSelectedCategory(cat === selectedCategory ? null : cat);
+                          setSelectedSub(null);
+                          setSelectedLeaf([]);
                           setPage(1);
                         }}
                         className={`w-full text-left rounded-md px-2 py-2 text-sm transition-colors ${
-                          s === selectedSub ? "bg-[#1f632b]/10 text-[#1f632b]" : "hover:bg-[#1f632b]/10 hover:text-[#1f632b]"
+                          cat === selectedCategory ? "bg-[#1f632b]/10 text-[#1f632b]" : "hover:bg-[#1f632b]/10 hover:text-[#1f632b]"
                         }`}
                       >
-                        {s}
+                        {cat}
                       </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Subcategories (subcategory field) - shown when a category is selected */}
+              {selectedCat !== "all" && selectedCategory && subcats[selectedCat] && subcats[selectedCat]![selectedCategory] ? (
+                <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                  <div className="text-sm font-semibold text-gray-800 mb-2">Дэд ангилал</div>
+                  <div className="space-y-2">
+                    {subcats[selectedCat]![selectedCategory]!.map((sub) => (
+                      <button
+                        key={sub}
+                        onClick={() => {
+                          setSelectedSub(sub === selectedSub ? null : sub);
+                          setSelectedLeaf([]);
+                          setPage(1);
+                        }}
+                        className={`w-full text-left rounded-md px-2 py-2 text-sm transition-colors ${
+                          sub === selectedSub ? "bg-[#1f632b]/10 text-[#1f632b]" : "hover:bg-[#1f632b]/10 hover:text-[#1f632b]"
+                        }`}
+                      >
+                        {sub}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Subleaf (subleaf field) - shown when a subcategory is selected */}
+              {selectedCat !== "all" && selectedCategory && selectedSub && leafcats[selectedCat] && leafcats[selectedCat]![selectedCategory] && leafcats[selectedCat]![selectedCategory]![selectedSub] ? (
+                <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                  <div className="text-sm font-semibold text-gray-800 mb-2">Нарийвчилсан ангилал</div>
+                  <div className="space-y-2 text-sm">
+                    {leafcats[selectedCat]![selectedCategory]![selectedSub]!.map((leaf) => (
+                      <label key={leaf} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedLeaf.includes(leaf)}
+                          onChange={(e) => {
+                            setPage(1);
+                            setSelectedLeaf((prev) =>
+                              e.target.checked ? [...prev, leaf] : prev.filter((x) => x !== leaf)
+                            );
+                          }}
+                        />
+                        {leaf}
+                      </label>
                     ))}
                   </div>
                 </div>
@@ -566,25 +771,43 @@ function ProductsPageContent() {
               {/* Color */}
               <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
                 <div className="text-sm font-semibold text-gray-800 mb-2">Өнгө</div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  {Array.from(new Set(allProducts.map((p) => p.color))).map((c) => {
-                    const checked = selectedColors.includes(c);
-                    return (
-                      <label key={c} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) => {
-                            setPage(1);
-                            setSelectedColors((prev) =>
-                              e.target.checked ? [...prev, c] : prev.filter((x) => x !== c)
-                            );
-                          }}
-                        />
-                        {c}
-                      </label>
+                <div className="space-y-2 text-sm">
+                  {(() => {
+                    const allColors = new Set<string>();
+                    allProducts.forEach((p) => {
+                      if (p.color) {
+                        const colorStr = String(p.color).trim();
+                        if (colorStr) {
+                          // Split by comma and add each color
+                          const colors = colorStr.split(',').map(c => c.trim()).filter(c => c && c.length > 0);
+                          colors.forEach(c => allColors.add(c));
+                        }
+                      }
+                    });
+                    const sortedColors = Array.from(allColors).sort();
+                    return sortedColors.length > 0 ? (
+                      sortedColors.map((c) => {
+                        const checked = selectedColors.includes(c);
+                        return (
+                          <label key={c} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                setPage(1);
+                                setSelectedColors((prev) =>
+                                  e.target.checked ? [...prev, c] : prev.filter((x) => x !== c)
+                                );
+                              }}
+                            />
+                            {c}
+                          </label>
+                        );
+                      })
+                    ) : (
+                      <div className="text-xs text-gray-400">Өнгө олдсонгүй</div>
                     );
-                  })}
+                  })()}
                 </div>
               </div>
 
@@ -592,7 +815,7 @@ function ProductsPageContent() {
               <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
                 <div className="text-sm font-semibold text-gray-800 mb-2">Брэнд</div>
                 <div className="space-y-2 text-sm">
-                  {Array.from(new Set(allProducts.map((p) => p.brand))).map((b) => {
+                  {Array.from(new Set(allProducts.map((p) => p.brand).filter(b => b && b.trim() !== ''))).sort().map((b) => {
                     const checked = selectedBrands.includes(b);
                     return (
                       <label key={b} className="flex items-center gap-2">
@@ -616,54 +839,43 @@ function ProductsPageContent() {
               {/* Size */}
               <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
                 <div className="text-sm font-semibold text-gray-800 mb-2">Хэмжээ</div>
-                <div className="flex flex-wrap gap-2">
-                  {Array.from(new Set(allProducts.map((p) => p.size))).map((s) => {
-                    const active = selectedSizes.includes(s);
-                    return (
-                      <button
-                        key={s}
-                        onClick={() => {
-                          setPage(1);
-                          setSelectedSizes((prev) =>
-                            active ? prev.filter((x) => x !== s) : [...prev, s]
-                          );
-                        }}
-                        className={`rounded-md border px-2 py-1 text-sm transition-colors ${
-                          active ? "border-[#1f632b] text-[#1f632b] bg-[#1f632b]/10" : "border-gray-200 hover:border-[#1f632b] hover:text-[#1f632b]"
-                        }`}
-                      >
-                        {s}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Stock */}
-              <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-                <div className="text-sm font-semibold text-gray-800 mb-2">Нөөц</div>
                 <div className="space-y-2 text-sm">
-                  {[
-                    { id: "in_stock" as const, label: "Бэлэн байгаа" },
-                    { id: "preorder" as const, label: "Захиалгаар" },
-                  ].map((s) => {
-                    const checked = selectedStock.includes(s.id);
-                    return (
-                      <label key={s.id} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) => {
-                            setPage(1);
-                            setSelectedStock((prev) =>
-                              e.target.checked ? [...prev, s.id] : prev.filter((x) => x !== s.id)
-                            );
-                          }}
-                        />
-                        {s.label}
-                      </label>
+                  {(() => {
+                    const allSizes = new Set<string>();
+                    allProducts.forEach((p) => {
+                      if (p.size) {
+                        const sizeStr = String(p.size).trim();
+                        if (sizeStr) {
+                          // Split by comma and add each size
+                          const sizes = sizeStr.split(',').map(s => s.trim()).filter(s => s && s.length > 0);
+                          sizes.forEach(s => allSizes.add(s));
+                        }
+                      }
+                    });
+                    const sortedSizes = Array.from(allSizes).sort();
+                    return sortedSizes.length > 0 ? (
+                      sortedSizes.map((s) => {
+                        const checked = selectedSizes.includes(s);
+                        return (
+                          <label key={s} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                setPage(1);
+                                setSelectedSizes((prev) =>
+                                  e.target.checked ? [...prev, s] : prev.filter((x) => x !== s)
+                                );
+                              }}
+                            />
+                            {s}
+                          </label>
+                        );
+                      })
+                    ) : (
+                      <div className="text-xs text-gray-400">Хэмжээ олдсонгүй</div>
                     );
-                  })}
+                  })()}
                 </div>
               </div>
 
@@ -695,6 +907,7 @@ function ProductsPageContent() {
               <div className="flex gap-2">
                 <button
                   onClick={() => {
+                    setSelectedCategory(null);
                     setSelectedSub(null);
                     setSelectedLeaf([]);
                     setSelectedColors([]);

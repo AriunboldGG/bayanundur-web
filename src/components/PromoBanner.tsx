@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
 export default function PromoBanner() {
@@ -17,12 +16,7 @@ export default function PromoBanner() {
 
       {/* Center product image */}
       <div className="relative h-20 md:h-auto md:w-24 flex items-center justify-center">
-        <Image
-          src=""
-          alt="Promo product"
-          fill
-          className="object-contain"
-        />
+        {/* Image will be rendered here when src is provided */}
       </div>
 
       {/* Right wide banner */}
