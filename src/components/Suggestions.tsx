@@ -49,12 +49,18 @@ export default function Suggestions() {
           <Card key={it.id} className="overflow-hidden">
             <CardContent className="p-3">
               <div className="relative h-36 w-full rounded-md overflow-hidden lg:h-[230px] lg:w-[302px] mx-auto">
-                <Image
-                  src={it.img}
-                  alt={it.title}
-                  fill
-                  className="object-contain bg-white"
-                />
+                {it.img && it.img.trim() !== "" ? (
+                  <Image
+                    src={it.img}
+                    alt={it.title}
+                    fill
+                    className="object-contain bg-white"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+                    <span className="text-gray-400 text-xs">Зураг байхгүй</span>
+                  </div>
+                )}
               </div>
               <div className="mt-3 text-sm font-medium text-gray-800 line-clamp-2">
                 {it.title}

@@ -32,7 +32,7 @@ export default function FirebaseImage({
 
   useEffect(() => {
     async function loadImage() {
-      if (!src) return;
+      if (!src || src.trim() === "") return;
       
       // If already a full URL, use it directly
       if (src.startsWith("http://") || src.startsWith("https://")) {
@@ -63,6 +63,15 @@ export default function FirebaseImage({
 
     loadImage();
   }, [src]);
+
+  // Don't render if no valid image URL
+  if (!imageUrl || imageUrl.trim() === "") {
+    return (
+      <div className={`bg-gray-100 flex items-center justify-center ${className}`} style={fill ? undefined : { width, height }}>
+        <span className="text-gray-400 text-xs">Зураг байхгүй</span>
+      </div>
+    );
+  }
 
   // Show placeholder while loading
   if (isLoading && !imageUrl.startsWith("/")) {

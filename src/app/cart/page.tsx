@@ -13,12 +13,6 @@ export default function CartPage() {
   const { items, removeItem, clear, updateQty } = useCart();
   const [showQuote, setShowQuote] = useState(false);
 
-  // Debug: Log items to see what's in cart
-  useEffect(() => {
-    console.log("🛒 Cart items:", items.length, "items");
-    console.log("🛒 Items details:", items);
-  }, [items]);
-
   return (
     <main className="min-h-screen bg-white">
       <Header />
@@ -70,7 +64,7 @@ export default function CartPage() {
                             <div className="text-sm font-semibold text-gray-800">{item.name}</div>
                             <div className="mt-1">
                               <div className="text-[10px] text-gray-500">Бүтээгдэхүүний код</div>
-                              <div className="text-xs font-semibold text-[#1f632b]">{item.modelNumber}</div>
+                              <div className="text-xs font-semibold text-[#1f632b]">{item.modelNumber || "N/A"}</div>
                             </div>
                             <div className="text-xs text-gray-500 mt-1">
                               {item.size && `Хэмжээ: ${item.size}`}

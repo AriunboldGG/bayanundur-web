@@ -138,7 +138,13 @@ function ProductsCarousel({ productsToShow = products }: { productsToShow?: Prod
                   )}
                   {/* Image */}
                   <div className="relative h-32 w-full">
-                    <Image src={p.img} alt={p.title} fill className="object-contain" />
+                    {p.img && p.img.trim() !== "" ? (
+                      <Image src={p.img} alt={p.title} fill className="object-contain" />
+                    ) : (
+                      <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+                        <span className="text-gray-400 text-xs">Зураг байхгүй</span>
+                      </div>
+                    )}
                   </div>
                   {/* Title */}
                   <div className="text-xs text-gray-700 line-clamp-2 min-h-[32px]">

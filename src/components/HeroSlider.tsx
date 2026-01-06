@@ -103,13 +103,19 @@ export default function HeroSlider({ slides }: { slides?: Slide[] }) {
         {displaySlides.map((s) => (
           <CarouselItem key={s.id}>
             <div className="relative h-[260px] md:h-[360px] overflow-hidden rounded-xl group">
-              <Image
-                src={s.image}
-                alt={s.title}
-                fill
-                priority
-                className="object-contain bg-white"
-              />
+              {s.image && s.image.trim() !== "" ? (
+                <Image
+                  src={s.image}
+                  alt={s.title}
+                  fill
+                  priority
+                  className="object-contain bg-white"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
+                  <span className="text-gray-400 text-sm">Зураг байхгүй</span>
+                </div>
+              )}
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 to-black/10" />
               
               {/* Content Overlay */}

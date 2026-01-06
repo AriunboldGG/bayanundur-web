@@ -11,6 +11,7 @@ export type Product = {
   images?: string[]; // Multiple images for gallery
   modelNumber: string;
   category: "ppe" | "rescue" | "workplace" | "other";
+  mainCategory?: "ppe" | "rescue" | "workplace" | "other"; // Main category from backend
   subcategory: string;
   subleaf: string;
   color: string;
@@ -42,7 +43,6 @@ export async function getImageUrl(imagePath: string): Promise<string> {
       const url = await getDownloadURL(storageRef);
       return url;
     } catch (error) {
-      console.warn(`Failed to get Firebase Storage URL for ${imagePath}:`, error);
       // Fallback to the path as-is
       return imagePath;
     }
@@ -61,18 +61,36 @@ export async function getImageUrls(imagePaths: string[]): Promise<string[]> {
 
 // Helper function to extract value from Firestore data (handles both direct values and Firestore format)
 function getFirestoreValue(data: any, field: string, defaultValue: any = ""): any {
-  if (!data || !data[field]) return defaultValue;
-  const value = data[field];
-  // Firestore might return values in different formats
-  // Handle direct values
-  if (typeof value !== "object" || value === null) return value;
-  // Handle Firestore typed values (for REST API compatibility)
-  if (value.stringValue !== undefined) return value.stringValue;
-  if (value.integerValue !== undefined) return parseInt(value.integerValue, 10);
-  if (value.doubleValue !== undefined) return parseFloat(value.doubleValue);
-  if (value.booleanValue !== undefined) return value.booleanValue;
-  // Return as-is if it's already the correct format
-  return value;
+  if (!data) return defaultValue;
+  
+  // Try exact field name first
+  if (data[field] !== undefined && data[field] !== null) {
+    const value = data[field];
+    // Firestore might return values in different formats
+    // Handle direct values
+    if (typeof value !== "object" || value === null) return value;
+    // Handle Firestore typed values (for REST API compatibility)
+    if (value.stringValue !== undefined) return value.stringValue;
+    if (value.integerValue !== undefined) return parseInt(value.integerValue, 10);
+    if (value.doubleValue !== undefined) return parseFloat(value.doubleValue);
+    if (value.booleanValue !== undefined) return value.booleanValue;
+    // Return as-is if it's already the correct format
+    return value;
+  }
+  
+  // Try camelCase variations
+  const camelCaseField = field.charAt(0).toLowerCase() + field.slice(1);
+  if (data[camelCaseField] !== undefined && data[camelCaseField] !== null) {
+    return data[camelCaseField];
+  }
+  
+  // Try snake_case variations
+  const snakeCaseField = field.replace(/([A-Z])/g, '_$1').toLowerCase();
+  if (data[snakeCaseField] !== undefined && data[snakeCaseField] !== null) {
+    return data[snakeCaseField];
+  }
+  
+  return defaultValue;
 }
 
 // Convert Firestore document to Product type
@@ -92,6 +110,10 @@ function firestoreDocToProduct(docId: string, data: any): Product {
     }
   }
   
+  // Read mainCategory field from Firestore (field name is mainCategory)
+  const mainCategoryValue = getFirestoreValue(data, "mainCategory");
+  const categoryValue = getFirestoreValue(data, "category") || "other";
+  
   return {
     id: getFirestoreValue(data, "id") || docIdNum,
     firestoreId: docId, // Always use Firestore document ID as unique identifier
@@ -100,7 +122,8 @@ function firestoreDocToProduct(docId: string, data: any): Product {
     img: getFirestoreValue(data, "img") || getFirestoreValue(data, "image") || "",
     images: images, // Multiple images for gallery
     modelNumber: getFirestoreValue(data, "modelNumber") || "",
-    category: (getFirestoreValue(data, "category") || "other") as Product["category"],
+    category: categoryValue as Product["category"],
+    mainCategory: mainCategoryValue ? (mainCategoryValue as Product["mainCategory"]) : undefined,
     subcategory: getFirestoreValue(data, "subcategory") || "",
     subleaf: getFirestoreValue(data, "subleaf") || "",
     color: getFirestoreValue(data, "color") || "",
@@ -118,12 +141,10 @@ function firestoreDocToProduct(docId: string, data: any): Product {
  */
 export async function getAllProducts(): Promise<Product[]> {
   if (!db) {
-    console.warn("Firestore not initialized. Returning empty array.");
     return [];
   }
 
   try {
-    console.log("Fetching products from Firestore...");
     const productsRef = collection(db, "products");
     const snapshot = await getDocs(productsRef);
     
@@ -133,13 +154,8 @@ export async function getAllProducts(): Promise<Product[]> {
       products.push(product);
     });
 
-    console.log(`Successfully fetched ${products.length} products from Firestore`);
     return products;
   } catch (error) {
-    console.error("Error fetching products from Firestore:", error);
-    if (error instanceof Error) {
-      console.error("Error details:", error.message);
-    }
     return [];
   }
 }
@@ -150,7 +166,6 @@ export async function getAllProducts(): Promise<Product[]> {
  */
 export async function getProductById(productId: string | number): Promise<Product | null> {
   if (!db) {
-    console.warn("Firestore not initialized. Returning null.");
     return null;
   }
 
@@ -173,10 +188,8 @@ export async function getProductById(productId: string | number): Promise<Produc
       return firestoreDocToProduct(doc.id, doc.data());
     }
 
-    console.warn(`Product with ID ${productId} not found`);
     return null;
   } catch (error) {
-    console.error(`Error fetching product ${productId} from Firestore:`, error);
     return null;
   }
 }
@@ -186,7 +199,6 @@ export async function getProductById(productId: string | number): Promise<Produc
  */
 export async function getProductsByCategory(category: Product["category"]): Promise<Product[]> {
   if (!db) {
-    console.warn("Firestore not initialized. Returning empty array.");
     return [];
   }
 
@@ -203,7 +215,153 @@ export async function getProductsByCategory(category: Product["category"]): Prom
 
     return products;
   } catch (error) {
-    console.error(`Error fetching products by category ${category} from Firestore:`, error);
+    return [];
+  }
+}
+
+/**
+ * Main Category type from Firestore
+ */
+export type MainCategory = {
+  id: string;
+  name: string;
+  label: string; // Display label in Mongolian
+  slug: Product["category"]; // ppe, rescue, workplace, other
+  order?: number;
+  icon?: string; // Icon name or identifier
+};
+
+/**
+ * Subcategory type from Firestore
+ */
+export type Subcategory = {
+  id: string;
+  name: string;
+  category: Product["category"];
+  order?: number;
+};
+
+/**
+ * Fetch main categories from Firestore
+ * Expected collection structure: "main_categories" or "categories"
+ * Each document should have: { name: string, label: string, mainCategory: string, order?: number }
+ * The mainCategory field should be: "ppe", "rescue", "workplace", or "other"
+ */
+export async function getMainCategories(): Promise<MainCategory[]> {
+  if (!db) {
+    return [];
+  }
+
+  try {
+    // Try "main_categories" collection first, fallback to "categories"
+    let categoriesRef = collection(db, "main_categories");
+    let snapshot;
+    
+    try {
+      const q = query(categoriesRef, orderBy("order", "asc"));
+      snapshot = await getDocs(q);
+    } catch (error) {
+      // If "main_categories" doesn't exist or has no order field, try "categories"
+      try {
+        categoriesRef = collection(db, "categories");
+        snapshot = await getDocs(categoriesRef);
+      } catch (err) {
+        // If both fail, return empty array
+        return [];
+      }
+    }
+
+    const categories: MainCategory[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      // Use mainCategory field instead of slug
+      const mainCategory = data.mainCategory || data.slug; // Fallback to slug for backward compatibility
+      
+      if (mainCategory) {
+        // Validate mainCategory is one of the allowed category types
+        const validCategories: Product["category"][] = ["ppe", "rescue", "workplace", "other"];
+        if (validCategories.includes(mainCategory as Product["category"])) {
+          categories.push({
+            id: doc.id,
+            name: data.name || "",
+            label: data.label || data.name || "",
+            slug: mainCategory as Product["category"],
+            order: data.order || 0,
+            icon: data.icon || "",
+          });
+        }
+      }
+    });
+
+    // Sort by order
+    categories.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    return categories;
+  } catch (error) {
+    // Return empty array if collection doesn't exist
+    return [];
+  }
+}
+
+/**
+ * Fetch subcategories from Firestore
+ * Expected collection structure: "subcategories" or "categories"
+ * Each document should have: { name: string, category: string, order?: number }
+ */
+export async function getSubcategories(category?: Product["category"]): Promise<Subcategory[]> {
+  if (!db) {
+    return [];
+  }
+
+  try {
+    // Try "subcategories" collection first, fallback to "categories"
+    let subcategoriesRef = collection(db, "subcategories");
+    let snapshot;
+    
+    if (category) {
+      const q = query(subcategoriesRef, where("category", "==", category), orderBy("order", "asc"));
+      snapshot = await getDocs(q);
+    } else {
+      const q = query(subcategoriesRef, orderBy("order", "asc"));
+      snapshot = await getDocs(q);
+    }
+
+    const subcategories: Subcategory[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      subcategories.push({
+        id: doc.id,
+        name: data.name || "",
+        category: (data.category || "other") as Product["category"],
+        order: data.order || 0,
+      });
+    });
+
+    // If no results from "subcategories", try "categories" collection
+    if (subcategories.length === 0) {
+      subcategoriesRef = collection(db, "categories");
+      if (category) {
+        const q = query(subcategoriesRef, where("category", "==", category), orderBy("order", "asc"));
+        snapshot = await getDocs(q);
+      } else {
+        const q = query(subcategoriesRef, orderBy("order", "asc"));
+        snapshot = await getDocs(q);
+      }
+
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        subcategories.push({
+          id: doc.id,
+          name: data.name || "",
+          category: (data.category || "other") as Product["category"],
+          order: data.order || 0,
+        });
+      });
+    }
+
+    return subcategories.sort((a, b) => (a.order || 0) - (b.order || 0));
+  } catch (error) {
+    // If collection doesn't exist, return empty array (will fallback to extracting from products)
     return [];
   }
 }

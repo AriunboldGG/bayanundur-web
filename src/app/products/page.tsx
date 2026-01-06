@@ -4,18 +4,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
 import FirebaseImage from "@/components/FirebaseImage";
-import { useMemo, useState, useEffect, Suspense } from "react";
+import React, { useMemo, useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Shield, LifeBuoy, Wrench, Package } from "lucide-react";
 import { useStock } from "@/context/StockContext";
-import { getAllProducts, type Product } from "@/lib/products";
+import { getAllProducts, getSubcategories, type Product, type Subcategory } from "@/lib/products";
 
 function ProductsPageContent() {
   const searchParams = useSearchParams();
   const { setInitialStock, getStock } = useStock();
   const pageSize = 50;
   const [page, setPage] = useState(1);
-  const [selectedCat, setSelectedCat] = useState<"all" | Product["category"]>("all");
+  const [selectedCat, setSelectedCat] = useState<"all" | string>("all");
   const [selectedSub, setSelectedSub] = useState<string | null>(null);
   const [selectedLeaf, setSelectedLeaf] = useState<string[]>([]);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
@@ -27,33 +27,52 @@ function ProductsPageContent() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFromFirestore, setIsFromFirestore] = useState(false);
+  const [backendSubcategories, setBackendSubcategories] = useState<Subcategory[]>([]);
 
-  // Fetch products from Firestore on mount - ONLY from Firebase, no fallback
+  // Fetch products and subcategories from Firestore on mount
   useEffect(() => {
-    async function fetchProducts() {
+    async function fetchData() {
       setIsLoading(true);
       try {
-        console.log("🔄 Fetching products from Firebase Firestore...");
+        // Fetch products
         const products = await getAllProducts();
         if (products.length > 0) {
-          console.log(`✅ Successfully loaded ${products.length} products from Firestore`);
           setAllProducts(products);
           setIsFromFirestore(true);
         } else {
-          console.warn("⚠️ No products found in Firestore");
           setAllProducts([]);
           setIsFromFirestore(false);
         }
+
+        // Fetch subcategories from backend
+        const subcategories = await getSubcategories();
+        if (subcategories.length > 0) {
+          setBackendSubcategories(subcategories);
+        } else {
+          setBackendSubcategories([]);
+        }
       } catch (error) {
-        console.error("❌ Error fetching products from Firestore:", error);
         setAllProducts([]);
         setIsFromFirestore(false);
+        setBackendSubcategories([]);
       } finally {
         setIsLoading(false);
       }
     }
-    fetchProducts();
+    fetchData();
   }, []);
+
+  // Extract unique mainCategory values from products (can be Mongolian text)
+  const mainCategoriesFromProducts = useMemo(() => {
+    const uniqueMainCategories = new Set<string>();
+    allProducts.forEach(p => {
+      // Check if product has mainCategory field (from Firestore)
+      if (p.mainCategory && typeof p.mainCategory === 'string' && p.mainCategory.trim() !== '') {
+        uniqueMainCategories.add(p.mainCategory.trim());
+      }
+    });
+    return Array.from(uniqueMainCategories); // Return all unique mainCategory values (Mongolian text)
+  }, [allProducts]);
 
   // Initialize stock counts
   useEffect(() => {
@@ -66,14 +85,16 @@ function ProductsPageContent() {
 
   // Read category and brand from URL query params on mount
   useEffect(() => {
-    if (allProducts.length === 0) return;
-    
     const categoryParam = searchParams.get("category");
-    if (categoryParam && ["ppe", "rescue", "workplace", "other"].includes(categoryParam)) {
-      setSelectedCat(categoryParam as Product["category"]);
-      setPage(1);
-      setSelectedSub(null);
-      setSelectedLeaf([]);
+    if (categoryParam) {
+      // Check if category is valid (ppe, rescue, workplace, other)
+      const validCategories: Product["category"][] = ["ppe", "rescue", "workplace", "other"];
+      if (validCategories.includes(categoryParam as Product["category"])) {
+        setSelectedCat(categoryParam as Product["category"]);
+        setPage(1);
+        setSelectedSub(null);
+        setSelectedLeaf([]);
+      }
     }
     
     const brandParam = searchParams.get("brand");
@@ -86,47 +107,115 @@ function ProductsPageContent() {
     }
   }, [searchParams, allProducts]);
 
-  const categories = [
-    { id: "all" as const, label: "Бүгд", icon: null, count: allProducts.length },
-    { id: "ppe" as const, label: "ХАБ хувцас хэрэгсэл", icon: Shield, count: allProducts.filter(p => p.category === "ppe").length },
-    { id: "rescue" as const, label: "Аврах хамгаалах", icon: LifeBuoy, count: allProducts.filter(p => p.category === "rescue").length },
-    { id: "workplace" as const, label: "Ажлын байр", icon: Wrench, count: allProducts.filter(p => p.category === "workplace").length },
-    { id: "other" as const, label: "Бусад", icon: Package, count: allProducts.filter(p => p.category === "other").length },
-  ];
+  // Icon mapping for categories
+  const categoryIcons: Record<Product["category"], typeof Shield | null> = {
+    ppe: Shield,
+    rescue: LifeBuoy,
+    workplace: Wrench,
+    other: Package,
+  };
 
-  const subcats: Record<Product["category"], string[]> = {
-    ppe: ["Толгойн хамгаалалт", "Хамгаалалтын хувцас", "Гар хамгаалалт", "Хөл хамгаалалт"],
-    rescue: ["Аюулгүйн цоож пайз", "Цахилгааны хамгаалалтын багаж", "Тэмдэг тэмдэглэгээ", "Гэрэл, чийдэн", "Осолын үеийн багаж хэрэгсэл"],
-    workplace: ["Дуу чимээ, тоосжилт"],
-    other: ["Бусад бүтээгдэхүүн", "Нэмэлт хэрэгсэл", "Сэлбэг хэрэгсэл"],
+  // Category labels mapping
+  const categoryLabels: Record<Product["category"], string> = {
+    ppe: "ХАБ хувцас хэрэгсэл",
+    rescue: "Аврах хамгаалах",
+    workplace: "Ажлын байр",
+    other: "Бусад",
   };
-  const leafcats: Record<Product["category"], Record<string, string[]>> = {
-    ppe: {
-      "Толгойн хамгаалалт": ["Малгай, каск", "Нүүрний хамгаалалт, нүдний шил", "Гагнуурын баг", "Амьсгалын маск", "Чихэвч", "Баг шүүлтүүр"],
-      "Хамгаалалтын хувцас": ["Зуны хувцас", "Өвлийн хувцас", "Цахилгаан, нуман ниргэлтээс", "Гагнуурын хувцас", "Халуунаас хамгаалах", "Хими, цацрагаас"],
-      "Гар хамгаалалт": ["Ажлын бээлий", "Цахилгааны бээлий", "Гагнуурын/халуун бээлий", "Хими, шүлт, цацрагаас"],
-      "Хөл хамгаалалт": ["Ажлын гутал", "Гагнуурын гутал", "Хүчил шүлтнээс", "Усны гутал"],
-    },
-    rescue: {
-      "Аюулгүйн цоож пайз": ["Цоож", "Түгжээ", "Хайрцаг/стайшин", "Пайз", "Иж бүрдэл"],
-      "Цахилгааны хамгаалалтын багаж": ["Хөндийрүүлэгч штанг", "Зөөврийн газардуулга", "Хүчдэл хэмжигч", "Тусгаарлагч материал", "Зөөврийн хайс/шат"],
-      "Тэмдэг тэмдэглэгээ": ["Анхааруулах палакат", "Тууз/наалт/скоч", "Замын тэмдэг", "Тумбо/шон", "Туг дарцаг"],
-      "Гэрэл, чийдэн": ["Духны гэрэл", "Баттерей", "Зөөврийн гэрэл", "Прожектор гэрэл", "Маяк/дохиолол"],
-      "Осолын үеийн багаж хэрэгсэл": ["Химийн асгаралтын иж бүрдэл", "Галын анхан шатны хэрэгсэл", "Түргэн тусламжийн хэрэгсэл"],
-    },
-    workplace: {
-      "Дуу чимээ, тоосжилт": ["Тоосны маск", "Чихний хамгаалалт"],
-    },
-    other: {
-      "Бусад бүтээгдэхүүн": ["Бусад", "Нэмэлт"],
-      "Нэмэлт хэрэгсэл": ["Хэрэгсэл", "Тоног төхөөрөмж"],
-      "Сэлбэг хэрэгсэл": ["Сэлбэг", "Дагалдах хэрэгсэл"],
-    },
-  };
+
+  // Build categories array for top filter bar - extract from products mainCategory field only
+  const categories = useMemo(() => {
+    const allCat = { id: "all" as const, label: "Бүгд", icon: null, count: allProducts.length };
+    
+    // Use mainCategories extracted from products (Mongolian text from Firebase)
+    const categoryCats = mainCategoriesFromProducts.map(mainCatText => ({
+      id: mainCatText, // Use the Mongolian text as ID
+      label: mainCatText, // Display the Mongolian text directly
+      icon: null, // No icon mapping for custom categories
+      count: allProducts.filter(p => {
+        // Filter by exact mainCategory match
+        return p.mainCategory === mainCatText;
+      }).length,
+    }));
+    
+    return [allCat, ...categoryCats];
+  }, [allProducts, mainCategoriesFromProducts]);
+
+  // Subcategories from backend or extracted from products - grouped by mainCategory
+  const subcats = useMemo(() => {
+    const subcatsMap: Record<string, string[]> = {};
+    
+    // If we have subcategories from backend, use those
+    if (backendSubcategories.length > 0) {
+      backendSubcategories.forEach(sub => {
+        if (sub.category && sub.name) {
+          // Group by mainCategory from products that match this category
+          allProducts.forEach(p => {
+            if (p.category === sub.category && p.mainCategory) {
+              if (!subcatsMap[p.mainCategory]) {
+                subcatsMap[p.mainCategory] = [];
+              }
+              if (!subcatsMap[p.mainCategory]!.includes(sub.name)) {
+                subcatsMap[p.mainCategory]!.push(sub.name);
+              }
+            }
+          });
+        }
+      });
+    } else {
+      // Extract unique subcategories from products, grouped by mainCategory
+      allProducts.forEach(p => {
+        if (p.mainCategory && p.subcategory) {
+          // Group by mainCategory
+          if (!subcatsMap[p.mainCategory]) {
+            subcatsMap[p.mainCategory] = [];
+          }
+          // Add subcategory if it doesn't exist
+          if (!subcatsMap[p.mainCategory]!.includes(p.subcategory)) {
+            subcatsMap[p.mainCategory]!.push(p.subcategory);
+          }
+        }
+      });
+    }
+    
+    return subcatsMap;
+  }, [backendSubcategories, allProducts]);
+  // Dynamic leaf categories (subleaf) based on products from Firebase - grouped by mainCategory
+  const leafcats = useMemo(() => {
+    const leafcatsMap: Record<string, Record<string, string[]>> = {};
+    
+    // Extract unique subleaf values from products for each mainCategory and subcategory combination
+    allProducts.forEach(p => {
+      if (p.mainCategory && p.subcategory && p.subleaf) {
+        // Initialize mainCategory if it doesn't exist
+        if (!leafcatsMap[p.mainCategory]) {
+          leafcatsMap[p.mainCategory] = {};
+        }
+        // Initialize subcategory array if it doesn't exist
+        if (!leafcatsMap[p.mainCategory]![p.subcategory]) {
+          leafcatsMap[p.mainCategory]![p.subcategory] = [];
+        }
+        // Add subleaf if it doesn't exist
+        if (!leafcatsMap[p.mainCategory]![p.subcategory].includes(p.subleaf)) {
+          leafcatsMap[p.mainCategory]![p.subcategory].push(p.subleaf);
+        }
+      }
+    });
+    
+    return leafcatsMap;
+  }, [allProducts]);
 
   const filtered = useMemo(() => {
     if (allProducts.length === 0) return [];
-    let base = selectedCat === "all" ? allProducts : allProducts.filter(p => p.category === selectedCat);
+    
+    // Filter by mainCategory field from products (Mongolian text)
+    let base = selectedCat === "all" 
+      ? allProducts 
+      : allProducts.filter(p => {
+          // Filter by exact mainCategory match (Mongolian text from Firebase)
+          return p.mainCategory === selectedCat;
+        });
+    
     if (selectedCat !== "all" && selectedSub) {
       base = base.filter(p => p.subcategory === selectedSub);
     }
@@ -165,16 +254,7 @@ function ProductsPageContent() {
         <div className="mb-4 flex items-end justify-between gap-3">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">БҮТЭЭГДЭХҮҮН</h1>
-            {isFromFirestore && allProducts.length > 0 && (
-              <p className="text-sm text-green-600 mt-1">
-                ✅ {allProducts.length} бүтээгдэхүүн Firebase-аас ачааллаж байна
-              </p>
-            )}
-            {!isFromFirestore && allProducts.length === 0 && !isLoading && (
-              <p className="text-sm text-amber-600 mt-1">
-                ⚠️ Firestore-д бүтээгдэхүүн олдсонгүй
-              </p>
-            )}
+           
           </div>
         </div>
 
@@ -195,7 +275,11 @@ function ProductsPageContent() {
                     : "border-gray-200 bg-white text-gray-700 hover:border-[#1f632b] hover:bg-[#1f632b]/10"
                 }`}
               >
-                {c.icon ? <c.icon className="h-4 w-4" /> : null}
+                {c.icon ? (
+                  typeof c.icon === 'function' ? (
+                    React.createElement(c.icon as React.ComponentType<{ className?: string }>, { className: "h-4 w-4" })
+                  ) : null
+                ) : null}
                 <span>{c.label}</span>
                 <span className="ml-1 text-[10px] opacity-80">{c.count}</span>
               </button>
@@ -216,11 +300,11 @@ function ProductsPageContent() {
         <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-6">
           {/* Left filters: show subcats only when main selected */}
           <aside className="hidden md:block space-y-4">
-            {selectedCat !== "all" ? (
+            {selectedCat !== "all" && subcats[selectedCat] ? (
               <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
                 <div className="text-sm font-semibold text-gray-800 mb-2">Дэд ангилал</div>
                 <div className="space-y-2">
-                  {subcats[selectedCat].map((s) => (
+                  {subcats[selectedCat]!.map((s) => (
                     <button
                       key={s}
                       onClick={() => {
@@ -240,11 +324,11 @@ function ProductsPageContent() {
             ) : null}
 
             {/* Sub-sub categories */}
-            {selectedCat !== "all" && selectedSub ? (
+            {selectedCat !== "all" && selectedSub && leafcats[selectedCat] && leafcats[selectedCat]![selectedSub] ? (
               <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
                 <div className="text-sm font-semibold text-gray-800 mb-2">Нарийвчилсан ангилал</div>
                 <div className="space-y-2 text-sm">
-                  {(leafcats[selectedCat][selectedSub] ?? []).map((leaf) => (
+                  {leafcats[selectedCat]![selectedSub]!.map((leaf) => (
                     <label key={leaf} className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -415,7 +499,7 @@ function ProductsPageContent() {
                   <div className="flex items-center justify-between text-xs">
                     <div>
                       <div className="text-gray-500 text-[10px]">Бүтээгдэхүүний код</div>
-                      <span className="font-semibold text-[#1f632b]">{p.modelNumber}</span>
+                      <span className="font-semibold text-[#1f632b]">{p.modelNumber || "N/A"}</span>
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <span
@@ -457,11 +541,11 @@ function ProductsPageContent() {
             <div className="absolute bottom-0 left-0 right-0 max-h-[80%] overflow-y-auto rounded-t-2xl bg-white p-4 space-y-4">
               <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-gray-300" />
 
-              {selectedCat !== "all" ? (
+              {selectedCat !== "all" && subcats[selectedCat] ? (
                 <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
                   <div className="text-sm font-semibold text-gray-800 mb-2">Дэд ангилал</div>
                   <div className="space-y-2">
-                    {subcats[selectedCat].map((s) => (
+                    {subcats[selectedCat]!.map((s) => (
                       <button
                         key={s}
                         onClick={() => {
