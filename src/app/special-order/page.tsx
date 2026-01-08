@@ -3,8 +3,12 @@
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useCart } from "@/context/CartContext";
+import { CheckCircle } from "lucide-react";
+import { saveSpecialOrderToFirestore } from "@/lib/quotes";
 
 export default function SpecialOrderPage() {
+  const { clear } = useCart();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -20,6 +24,7 @@ export default function SpecialOrderPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"success" | "error" | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -34,33 +39,41 @@ export default function SpecialOrderPage() {
     setIsSubmitting(true);
     setSubmitStatus(null);
 
-    // Simulate form submission (replace with actual API call)
     try {
-      // TODO: Replace with actual API endpoint
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // For now, just log the data and show success
-      console.log("Special Order Request:", formData);
+      // Save to Firestore special_quotes collection
+      await saveSpecialOrderToFirestore({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        company: formData.company,
+        productName: formData.productName,
+        productDescription: formData.productDescription,
+        quantity: formData.quantity,
+        specifications: formData.specifications,
+        deliveryDate: formData.deliveryDate,
+        additionalInfo: formData.additionalInfo,
+      });
       
       setSubmitStatus("success");
+      setShowSuccessModal(true);
+      // Clear cart after successful submission
+      clear();
       
       // Reset form after successful submission
-      setTimeout(() => {
-        setFormData({
-          name: "",
-          email: "",
-          phone: "",
-          company: "",
-          productName: "",
-          productDescription: "",
-          quantity: "",
-          specifications: "",
-          deliveryDate: "",
-          additionalInfo: "",
-        });
-        setSubmitStatus(null);
-      }, 3000);
-    } catch (error) {
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        company: "",
+        productName: "",
+        productDescription: "",
+        quantity: "",
+        specifications: "",
+        deliveryDate: "",
+        additionalInfo: "",
+      });
+    } catch (error: any) {
+      console.error("Error saving special order:", error);
       setSubmitStatus("error");
     } finally {
       setIsSubmitting(false);
@@ -70,17 +83,39 @@ export default function SpecialOrderPage() {
   return (
     <main className="min-h-screen bg-white">
       <Header />
-      <div className="container mx-auto px-4 py-8 md:py-12">
+      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 md:py-12">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2">
             ТУСГАЙ ЗАХИАЛГА
           </h1>
-          <p className="text-sm md:text-base text-gray-600 mb-8">
+          <p className="text-xs sm:text-sm md:text-base text-gray-600 mb-6 sm:mb-8">
             Бидний каталогт байхгүй бүтээгдэхүүний үнийн санал авах, тусгай захиалга өгөх
           </p>
 
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 md:p-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Success Modal */}
+          {showSuccessModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3 sm:px-4">
+              <div className="w-full max-w-md rounded-2xl bg-white shadow-xl p-4 sm:p-6 md:p-8 text-center">
+                <div className="flex justify-center mb-4">
+                  <CheckCircle className="h-16 w-16 text-green-500" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">Амжилттай!</h2>
+                <p className="text-sm text-gray-600 mb-6">
+                  Таны хүсэлт амжилттай илгээгдлээ. Бид удахгүй тань руу холбогдох болно.
+                </p>
+                <Button
+                  onClick={() => setShowSuccessModal(false)}
+                  className="w-full bg-[#1f632b] hover:bg-[#16451e] text-white cursor-pointer"
+                >
+                  Хаах
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {!showSuccessModal && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 sm:p-6 md:p-8">
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               {/* Contact Information Section */}
               <div>
                 <h2 className="text-lg font-semibold text-gray-800 mb-4">Холбоо барих мэдээлэл</h2>
@@ -242,11 +277,6 @@ export default function SpecialOrderPage() {
 
               {/* Submit Button */}
               <div className="border-t border-gray-200 pt-6">
-                {submitStatus === "success" && (
-                  <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
-                    Таны хүсэлт амжилттай илгээгдлээ! Бид удахгүй танд холбогдох болно.
-                  </div>
-                )}
                 {submitStatus === "error" && (
                   <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
                     Алдаа гарлаа. Дахин оролдоно уу эсвэл утсаар холбогдоно уу.
@@ -262,6 +292,7 @@ export default function SpecialOrderPage() {
               </div>
             </form>
           </div>
+          )}
 
           {/* Additional Info */}
           <div className="mt-8 p-4 bg-gray-50 rounded-lg">

@@ -1,9 +1,10 @@
  "use client";
 
 import { Button } from "@/components/ui/button";
-import { CartItem } from "@/context/CartContext";
-import { useState, useEffect } from "react";
+import { CartItem, useCart } from "@/context/CartContext";
+import { useState } from "react";
 import { saveQuoteToFirestore } from "@/lib/quotes";
+import { CheckCircle } from "lucide-react";
 
 type QuoteModalProps = {
   open: boolean;
@@ -12,17 +13,10 @@ type QuoteModalProps = {
 };
 
 export function QuoteModal({ open, onClose, items }: QuoteModalProps) {
+  const { clear } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-
-  // Log items when modal opens or items change
-  useEffect(() => {
-    if (open) {
-      console.log("🔍 QuoteModal opened with items:", items.length, "items");
-      console.log("🔍 Items:", items);
-    }
-  }, [open, items]);
 
   if (!open) return null;
 
@@ -43,10 +37,6 @@ export function QuoteModal({ open, onClose, items }: QuoteModalProps) {
     const company = (formData.get("company") as string) ?? "";
 
     try {
-      // Log items before sending
-      console.log("📋 Quote form submitted with items:", items.length, "items");
-      console.log("📋 Items array:", items);
-      
       // Ensure items is an array and create a copy
       const itemsToSave = Array.isArray(items) ? [...items] : [];
       
@@ -69,12 +59,14 @@ export function QuoteModal({ open, onClose, items }: QuoteModalProps) {
       });
 
       setSuccess(true);
+      // Clear cart after successful submission
+      clear();
       
-      // Close modal after 2 seconds
+      // Close modal after 3 seconds
       setTimeout(() => {
         onClose();
         setSuccess(false);
-      }, 2000);
+      }, 3000);
     } catch (err: any) {
       console.error("Error saving quote:", err);
       setError(err.message || "Алдаа гарлаа. Дахин оролдоно уу.");
@@ -83,10 +75,36 @@ export function QuoteModal({ open, onClose, items }: QuoteModalProps) {
     }
   }
 
+  // Show success modal
+  if (success) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3 sm:px-4">
+        <div className="w-full max-w-md rounded-2xl bg-white shadow-xl p-4 sm:p-6 md:p-8 text-center">
+          <div className="flex justify-center mb-4">
+            <CheckCircle className="h-16 w-16 text-green-500" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Амжилттай!</h2>
+          <p className="text-sm text-gray-600 mb-6">
+            Үнийн санал амжилттай илгээгдлээ. Бид удахгүй тань руу холбогдох болно.
+          </p>
+          <Button
+            onClick={() => {
+              onClose();
+              setSuccess(false);
+            }}
+            className="w-full bg-[#8DC63F] hover:bg-[#7AB82E] text-white cursor-pointer"
+          >
+            Хаах
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-xl rounded-2xl bg-white shadow-xl">
-        <div className="border-b px-6 py-4 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3 sm:px-4 overflow-y-auto">
+      <div className="w-full max-w-xl rounded-2xl bg-white shadow-xl my-4 sm:my-8">
+        <div className="border-b px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <h2 className="text-base font-semibold text-gray-900">Үнийн санал авах</h2>
           <button
             type="button"
@@ -97,15 +115,10 @@ export function QuoteModal({ open, onClose, items }: QuoteModalProps) {
             ✕
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4 max-h-[80vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-4 sm:py-5 space-y-3 sm:space-y-4 max-h-[calc(100vh-120px)] overflow-y-auto">
           {error && (
             <div className="rounded-md bg-red-50 border border-red-200 p-3">
               <p className="text-sm text-red-800">{error}</p>
-            </div>
-          )}
-          {success && (
-            <div className="rounded-md bg-green-50 border border-green-200 p-3">
-              <p className="text-sm text-green-800">✅ Үнийн санал амжилттай илгээгдлээ!</p>
             </div>
           )}
           <div className="grid grid-cols-1 gap-4">

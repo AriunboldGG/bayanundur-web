@@ -12,6 +12,7 @@ export type CartItem = {
   size?: string;
   brand?: string;
   theme?: string;
+  stock?: number; // Stock count from Firebase
   qty: number;
 };
 
@@ -53,8 +54,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const itemKey = getCartItemKey(item);
       const existing = prev.find((p) => getCartItemKey(p) === itemKey);
       if (existing) {
-        // If exact same item (same id, size, color, theme, modelNumber), increase quantity
-        return prev.map((p) => (getCartItemKey(p) === itemKey ? { ...p, qty: p.qty + qty } : p));
+        // If exact same item (same id, size, color, theme, modelNumber), increase quantity and update stock
+        return prev.map((p) => (getCartItemKey(p) === itemKey ? { ...p, qty: p.qty + qty, stock: item.stock ?? p.stock } : p));
       }
       // Different item, add as new
       return [...prev, { ...item, qty }];

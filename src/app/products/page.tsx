@@ -9,6 +9,7 @@ import { useSearchParams } from "next/navigation";
 import { Shield, LifeBuoy, Wrench, Package } from "lucide-react";
 import { useStock } from "@/context/StockContext";
 import { getAllProducts, getSubcategories, type Product, type Subcategory } from "@/lib/products";
+import { log } from "console";
 
 function ProductsPageContent() {
   const searchParams = useSearchParams();
@@ -22,7 +23,7 @@ function ProductsPageContent() {
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [selectedStock, setSelectedStock] = useState<Array<Product["stock"]>>([]);
+  const [selectedStock, setSelectedStock] = useState<Array<"in_stock" | "preorder">>([]);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -75,14 +76,8 @@ function ProductsPageContent() {
     return Array.from(uniqueMainCategories); // Return all unique mainCategory values (Mongolian text)
   }, [allProducts]);
 
-  // Initialize stock counts
-  useEffect(() => {
-    if (allProducts.length > 0) {
-      allProducts.forEach((product) => {
-        setInitialStock(product.id, product.stockCount);
-      });
-    }
-  }, [allProducts, setInitialStock]);
+  // Initialize stock counts (using stock context, not from product data)
+
 
   // Read category and brand from URL query params on mount
   useEffect(() => {
@@ -226,7 +221,8 @@ function ProductsPageContent() {
     // Split by comma and filter out empty values
     return str.split(',').map(s => s.trim()).filter(s => s && s.length > 0);
   };
-
+  console.log('allProducts', allProducts);
+  
   // Helper function to check if a product's size contains any selected value
   const productHasSize = (product: Product, selectedSizes: string[]): boolean => {
     if (selectedSizes.length === 0) return true;
@@ -250,68 +246,6 @@ function ProductsPageContent() {
     // Check if any of the product's colors match any selected color
     return productColors.some(color => selectedColors.includes(color));
   };
-
-  // Helper function to get stock status from stockCount
-  const getStockStatus = (stockCount: number | string | undefined | null): "in_stock" | "preorder" => {
-    // Handle null, undefined, or empty values
-    if (stockCount === null || stockCount === undefined) {
-      return "preorder";
-    }
-    
-    // Convert to number - handle strings with whitespace
-    let numStock: number;
-    if (typeof stockCount === 'string') {
-      const trimmed = stockCount.trim();
-      if (trimmed === '' || trimmed === '0') {
-        return "preorder";
-      }
-      numStock = parseFloat(trimmed);
-    } else {
-      numStock = Number(stockCount);
-    }
-    
-    // Check if it's a valid number and greater than 0
-    if (isNaN(numStock) || numStock <= 0) {
-      return "preorder";
-    }
-    
-    return "in_stock";
-  };
-
-  // Dynamic stock filter options based on available products
-  const stockFilterOptions = useMemo(() => {
-    // Helper to convert stockCount to number
-    const getStockNumber = (stock: number | string | undefined | null): number => {
-      if (stock === null || stock === undefined) return 0;
-      if (typeof stock === 'string') {
-        const trimmed = stock.trim();
-        return parseFloat(trimmed) || 0;
-      }
-      return Number(stock) || 0;
-    };
-    
-    // Check if any product has stockCount > 0 (from API/database)
-    const hasInStock = allProducts.some(p => {
-      const numStock = getStockNumber(p.stockCount);
-      return numStock > 0;
-    });
-    
-    // Check if any product has stockCount <= 0 (from API/database)
-    const hasPreorder = allProducts.some(p => {
-      const numStock = getStockNumber(p.stockCount);
-      return numStock <= 0;
-    });
-    
-    const options: Array<{ id: "in_stock" | "preorder", label: string }> = [];
-    if (hasInStock) {
-      options.push({ id: "in_stock", label: "Бэлэн байгаа" });
-    }
-    if (hasPreorder) {
-      options.push({ id: "preorder", label: "Захиалгаар" });
-    }
-    return options;
-  }, [allProducts]);
-
   const filtered = useMemo(() => {
     if (allProducts.length === 0) return [];
     
@@ -336,8 +270,14 @@ function ProductsPageContent() {
     if (selectedBrands.length) base = base.filter(p => selectedBrands.includes(p.brand));
     if (selectedSizes.length) base = base.filter(p => productHasSize(p, selectedSizes));
     if (selectedThemes.length) base = base.filter(p => selectedThemes.includes(p.theme));
+    if (selectedStock.length) {
+      base = base.filter(p => {
+        const stockStatus: "in_stock" | "preorder" = p.stock > 0 ? "in_stock" : "preorder";
+        return selectedStock.includes(stockStatus);
+      });
+    }
     return base;
-  }, [allProducts, selectedCat, selectedCategory, selectedSub, selectedLeaf, selectedColors, selectedBrands, selectedSizes, selectedThemes]);
+  }, [allProducts, selectedCat, selectedCategory, selectedSub, selectedLeaf, selectedColors, selectedBrands, selectedSizes, selectedThemes, selectedStock]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageItems = useMemo(() => {
@@ -359,17 +299,17 @@ function ProductsPageContent() {
   return (
     <main className="min-h-screen bg-white">
       <Header />
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 md:py-12">
         <div className="mb-4 flex items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">БҮТЭЭГДЭХҮҮН</h1>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">БҮТЭЭГДЭХҮҮН</h1>
            
           </div>
         </div>
 
         {/* Top category filter bar */}
-        <div className="mb-6 rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-          <div className="flex flex-wrap gap-3">
+        <div className="mb-4 sm:mb-6 rounded-xl border border-gray-200 bg-white p-2 sm:p-3 shadow-sm overflow-x-auto">
+          <div className="flex flex-wrap gap-2 sm:gap-3 min-w-max sm:min-w-0">
             {categories.map((c) => (
               <button
                 key={c.id}
@@ -408,9 +348,9 @@ function ProductsPageContent() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-4 sm:gap-6">
           {/* Left filters: show categories first, then subcategories when category is selected */}
-          <aside className="hidden md:block space-y-4">
+          <aside className="hidden lg:block space-y-4">
             {/* Categories (category field) - shown when main category is selected */}
             {selectedCat !== "all" && productCategories[selectedCat] ? (
               <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
@@ -595,6 +535,39 @@ function ProductsPageContent() {
               </div>
             </div>
 
+            {/* Stock Status filter */}
+            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+              <div className="text-sm font-semibold text-gray-800 mb-2">Нөөцийн төлөв</div>
+              <div className="space-y-2 text-sm">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedStock.includes("in_stock")}
+                    onChange={(e) => {
+                      setPage(1);
+                      setSelectedStock((prev) =>
+                        e.target.checked ? [...prev, "in_stock"] : prev.filter((x) => x !== "in_stock")
+                      );
+                    }}
+                  />
+                  <span className="text-black font-medium">Бэлэн байгаа</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedStock.includes("preorder")}
+                    onChange={(e) => {
+                      setPage(1);
+                      setSelectedStock((prev) =>
+                        e.target.checked ? [...prev, "preorder"] : prev.filter((x) => x !== "preorder")
+                      );
+                    }}
+                  />
+                  <span className="text-black font-medium">Захиалгаар</span>
+                </label>
+              </div>
+            </div>
+
             {/* Clear filters */}
             <button
               onClick={() => {
@@ -605,6 +578,7 @@ function ProductsPageContent() {
                 setSelectedBrands([]);
                 setSelectedSizes([]);
                 setSelectedThemes([]);
+                setSelectedStock([]);
                 setPage(1);
               }}
               className="w-full rounded-md border px-3 py-2 text-sm hover:bg-[#1f632b]/10 hover:text-[#1f632b] hover:border-[#1f632b] transition-colors"
@@ -620,11 +594,11 @@ function ProductsPageContent() {
               <p className="text-gray-500 text-sm">Firestore-д бүтээгдэхүүн нэмнэ үү</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
             {pageItems.map((p) => (
-            <Card key={p.firestoreId || `product-${p.id}`} className="group overflow-hidden flex flex-col h-full relative cursor-pointer hover:border-[#1f632b] transition-colors">
+            <Card key={p.firestoreId || `product-${p.id}`} className="group overflow-visible flex flex-col h-full min-h-0 relative cursor-pointer hover:border-[#1f632b] transition-colors">
               <Link href={`/products/${p.firestoreId || p.id}`} aria-label={`View ${p.name}`} className="absolute inset-0 z-[1]"></Link>
-              <div className="relative h-40 w-full">
+              <div className="relative w-full flex-shrink-0" style={{ height: '40%', minHeight: '120px', paddingTop: 0 }}>
                 <FirebaseImage
                   src={p.images && p.images.length > 0 ? p.images[0] : p.img}
                   alt={p.name}
@@ -634,48 +608,54 @@ function ProductsPageContent() {
                 />
                 <Link
                   href={`/products/${p.firestoreId || p.id}`}
-                  className="absolute bottom-2 right-2 z-[2] opacity-0 group-hover:opacity-100 transition-opacity rounded-md bg-[#1f632b] hover:bg-[#16451e] text-white text-xs px-3 py-1"
+                  className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 z-[2] opacity-0 group-hover:opacity-100 transition-opacity rounded-md bg-[#1f632b] hover:bg-[#16451e] text-white text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1"
                 >
                   Харах
                 </Link>
               </div>
-              <CardContent className="p-3 flex flex-col">
-                  <div>
-                    <div className="text-[10px] text-gray-500 font-medium">Бүтээгдэхүүний код</div>
-                    <div className="text-xs font-bold text-[#1f632b]">{p.modelNumber || "N/A"}</div>
+              <CardContent className="p-1.5 sm:p-2 md:p-3 flex flex-col overflow-visible flex-1 min-h-0" style={{ height: '60%' }}>
+                  <div className="mt-0.5">
+                    <div className="text-[10px] sm:text-xs md:text-sm font-bold text-gray-800 line-clamp-2 leading-tight">{p.name}</div>
                   </div>
-                  <div className="mt-1">
-                    <div className="text-sm font-bold text-gray-800 line-clamp-2">{p.name}</div>
+                  <div className="mt-0.5 sm:mt-1">
+                    <div className="text-[8px] sm:text-[9px] md:text-[10px] text-gray-500 font-medium">Бүтээгдэхүүний код</div>
+                    <div className="text-[9px] sm:text-[10px] md:text-xs font-bold text-[#1f632b] leading-tight">{p.modelNumber || "N/A"}</div>
                   </div>
-                  <div className="mt-1 space-y-0.5 text-xs">
-                    <div className="flex items-start gap-2">
-                      <span className="font-bold text-gray-700 min-w-[60px]">Брэнд:</span>
-                      <span className="text-gray-600">{p.brand || "-"}</span>
+                  <div className="mt-0.5 sm:mt-1 space-y-0.5 text-[8px] sm:text-[9px] md:text-[10px] overflow-visible flex-1 min-h-0">
+                    <div className="flex items-start gap-0.5 sm:gap-1 md:gap-1.5">
+                      <span className="font-bold text-gray-700 min-w-[40px] sm:min-w-[50px] md:min-w-[55px] text-[8px] sm:text-[9px] md:text-[10px] leading-tight flex-shrink-0">Брэнд:</span>
+                      <span className="text-gray-600 text-[8px] sm:text-[9px] md:text-[10px] leading-tight break-words">{p.brand || "-"}</span>
                     </div>
                     {p.color && (
-                      <div className="flex items-start gap-2">
-                        <span className="font-bold text-gray-700 min-w-[60px]">Өнгө:</span>
-                        <span className="text-gray-600">{p.color}</span>
+                      <div className="flex items-start gap-0.5 sm:gap-1 md:gap-1.5">
+                        <span className="font-bold text-gray-700 min-w-[40px] sm:min-w-[50px] md:min-w-[55px] text-[8px] sm:text-[9px] md:text-[10px] leading-tight flex-shrink-0">Өнгө:</span>
+                        <span className="text-gray-600 text-[8px] sm:text-[9px] md:text-[10px] leading-tight break-words">{p.color}</span>
                       </div>
                     )}
                     {p.size && (
-                      <div className="flex items-start gap-2">
-                        <span className="font-bold text-gray-700 min-w-[60px]">Хэмжээ:</span>
-                        <span className="text-gray-600">{p.size}</span>
+                      <div className="flex items-start gap-0.5 sm:gap-1 md:gap-1.5">
+                        <span className="font-bold text-gray-700 min-w-[40px] sm:min-w-[50px] md:min-w-[55px] text-[8px] sm:text-[9px] md:text-[10px] leading-tight flex-shrink-0">Хэмжээ:</span>
+                        <span className="text-gray-600 text-[8px] sm:text-[9px] md:text-[10px] leading-tight break-words">{p.size}</span>
                       </div>
                     )}
                     {p.theme && (
-                      <div className="flex items-start gap-2">
-                        <span className="font-bold text-gray-700 min-w-[60px]">Загвар:</span>
-                        <span className="text-gray-600">{p.theme}</span>
+                      <div className="flex items-start gap-0.5 sm:gap-1 md:gap-1.5">
+                        <span className="font-bold text-gray-700 min-w-[40px] sm:min-w-[50px] md:min-w-[55px] text-[8px] sm:text-[9px] md:text-[10px] leading-tight flex-shrink-0">Загвар:</span>
+                        <span className="text-gray-600 text-[8px] sm:text-[9px] md:text-[10px] leading-tight break-words">{p.theme}</span>
                       </div>
                     )}
                     {p.material && (
-                      <div className="flex items-start gap-2">
-                        <span className="font-bold text-gray-700 min-w-[60px]">Материал:</span>
-                        <span className="text-gray-600">{p.material}</span>
+                      <div className="flex items-start gap-0.5 sm:gap-1 md:gap-1.5">
+                        <span className="font-bold text-gray-700 min-w-[40px] sm:min-w-[50px] md:min-w-[55px] text-[8px] sm:text-[9px] md:text-[10px] leading-tight flex-shrink-0">Материал:</span>
+                        <span className="text-gray-600 text-[8px] sm:text-[9px] md:text-[10px] leading-tight break-words">{p.material}</span>
                       </div>
                     )}
+                    <div className="flex items-start gap-0.5 sm:gap-1 md:gap-1.5">
+                      <span className="font-bold text-gray-700 min-w-[40px] sm:min-w-[50px] md:min-w-[55px] text-[8px] sm:text-[9px] md:text-[10px] leading-tight flex-shrink-0">Нөөц:</span>
+                      <span className={`font-semibold text-[8px] sm:text-[9px] md:text-[10px] leading-tight ${p.stock > 0 ? "text-green-600" : "text-orange-600"}`}>
+                        {p.stock > 0 ? "Бэлэн байгаа" : "Захиалгаар"}
+                      </span>
+                    </div>
                   </div>
               </CardContent>
             </Card>
@@ -901,6 +881,39 @@ function ProductsPageContent() {
                       </label>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* Stock Status filter */}
+              <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                <div className="text-sm font-semibold text-gray-800 mb-2">Нөөцийн төлөв</div>
+                <div className="space-y-2 text-sm">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedStock.includes("in_stock")}
+                      onChange={(e) => {
+                        setPage(1);
+                        setSelectedStock((prev) =>
+                          e.target.checked ? [...prev, "in_stock"] : prev.filter((x) => x !== "in_stock")
+                        );
+                      }}
+                    />
+                    <span className="text-black font-medium">Бэлэн байгаа</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedStock.includes("preorder")}
+                      onChange={(e) => {
+                        setPage(1);
+                        setSelectedStock((prev) =>
+                          e.target.checked ? [...prev, "preorder"] : prev.filter((x) => x !== "preorder")
+                        );
+                      }}
+                    />
+                    <span className="text-black font-medium">Захиалгаар</span>
+                  </label>
                 </div>
               </div>
 

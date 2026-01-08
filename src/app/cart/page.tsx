@@ -13,11 +13,19 @@ export default function CartPage() {
   const { items, removeItem, clear, updateQty } = useCart();
   const [showQuote, setShowQuote] = useState(false);
 
+  // Debug: log items to see if stock is present
+  useEffect(() => {
+    console.log("Cart items:", items);
+    items.forEach((item, index) => {
+      console.log(`Item ${index}:`, item.name, "stock:", item.stock, "stock type:", typeof item.stock);
+    });
+  }, [items]);
+
   return (
     <main className="min-h-screen bg-white">
       <Header />
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Таны сагс</h1>
+      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-4 sm:mb-6">Таны сагс</h1>
 
         {items.length === 0 ? (
           <div className="text-center py-16">
@@ -27,7 +35,7 @@ export default function CartPage() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] xl:grid-cols-[1fr_320px] gap-4 sm:gap-6">
             {/* Left: Cart Items */}
             <div className="space-y-4">
               {/* Delivery Info Card */}
@@ -47,7 +55,7 @@ export default function CartPage() {
                   <CardContent className="p-4">
                     <div className="flex flex-col md:flex-row gap-4">
                       {/* Image */}
-                      <div className="relative w-full md:w-24 h-32 md:h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                      <div className="relative w-full sm:w-20 md:w-24 h-24 sm:h-20 md:h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                         {item.img ? (
                           <FirebaseImage
                             src={item.img}
@@ -63,58 +71,78 @@ export default function CartPage() {
                       </div>
 
                       {/* Info */}
-                      <div className="flex-1 space-y-3">
-                        {/* Title */}
+                      <div className="flex-1 space-y-2">
+                        {/* Title and Remove Button */}
                         <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="text-sm font-semibold text-gray-800">{item.name}</div>
-                            {item.modelNumber && (
-                              <div className="mt-1">
-                                <div className="text-[10px] text-gray-500">Бүтээгдэхүүний код</div>
-                                <div className="text-xs font-semibold text-[#1f632b]">{item.modelNumber}</div>
-                              </div>
-                            )}
-                            <div className="text-xs text-gray-500 mt-1">
-                              {item.size && `Хэмжээ: ${item.size}`}
-                              {item.color && ` • Өнгө: ${item.color}`}
+                          <div className="text-sm font-bold text-gray-800">{item.name}</div>
+                          <button
+                            onClick={() => removeItem(item.id, item)}
+                            className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer flex-shrink-0"
+                          >
+                            <X className="h-4 w-4 text-gray-600" />
+                          </button>
+                        </div>
+
+                        {/* Product Details - One column, one item per row */}
+                        <div className="space-y-1.5 text-xs">
+                          {item.modelNumber && (
+                            <div className="flex items-start gap-2">
+                              <span className="font-bold text-gray-700 min-w-[100px]">Бүтээгдэхүүний код:</span>
+                              <span className="text-[#1f632b] font-semibold">{item.modelNumber}</span>
                             </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => removeItem(item.id, item)}
-                              className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
-                            >
-                              <X className="h-4 w-4 text-gray-600" />
-                            </button>
+                          )}
+                          {item.size && (
+                            <div className="flex items-start gap-2">
+                              <span className="font-bold text-gray-700 min-w-[100px]">Хэмжээ:</span>
+                              <span className="text-gray-600">{item.size}</span>
+                            </div>
+                          )}
+                          {item.color && (
+                            <div className="flex items-start gap-2">
+                              <span className="font-bold text-gray-700 min-w-[100px]">Өнгө:</span>
+                              <span className="text-gray-600">{item.color}</span>
+                            </div>
+                          )}
+                          {item.brand && (
+                            <div className="flex items-start gap-2">
+                              <span className="font-bold text-gray-700 min-w-[100px]">Брэнд:</span>
+                              <span className="text-gray-600">{item.brand}</span>
+                            </div>
+                          )}
+                          {item.theme && (
+                            <div className="flex items-start gap-2">
+                              <span className="font-bold text-gray-700 min-w-[100px]">Загвар:</span>
+                              <span className="text-gray-600">{item.theme}</span>
+                            </div>
+                          )}
+                          <div className="flex items-start gap-2">
+                            <span className="font-bold text-gray-700 min-w-[100px]">Нөөц:</span>
+                            <span className={(item.stock ?? 0) > 0 ? "text-green-600 font-semibold" : "text-orange-600 font-semibold"}>
+                              {(item.stock ?? 0) > 0 ? "Бэлэн байгаа" : "Захиалгаар"}
+                            </span>
                           </div>
                         </div>
 
-                       
-
-                        {/* Quantity and Actions */}
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs text-gray-600">Тоо ширхэг:</span>
-                            <div className="flex items-center border border-gray-200 rounded">
-                              <button
-                                onClick={() => updateQty(item.id, item.qty - 1, item)}
-                                className="px-2 py-1 hover:bg-gray-50 text-gray-600 cursor-pointer"
-                              >
-                                -
-                              </button>
-                              <span className="px-3 py-1 text-sm border-x border-gray-200 min-w-[40px] text-center">
-                                {item.qty}
-                              </span>
-                              <button
-                                onClick={() => updateQty(item.id, item.qty + 1, item)}
-                                className="px-2 py-1 hover:bg-gray-50 text-gray-600 cursor-pointer"
-                              >
-                                +
-                              </button>
-                            </div>
+                        {/* Quantity */}
+                        <div className="flex items-center gap-3 pt-2">
+                          <span className="text-xs font-bold text-gray-700">Тоо ширхэг:</span>
+                          <div className="flex items-center border border-gray-200 rounded">
+                            <button
+                              onClick={() => updateQty(item.id, item.qty - 1, item)}
+                              className="px-2 py-1 hover:bg-gray-50 text-gray-600 cursor-pointer"
+                            >
+                              -
+                            </button>
+                            <span className="px-3 py-1 text-sm border-x border-gray-200 min-w-[40px] text-center">
+                              {item.qty}
+                            </span>
+                            <button
+                              onClick={() => updateQty(item.id, item.qty + 1, item)}
+                              className="px-2 py-1 hover:bg-gray-50 text-gray-600 cursor-pointer"
+                            >
+                              +
+                            </button>
                           </div>
-
-                         
                         </div>
                       </div>
                     </div>

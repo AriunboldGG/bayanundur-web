@@ -107,12 +107,11 @@ export default function ProductTabsSlider() {
   const filteredProducts = useMemo(() => {
     return {
       best: allProducts.filter(p => {
-        // Filter by productType field from backend, or fallback to stockCount
+        // Filter by productType field from backend
         if (p.productType) {
           return p.productType.toLowerCase().includes("best") || p.productType.toLowerCase() === "bestseller";
         }
-        // Fallback: products with high stockCount
-        return p.stockCount && p.stockCount > 10;
+        return false;
       }).slice(0, 12),
       new: allProducts.filter(p => {
         // Filter by productType field from backend

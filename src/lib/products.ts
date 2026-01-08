@@ -18,8 +18,7 @@ export type Product = {
   brand: string;
   size: string;
   priceNum: number;
-  stock: "in_stock" | "preorder";
-  stockCount: number;
+  stock: number; // Stock count from Firebase: > 0 means in stock, 0 means preorder
   theme: string;
   material?: string;
   description?: string;
@@ -134,8 +133,7 @@ function firestoreDocToProduct(docId: string, data: any): Product {
     brand: getFirestoreValue(data, "brand") || "",
     size: getFirestoreValue(data, "size") || "",
     priceNum: getFirestoreValue(data, "priceNum") || 0,
-    stock: (getFirestoreValue(data, "stock") || "preorder") as Product["stock"],
-    stockCount: getFirestoreValue(data, "stockCount") || 0,
+    stock: getFirestoreValue(data, "stock") || 0, // Number: > 0 = in stock, 0 = preorder
     theme: getFirestoreValue(data, "theme") || "",
     material: getFirestoreValue(data, "material") || "",
     description: getFirestoreValue(data, "description") || "",

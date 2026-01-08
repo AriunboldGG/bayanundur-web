@@ -14,13 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useStock } from "@/context/StockContext";
 import { getProductById, getAllProducts, getImageUrl, getImageUrls, type Product } from "@/lib/products";
 
 export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { setInitialStock, getStock } = useStock();
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,7 +47,6 @@ export default function ProductDetailPage() {
         const fetchedProduct = await getProductById(params.id);
         if (fetchedProduct) {
           setProduct(fetchedProduct);
-          setInitialStock(fetchedProduct.id, fetchedProduct.stockCount);
           
           // Parse comma-separated values and select first option
           const sizes = parseCommaSeparated(fetchedProduct.size);
@@ -74,7 +71,7 @@ export default function ProductDetailPage() {
       }
     }
     fetchProduct();
-  }, [params.id, setInitialStock]);
+  }, [params.id]);
 
   // Fetch related products
   useEffect(() => {
@@ -290,21 +287,21 @@ export default function ProductDetailPage() {
   return (
     <main className="min-h-screen bg-white">
       <Header />
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8">
         {/* Breadcrumb */}
-        <nav className="mb-6 text-xs text-gray-500 flex items-center gap-2">
+        <nav className="mb-4 sm:mb-6 text-[10px] sm:text-xs text-gray-500 flex items-center gap-1 sm:gap-2 flex-wrap">
           <Link href="/" className="hover:text-[#1f632b] cursor-pointer">Нүүр</Link>
           <span>/</span>
           <Link href="/products" className="hover:text-[#1f632b] cursor-pointer">Бүтээгдэхүүн</Link>
           <span>/</span>
           <span className="truncate">{product.name}</span>
         </nav>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
           {/* Image Gallery */}
           <div className="space-y-4">
             {/* Main Image with Controls */}
             <div className="rounded-xl border p-4 bg-white relative">
-              <div className="relative w-full h-80 md:h-96 overflow-hidden">
+              <div className="relative w-full h-64 sm:h-80 md:h-96 overflow-hidden">
                 <div
                   className="relative w-full h-full cursor-move"
                   onMouseDown={handleMouseDown}
@@ -440,6 +437,12 @@ export default function ProductDetailPage() {
                   <span className="text-sm text-gray-600">{product.material}</span>
                 </div>
               )}
+              <div className="flex items-start gap-3">
+                <span className="text-sm font-bold text-gray-700 min-w-[80px]">Нөөц:</span>
+                <span className={`text-sm font-semibold ${product.stock > 0 ? "text-green-600" : "text-orange-600"}`}>
+                  {product.stock > 0 ? "Бэлэн байгаа" : "Захиалгаар"}
+                </span>
+              </div>
             </div>
 
             {/* Size Selection */}
@@ -648,13 +651,26 @@ export default function ProductDetailPage() {
                   href={`/products/${rp.firestoreId || rp.id}`}
                   className="group rounded-xl border bg-white p-3 hover:shadow-sm transition-shadow"
                 >
-                  <div className="relative w-full h-28">
-                    <FirebaseImage
-                      src={rp.img || ""}
-                      alt={rp.name}
-                      fill
-                      className="object-contain bg-white"
-                    />
+                  <div className="relative w-full h-28 bg-gray-50 rounded-lg overflow-hidden">
+                    {rp.images && rp.images.length > 0 ? (
+                      <FirebaseImage
+                        src={rp.images[0]}
+                        alt={rp.name}
+                        fill
+                        className="object-contain bg-white"
+                      />
+                    ) : rp.img ? (
+                      <FirebaseImage
+                        src={rp.img}
+                        alt={rp.name}
+                        fill
+                        className="object-contain bg-white"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-gray-400 text-xs">Зураг байхгүй</span>
+                      </div>
+                    )}
                   </div>
                   <div className="mt-2 text-xs text-gray-600 line-clamp-2 group-hover:text-gray-800">
                     {rp.name}
@@ -684,39 +700,30 @@ function AddToCartButton(props: {
   size?: string;
   brand?: string;
   theme?: string;
-  stock: "in_stock" | "preorder";
+  stock: number; // Stock count: > 0 = in stock, 0 = preorder
 }) {
   const cart = useCart();
-  const { getStock } = useStock();
   const [qty, setQty] = useState(1);
-  const stockCount = getStock(props.id);
   
-  // For in_stock items with available stock, limit quantity. For preorder/out-of-stock, allow unlimited.
-  const isInStock = props.stock === "in_stock" && stockCount > 0;
-  const maxQuantity = isInStock ? stockCount : Infinity;
+  // Use stock field from Firebase: > 0 means available, 0 means preorder
+  const isInStock = props.stock > 0;
 
   const handleAddToCart = () => {
-    // Validate stock availability for in-stock items
-    if (isInStock && qty > stockCount) {
-      return; // Don't add if quantity exceeds available stock
-    }
-    
-    cart.addItem(
-      {
-        id: props.id,
-        name: props.name,
-        priceNum: props.priceNum,
-        price: props.price,
-        img: props.img,
-        modelNumber: props.modelNumber,
-        color: props.color,
-        size: props.size,
-        brand: props.brand,
-        theme: props.theme,
-      },
-      qty,
-    );
-    // Stock count is static - only admins can change it
+    const cartItem = {
+      id: props.id,
+      name: props.name,
+      priceNum: props.priceNum,
+      price: props.price,
+      img: props.img,
+      modelNumber: props.modelNumber,
+      color: props.color,
+      size: props.size,
+      brand: props.brand,
+      theme: props.theme,
+      stock: props.stock ?? 0, // Ensure stock is always a number
+    };
+    console.log("Adding to cart with stock:", cartItem.stock);
+    cart.addItem(cartItem, qty);
   };
 
   return (
@@ -730,37 +737,18 @@ function AddToCartButton(props: {
         </button>
         <span className="px-3 text-sm">{qty}</span>
         <button 
-          className={`px-2 py-1 text-sm ${
-            isInStock && qty >= stockCount
-              ? "cursor-not-allowed opacity-50"
-              : "cursor-pointer"
-          }`}
-          onClick={() => {
-            if (isInStock) {
-              setQty((q: number) => Math.min(stockCount, q + 1));
-            } else {
-              setQty((q: number) => q + 1);
-            }
-          }}
-          disabled={isInStock && qty >= stockCount}
+          className="px-2 py-1 text-sm cursor-pointer"
+          onClick={() => setQty((q: number) => q + 1)}
         >
           +
         </button>
       </div>
       <Button
-        className={`bg-[#1f632b] hover:bg-[#16451e] ${
-          isInStock && qty > stockCount
-            ? "cursor-not-allowed opacity-50"
-            : "cursor-pointer"
-        }`}
+        className="bg-[#1f632b] hover:bg-[#16451e] cursor-pointer"
         onClick={handleAddToCart}
-        disabled={isInStock && qty > stockCount}
       >
         Сагсанд нэмэх
       </Button>
-      {isInStock && qty > stockCount && (
-        <span className="text-xs text-red-600">Үлдэгдэл хүрэлцэхгүй байна</span>
-      )}
     </div>
   );
 }
