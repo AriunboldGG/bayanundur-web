@@ -596,63 +596,63 @@ function ProductsPageContent() {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
             {pageItems.map((p) => (
-            <Card key={p.firestoreId || `product-${p.id}`} className="group overflow-visible flex flex-col h-full min-h-0 relative cursor-pointer hover:border-[#1f632b] transition-colors">
+            <Card key={p.firestoreId || `product-${p.id}`} className="group overflow-hidden flex flex-col h-full md:h-[80vh] relative cursor-pointer hover:border-[#1f632b] hover:shadow-lg transition-all">
               <Link href={`/products/${p.firestoreId || p.id}`} aria-label={`View ${p.name}`} className="absolute inset-0 z-[1]"></Link>
-              <div className="relative w-full flex-shrink-0" style={{ height: '40%', minHeight: '120px', paddingTop: 0 }}>
+              <div className="relative w-full flex-shrink-0 h-[200px]" style={{ paddingTop: 0 }}>
                 <FirebaseImage
                   src={p.images && p.images.length > 0 ? p.images[0] : p.img}
                   alt={p.name}
                   fill
-                  className="object-contain bg-white"
+                  className="object-contain bg-gray-50"
                   sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, (min-width: 640px) 33vw, 50vw"
                 />
                 <Link
                   href={`/products/${p.firestoreId || p.id}`}
-                  className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 z-[2] opacity-0 group-hover:opacity-100 transition-opacity rounded-md bg-[#1f632b] hover:bg-[#16451e] text-white text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1"
+                  className="absolute bottom-2 right-2 z-[2] opacity-0 group-hover:opacity-100 transition-opacity rounded-md bg-[#1f632b] hover:bg-[#16451e] text-white text-xs px-3 py-1.5 shadow-md"
                 >
                   Харах
                 </Link>
               </div>
-              <CardContent className="p-1.5 sm:p-2 md:p-3 flex flex-col overflow-visible flex-1 min-h-0" style={{ height: '60%' }}>
-                  <div className="mt-0.5">
-                    <div className="text-[10px] sm:text-xs md:text-sm font-bold text-gray-800 line-clamp-2 leading-tight">{p.name}</div>
+              <CardContent className="p-3 md:p-4 flex flex-col overflow-visible flex-1">
+                  <div className="mb-2">
+                    <div className="text-sm md:text-base font-bold text-gray-900 line-clamp-2 leading-snug">{p.name}</div>
                   </div>
-                  <div className="mt-0.5 sm:mt-1">
-                    <div className="text-[8px] sm:text-[9px] md:text-[10px] text-gray-500 font-medium">Бүтээгдэхүүний код</div>
-                    <div className="text-[9px] sm:text-[10px] md:text-xs font-bold text-[#1f632b] leading-tight">{p.modelNumber || "N/A"}</div>
+                  <div className="mb-2">
+                    <div className="text-[10px] md:text-xs text-gray-500 font-medium mb-0.5">Бүтээгдэхүүний код</div>
+                    <div className="text-xs md:text-sm font-bold text-[#1f632b] leading-tight">{p.modelNumber || "N/A"}</div>
                   </div>
-                  <div className="mt-0.5 sm:mt-1 space-y-0.5 text-[8px] sm:text-[9px] md:text-[10px] overflow-visible flex-1 min-h-0">
-                    <div className="flex items-start gap-0.5 sm:gap-1 md:gap-1.5">
-                      <span className="font-bold text-gray-700 min-w-[40px] sm:min-w-[50px] md:min-w-[55px] text-[8px] sm:text-[9px] md:text-[10px] leading-tight flex-shrink-0">Брэнд:</span>
-                      <span className="text-gray-600 text-[8px] sm:text-[9px] md:text-[10px] leading-tight break-words">{p.brand || "-"}</span>
+                  <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm overflow-visible flex-1">
+                    <div className="flex items-start gap-2">
+                      <span className="font-semibold text-gray-700 min-w-[70px] md:min-w-[80px] flex-shrink-0">Брэнд:</span>
+                      <span className="text-gray-600 break-words">{p.brand || "-"}</span>
                     </div>
                     {p.color && (
-                      <div className="flex items-start gap-0.5 sm:gap-1 md:gap-1.5">
-                        <span className="font-bold text-gray-700 min-w-[40px] sm:min-w-[50px] md:min-w-[55px] text-[8px] sm:text-[9px] md:text-[10px] leading-tight flex-shrink-0">Өнгө:</span>
-                        <span className="text-gray-600 text-[8px] sm:text-[9px] md:text-[10px] leading-tight break-words">{p.color}</span>
+                      <div className="flex items-start gap-2">
+                        <span className="font-semibold text-gray-700 min-w-[70px] md:min-w-[80px] flex-shrink-0">Өнгө:</span>
+                        <span className="text-gray-600 break-words">{p.color}</span>
                       </div>
                     )}
                     {p.size && (
-                      <div className="flex items-start gap-0.5 sm:gap-1 md:gap-1.5">
-                        <span className="font-bold text-gray-700 min-w-[40px] sm:min-w-[50px] md:min-w-[55px] text-[8px] sm:text-[9px] md:text-[10px] leading-tight flex-shrink-0">Хэмжээ:</span>
-                        <span className="text-gray-600 text-[8px] sm:text-[9px] md:text-[10px] leading-tight break-words">{p.size}</span>
+                      <div className="flex items-start gap-2">
+                        <span className="font-semibold text-gray-700 min-w-[70px] md:min-w-[80px] flex-shrink-0">Хэмжээ:</span>
+                        <span className="text-gray-600 break-words">{p.size}</span>
                       </div>
                     )}
                     {p.theme && (
-                      <div className="flex items-start gap-0.5 sm:gap-1 md:gap-1.5">
-                        <span className="font-bold text-gray-700 min-w-[40px] sm:min-w-[50px] md:min-w-[55px] text-[8px] sm:text-[9px] md:text-[10px] leading-tight flex-shrink-0">Загвар:</span>
-                        <span className="text-gray-600 text-[8px] sm:text-[9px] md:text-[10px] leading-tight break-words">{p.theme}</span>
+                      <div className="flex items-start gap-2">
+                        <span className="font-semibold text-gray-700 min-w-[70px] md:min-w-[80px] flex-shrink-0">Загвар:</span>
+                        <span className="text-gray-600 break-words">{p.theme}</span>
                       </div>
                     )}
                     {p.material && (
-                      <div className="flex items-start gap-0.5 sm:gap-1 md:gap-1.5">
-                        <span className="font-bold text-gray-700 min-w-[40px] sm:min-w-[50px] md:min-w-[55px] text-[8px] sm:text-[9px] md:text-[10px] leading-tight flex-shrink-0">Материал:</span>
-                        <span className="text-gray-600 text-[8px] sm:text-[9px] md:text-[10px] leading-tight break-words">{p.material}</span>
+                      <div className="flex items-start gap-2">
+                        <span className="font-semibold text-gray-700 min-w-[70px] md:min-w-[80px] flex-shrink-0">Материал:</span>
+                        <span className="text-gray-600 break-words">{p.material}</span>
                       </div>
                     )}
-                    <div className="flex items-start gap-0.5 sm:gap-1 md:gap-1.5">
-                      <span className="font-bold text-gray-700 min-w-[40px] sm:min-w-[50px] md:min-w-[55px] text-[8px] sm:text-[9px] md:text-[10px] leading-tight flex-shrink-0">Нөөц:</span>
-                      <span className={`font-semibold text-[8px] sm:text-[9px] md:text-[10px] leading-tight ${p.stock > 0 ? "text-green-600" : "text-orange-600"}`}>
+                    <div className="flex items-start gap-2">
+                      <span className="font-semibold text-gray-700 min-w-[70px] md:min-w-[80px] flex-shrink-0">Нөөц:</span>
+                      <span className={`font-semibold ${p.stock > 0 ? "text-green-600" : "text-orange-600"}`}>
                         {p.stock > 0 ? "Бэлэн байгаа" : "Захиалгаар"}
                       </span>
                     </div>
