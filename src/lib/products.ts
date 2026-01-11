@@ -223,10 +223,6 @@ export async function getAllProducts(): Promise<Product[]> {
       lastDoc = snapshot.docs[snapshot.docs.length - 1];
     }
 
-    // Print all unique productTypes
-    const productTypes = Array.from(productTypesSet).sort();
-    console.log(`productTypes:`, productTypes);
-    console.log(`Successfully fetched ${products.length} products from Firestore`);
     return products;
   } catch (error: any) {
     console.error("Error fetching products from Firestore (with pagination):", error);
@@ -266,9 +262,6 @@ export async function getAllProducts(): Promise<Product[]> {
         });
         
         // Print all unique productTypes
-        const productTypes = Array.from(productTypesSet).sort();
-        console.log(`productTypes:`, productTypes);
-        console.log(`Fetched ${products.length} products (without pagination - may be limited to first batch)`);
         if (snapshot.size >= 1000) {
           console.warn("Warning: Query returned 1000+ documents. Some products may be missing. Consider creating a Firestore index.");
         }

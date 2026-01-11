@@ -59,19 +59,16 @@ export async function saveQuoteToFirestore(data: QuoteData): Promise<string> {
           qty: quantity, // Use validated quantity
           status_type: statusType, // Add status_type field
         };
-        console.log(`📦 Item ${index + 1}:`, mappedItem);
-        console.log(`📦 Item ${index + 1} quantity:`, quantity, "(original:", item.qty, ")");
+
         return mappedItem;
       }),
       status: "pending",
       createdAt: serverTimestamp(),
     };
 
-    console.log("📦 Final quote data items count:", quoteData.items.length);
     
     const docRef = await addDoc(collection(db, "quotes"), quoteData);
-    console.log("✅ Quote saved to Firestore with ID:", docRef.id);
-    console.log("✅ Total items saved:", quoteData.items.length);
+
     return docRef.id;
   } catch (error) {
     console.error("❌ Error saving quote to Firestore:", error);
@@ -119,7 +116,6 @@ export async function saveSpecialOrderToFirestore(data: SpecialOrderData): Promi
     };
 
     const docRef = await addDoc(collection(db, "special_quotes"), specialOrderData);
-    console.log("✅ Special order saved to Firestore with ID:", docRef.id);
     return docRef.id;
   } catch (error) {
     console.error("❌ Error saving special order to Firestore:", error);

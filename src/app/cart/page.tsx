@@ -13,13 +13,7 @@ export default function CartPage() {
   const { items, removeItem, clear, updateQty } = useCart();
   const [showQuote, setShowQuote] = useState(false);
 
-  // Debug: log items to see if stock is present
-  useEffect(() => {
-    console.log("Cart items:", items);
-    items.forEach((item, index) => {
-      console.log(`Item ${index}:`, item.name, "stock:", item.stock, "stock type:", typeof item.stock);
-    });
-  }, [items]);
+
 
   return (
     <main className="min-h-screen bg-white">

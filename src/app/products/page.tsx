@@ -230,7 +230,6 @@ function ProductsPageContent() {
     // Split by comma and filter out empty values
     return str.split(',').map(s => s.trim()).filter(s => s && s.length > 0);
   };
-  console.log('allProducts', allProducts);
   
   // Helper function to check if a product's size contains any selected value
   const productHasSize = (product: Product, selectedSizes: string[]): boolean => {

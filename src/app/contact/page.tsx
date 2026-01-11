@@ -1,6 +1,17 @@
+import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Image from "next/image";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Холбоо барих",
+  description: "БАЯН ӨНДӨР компанитай холбогдох. Утас: 70118585, Имэйл: info@bayan-undur.mn. ХАБЭА хамгаалах хувцас хэрэгсэл, аврах багаж хэрэгсэл захиалга.",
+  openGraph: {
+    title: "Холбоо барих | БАЯН ӨНДӨР",
+    description: "БАЯН ӨНДӨР компанитай холбогдох",
+    url: "/contact",
+  },
+};
 
 export default function ContactPage() {
   return (

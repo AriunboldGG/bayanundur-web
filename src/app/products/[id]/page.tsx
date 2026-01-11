@@ -722,7 +722,6 @@ function AddToCartButton(props: {
       theme: props.theme,
       stock: props.stock ?? 0, // Ensure stock is always a number
     };
-    console.log("Adding to cart with stock:", cartItem.stock);
     cart.addItem(cartItem, qty);
   };
 

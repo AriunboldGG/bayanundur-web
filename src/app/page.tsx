@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Header from "@/components/Header";
 import SearchBar from "@/components/SearchBar";
 import TopCategories from "@/components/TopCategories";
@@ -6,6 +7,16 @@ import Brands from "@/components/Brands";
 import ProductTabsSlider from "@/components/ProductTabsSlider";
 import PromoBanner from "@/components/PromoBanner";
 import Suggestions from "@/components/Suggestions";
+
+export const metadata: Metadata = {
+  title: "Нүүр хуудас",
+  description: "ХАБЭА хамгаалах хувцас хэрэгсэл, аврах багаж хэрэгсэл, ажлын байрны тохилог орчны бүтээгдэхүн. БАЯН ӨНДӨР компаниас чанартай, найдвартай бүтээгдэхүн худалдан аваарай.",
+  openGraph: {
+    title: "БАЯН ӨНДӨР - Хамгаалах хувцас хэрэгсэл, багаж хэрэгсэл",
+    description: "ХАБЭА хамгаалах хувцас хэрэгсэл, аврах багаж хэрэгсэл нийлүүлнэ",
+    url: "/",
+  },
+};
 
 export default function Home() {
   return (
