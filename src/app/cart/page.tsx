@@ -38,16 +38,7 @@ export default function CartPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] xl:grid-cols-[1fr_320px] gap-4 sm:gap-6">
             {/* Left: Cart Items */}
             <div className="space-y-4">
-              {/* Delivery Info Card */}
-              <Card className="rounded-xl border border-gray-200 shadow-sm">
-                <CardContent className="p-4 flex items-center gap-3">
-                  <Package className="h-6 w-6 text-[#8DC63F]" />
-                  <div>
-                    <div className="text-sm font-semibold text-gray-800">Энгийн хүргэлт</div>
-                    <div className="text-xs text-gray-600">24-48 цагийн хооронд хүргэгдэнэ.</div>
-                  </div>
-                </CardContent>
-              </Card>
+             
 
               {/* Cart Items */}
               {items.map((item, index) => (

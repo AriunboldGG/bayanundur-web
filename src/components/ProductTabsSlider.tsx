@@ -15,8 +15,6 @@ import { useEffect, useState, useMemo } from "react";
 import { getAllProducts, type Product as BackendProduct } from "@/lib/products";
 import FirebaseImage from "@/components/FirebaseImage";
 
-type ProductType = "best" | "new" | "discount" | "promo" | "suggest";
-
 function ProductsCarousel({ productsToShow }: { productsToShow: BackendProduct[] }) {
   if (productsToShow.length === 0) {
     return (
@@ -103,50 +101,32 @@ export default function ProductTabsSlider() {
     fetchProducts();
   }, []);
 
-  // Filter products by productType from backend
-  const filteredProducts = useMemo(() => {
-    return {
-      best: allProducts.filter(p => {
-        // Filter by productType field from backend
-        if (p.productType) {
-          return p.productType.toLowerCase().includes("best") || p.productType.toLowerCase() === "bestseller";
-        }
-        return false;
-      }).slice(0, 12),
-      new: allProducts.filter(p => {
-        // Filter by productType field from backend
-        if (p.productType) {
-          return p.productType.toLowerCase().includes("new") || p.productType.toLowerCase() === "шинэ";
-        }
-        // Fallback: show all
-        return true;
-      }).slice(0, 12),
-      discount: allProducts.filter(p => {
-        // Filter by productType field from backend
-        if (p.productType) {
-          return p.productType.toLowerCase().includes("discount") || p.productType.toLowerCase().includes("хямдрал");
-        }
-        // Fallback: show all
-        return true;
-      }).slice(0, 12),
-      promo: allProducts.filter(p => {
-        // Filter by productType field from backend
-        if (p.productType) {
-          return p.productType.toLowerCase().includes("promo") || p.productType.toLowerCase().includes("промо");
-        }
-        // Fallback: show all
-        return true;
-      }).slice(0, 12),
-      suggest: allProducts.filter(p => {
-        // Filter by productType field from backend
-        if (p.productType) {
-          return p.productType.toLowerCase().includes("suggest") || p.productType.toLowerCase().includes("санал");
-        }
-        // Fallback: show all
-        return true;
-      }).slice(0, 12),
-    };
+  // Extract unique productTypes from all products
+  const productTypes = useMemo(() => {
+    const typesSet = new Set<string>();
+    allProducts.forEach((product) => {
+      if (product.productTypes && Array.isArray(product.productTypes)) {
+        product.productTypes.forEach((type) => {
+          if (type && typeof type === 'string' && type.trim() !== '') {
+            typesSet.add(type.trim());
+          }
+        });
+      }
+    });
+    return Array.from(typesSet).sort();
   }, [allProducts]);
+
+  // Filter products by productType
+  const getProductsByType = useMemo(() => {
+    const map = new Map<string, BackendProduct[]>();
+    productTypes.forEach((type) => {
+      const filtered = allProducts.filter((product) => {
+        return product.productTypes && product.productTypes.includes(type);
+      });
+      map.set(type, filtered.slice(0, 12)); // Limit to 12 per tab
+    });
+    return map;
+  }, [allProducts, productTypes]);
 
   if (isLoading) {
     return (
@@ -156,63 +136,49 @@ export default function ProductTabsSlider() {
     );
   }
 
+  if (productTypes.length === 0) {
+    return (
+      <div className="rounded-xl border border-gray-200 shadow-sm p-4 md:p-5">
+        <div className="text-center py-8 text-gray-500">Бүтээгдэхүүний төрөл олдсонгүй</div>
+      </div>
+    );
+  }
+
+  const firstTabValue = productTypes[0]?.toLowerCase().replace(/\s+/g, '-') || '';
+
   return (
-    <Tabs defaultValue="best" className="w-full">
+    <Tabs defaultValue={firstTabValue} className="w-full">
       <div className="rounded-xl border border-gray-200 shadow-sm p-4 md:p-5">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
           <div className="min-w-0 w-full overflow-x-auto sm:overflow-visible">
-          <TabsList className="bg-transparent p-1 rounded-full border border-gray-200 inline-flex whitespace-nowrap gap-1">
-            <TabsTrigger
-              value="best"
-              className="rounded-full data-[state=active]:bg-[#1f632b] data-[state=active]:text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 cursor-pointer"
-            >
-              BEST SELLER
-            </TabsTrigger>
-            <TabsTrigger
-              value="new"
-              className="rounded-full data-[state=active]:bg-[#1f632b] data-[state=active]:text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 cursor-pointer"
-            >
-              ШИНЭ
-            </TabsTrigger>
-            <TabsTrigger
-              value="discount"
-              className="rounded-full data-[state=active]:bg-[#1f632b] data-[state=active]:text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 cursor-pointer"
-            >
-              ХЯМДРАЛТАЙ
-            </TabsTrigger>
-            <TabsTrigger
-              value="promo"
-              className="rounded-full data-[state=active]:bg-[#1f632b] data-[state=active]:text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 cursor-pointer"
-            >
-              ПРОМОУШН
-            </TabsTrigger>
-            <TabsTrigger
-              value="suggest"
-              className="rounded-full data-[state=active]:bg-[#1f632b] data-[state=active]:text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 cursor-pointer"
-            >
-              САНАЛ БОЛГОХ
-            </TabsTrigger>
-          </TabsList>
+            <TabsList className="bg-transparent p-1 rounded-full border border-gray-200 inline-flex whitespace-nowrap gap-1">
+              {productTypes.map((type) => {
+                const tabValue = type.toLowerCase().replace(/\s+/g, '-');
+                return (
+                  <TabsTrigger
+                    key={type}
+                    value={tabValue}
+                    className="rounded-full data-[state=active]:bg-[#1f632b] data-[state=active]:text-white text-xs sm:text-sm px-3 py-1 sm:px-4 sm:py-2 cursor-pointer"
+                  >
+                    {type}
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
           </div>
           <Button variant="outline" size="sm" className="h-8 text-xs self-start md:self-auto">
             <Link href="/products">Бүгдийг Харах</Link>
           </Button>
         </div>
-      <TabsContent value="best">
-        <ProductsCarousel productsToShow={filteredProducts.best} />
-      </TabsContent>
-      <TabsContent value="new">
-        <ProductsCarousel productsToShow={filteredProducts.new} />
-      </TabsContent>
-      <TabsContent value="discount">
-        <ProductsCarousel productsToShow={filteredProducts.discount} />
-      </TabsContent>
-      <TabsContent value="promo">
-        <ProductsCarousel productsToShow={filteredProducts.promo} />
-      </TabsContent>
-      <TabsContent value="suggest">
-        <ProductsCarousel productsToShow={filteredProducts.suggest} />
-      </TabsContent>
+        {productTypes.map((type) => {
+          const tabValue = type.toLowerCase().replace(/\s+/g, '-');
+          const productsForTab = getProductsByType.get(type) || [];
+          return (
+            <TabsContent key={type} value={tabValue}>
+              <ProductsCarousel productsToShow={productsForTab} />
+            </TabsContent>
+          );
+        })}
       </div>
     </Tabs>
   );
