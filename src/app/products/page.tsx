@@ -83,13 +83,22 @@ function ProductsPageContent() {
   useEffect(() => {
     const categoryParam = searchParams.get("category");
     if (categoryParam) {
-      // Check if category is valid (ppe, rescue, workplace, other)
+      // Check if category is valid (ppe, rescue, workplace, other) - legacy support
       const validCategories: Product["category"][] = ["ppe", "rescue", "workplace", "other"];
       if (validCategories.includes(categoryParam as Product["category"])) {
         setSelectedCat(categoryParam as Product["category"]);
         setPage(1);
         setSelectedSub(null);
         setSelectedLeaf([]);
+      } else {
+        // Check if it's a mainCategory text from products
+        const mainCategories = Array.from(new Set(allProducts.map(p => p.mainCategory).filter(Boolean) as string[]));
+        if (mainCategories.includes(categoryParam)) {
+          setSelectedCat(categoryParam);
+          setPage(1);
+          setSelectedSub(null);
+          setSelectedLeaf([]);
+        }
       }
     }
     

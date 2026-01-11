@@ -4,74 +4,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import Image from "next/image";
-
-type NewsPost = {
-  id: string;
-  title: string;
-  date: string;
-  category: string;
-  href: string;
-  img: string;
-};
-
-const ALL_POSTS: NewsPost[] = [
-  {
-    id: "p1",
-    title: "ХАБЭА Сургалтын зохион байгуулалт. Үндсэн дүрэм MNS 4969 : 2000",
-    date: "2024-09-04",
-    category: "Зөвлөгөө",
-    href: "https://hsct.mn/posts?category_id=124",
-    img: "/images/hero1.jpg",
-  },
-  {
-    id: "p2",
-    title: "HSCT бараа бүтээгдэхүүний каталог",
-    date: "2023-10-19",
-    category: "Зөвлөгөө",
-    href: "https://hsct.mn/posts?category_id=124",
-    img: "/images/hero2.png",
-  },
-  {
-    id: "p3",
-    title: "ХАБ-ууд бид өөрсдийгөө хязгаарладаг",
-    date: "2023-02-15",
-    category: "Зөвлөгөө",
-    href: "https://hsct.mn/posts?category_id=124",
-    img: "",
-  },
-  {
-    id: "p4",
-    title: "ХАБЭА нэр томъёог зөв хэрэглэн хэвшицгээе",
-    date: "2022-02-15",
-    category: "Зөвлөгөө",
-    href: "https://hsct.mn/posts?category_id=124",
-    img: "",
-  },
-  {
-    id: "p5",
-    title: "Хугацаа алдсан гэмтлийн давтамж — Lost Time Injury Frequency",
-    date: "2022-02-15",
-    category: "Зөвлөгөө",
-    href: "https://hsct.mn/posts?category_id=124",
-    img: "",
-  },
-  {
-    id: "p6",
-    title: "Нийт гэмтлийн давтамж — Total Recordable Injury Frequency",
-    date: "2022-02-15",
-    category: "Зөвлөгөө",
-    href: "https://hsct.mn/posts?category_id=124",
-    img: "/images/hero3.jpg",
-  },
-];
+import { ALL_NEWS } from "@/lib/newsData";
 
 export default function NewsPage() {
   const pageSize = 6;
   const [page, setPage] = useState(1);
-  const totalPages = Math.max(1, Math.ceil(ALL_POSTS.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(ALL_NEWS.length / pageSize));
   const pageItems = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return ALL_POSTS.slice(start, start + pageSize);
+    return ALL_NEWS.slice(start, start + pageSize);
   }, [page]);
 
   return (
@@ -85,14 +26,14 @@ export default function NewsPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {pageItems.map((post) => (
-            <Card key={post.id} className="overflow-hidden">
+            <Card key={post.id} className="overflow-hidden hover:border-[#8DC63F] transition-colors">
               {post.img && post.img.trim() !== '' ? (
-                <div className="relative h-40 w-full">
+                <div className="relative h-40 w-full bg-gray-100">
                   <Image
                     src={post.img}
                     alt={post.title}
                     fill
-                    className="object-contain bg-white"
+                    className="object-cover"
                     sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                   />
                 </div>
@@ -109,14 +50,19 @@ export default function NewsPage() {
                   <h2 className="mt-2 text-base font-semibold text-gray-900 line-clamp-3">
                     {post.title}
                   </h2>
+                  {post.description && (
+                    <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                      {post.description}
+                    </p>
+                  )}
                 </div>
                 <div className="mt-4">
                   <Link
-                    href={post.href}
-                    target="_blank"
-                    className="text-sm font-medium text-[#8DC63F] hover:underline"
+                    href={`/news/${post.id}`}
+                    className="text-sm font-medium text-[#8DC63F] hover:underline inline-flex items-center gap-1"
                   >
                     Дэлгэрэнгүй үзэх
+                    <span>→</span>
                   </Link>
                 </div>
               </CardContent>

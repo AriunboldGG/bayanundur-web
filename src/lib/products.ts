@@ -1,6 +1,8 @@
 import { db, storage } from "./firebase";
-import { collection, getDocs, doc, getDoc, query, where, orderBy } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, startAfter, type QuerySnapshot } from "firebase/firestore";
 import { ref, getDownloadURL } from "firebase/storage";
+import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
+import { log } from "console";
 
 export type Product = {
   id: number;
@@ -101,6 +103,29 @@ function firestoreDocToProduct(docId: string, data: any): Product {
   // Try to parse document ID as number if id field is missing
   const docIdNum = parseInt(docId, 10) || 0;
   
+  // DEBUG: Log raw Firestore data for first few products to see actual structure
+  if (typeof window !== 'undefined') {
+    // Log first 3 documents to see structure
+    const logKey = `_logged_doc_${docId}`;
+    if (!(window as any)[logKey] && Math.random() < 0.3) {
+      (window as any)[logKey] = true;
+      console.log('🔍 RAW FIRESTORE DOCUMENT:', {
+        docId,
+        allFields: Object.keys(data || {}),
+       
+        productType: data?.productType,
+        product_type: data?.product_type,
+        ProductType: data?.ProductType,
+        PRODUCT_TYPE: data?.PRODUCT_TYPE,
+        productType_raw: data?.productType,
+        fullDataSample: data ? Object.keys(data).reduce((acc: any, key: string) => {
+          acc[key] = typeof data[key] === 'object' ? '[object]' : data[key];
+          return acc;
+        }, {}) : null
+      });
+    }
+  }
+  
   // Handle images array
   const imagesValue = getFirestoreValue(data, "images");
   let images: string[] | undefined;
@@ -138,30 +163,128 @@ function firestoreDocToProduct(docId: string, data: any): Product {
     material: getFirestoreValue(data, "material") || "",
     description: getFirestoreValue(data, "description") || "",
     feature: getFirestoreValue(data, "feature") || "",
-    productType: getFirestoreValue(data, "productType") || getFirestoreValue(data, "product_type") || "",
+    productType: (() => {
+      if (!data || typeof data !== 'object') return undefined;
+      
+      // Check productType field directly from raw Firestore data
+      if (data.hasOwnProperty('productType') && data.productType !== null && data.productType !== undefined && data.productType !== '') {
+        const pt = data.productType;
+        if (typeof pt === 'string' && pt.trim() !== '') {
+          return pt.trim();
+        }
+        if (typeof pt === 'object' && pt.stringValue && typeof pt.stringValue === 'string' && pt.stringValue.trim() !== '') {
+          return pt.stringValue.trim();
+        }
+      }
+      
+      // Check product_type (snake_case)
+      if (data.hasOwnProperty('product_type') && data.product_type !== null && data.product_type !== undefined && data.product_type !== '') {
+        const pt = data.product_type;
+        if (typeof pt === 'string' && pt.trim() !== '') {
+          return pt.trim();
+        }
+        if (typeof pt === 'object' && pt.stringValue && typeof pt.stringValue === 'string' && pt.stringValue.trim() !== '') {
+          return pt.stringValue.trim();
+        }
+      }
+      
+      // Try getFirestoreValue
+      const pt1 = getFirestoreValue(data, "productType", undefined);
+      if (pt1 && typeof pt1 === 'string' && pt1.trim() !== '') {
+        return pt1.trim();
+      }
+      
+      const pt2 = getFirestoreValue(data, "product_type", undefined);
+      if (pt2 && typeof pt2 === 'string' && pt2.trim() !== '') {
+        return pt2.trim();
+      }
+      
+      return undefined;
+    })(),
   };
 }
 
 /**
  * Fetch all products from Firestore
+ * Uses pagination if there are many products (Firestore default limit is ~1000 documents per query)
  */
 export async function getAllProducts(): Promise<Product[]> {
   if (!db) {
+    console.error("Firebase db is not initialized");
     return [];
   }
 
   try {
     const productsRef = collection(db, "products");
-    const snapshot = await getDocs(productsRef);
-    
     const products: Product[] = [];
-    snapshot.forEach((doc) => {
-      const product = firestoreDocToProduct(doc.id, doc.data());
-      products.push(product);
-    });
+    let lastDoc: QueryDocumentSnapshot<DocumentData> | null = null;
+    const batchSize = 1000; // Firestore's maximum batch size
+    
+    // Paginate through all products using document ID ordering
+    while (true) {
+      let q;
+      if (lastDoc) {
+        // Paginate using document ID (requires orderBy)
+        q = query(productsRef, orderBy("__name__"), startAfter(lastDoc), limit(batchSize));
+      } else {
+        q = query(productsRef, orderBy("__name__"), limit(batchSize));
+      }
+      
+      const snapshot: QuerySnapshot<DocumentData> = await getDocs(q);
+      
+      if (snapshot.empty) {
+        break; // No more documents
+      }
+      
+      snapshot.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
+        try {
+          const product = firestoreDocToProduct(doc.id, doc.data());
+          products.push(product);
+        } catch (err) {
+          console.error(`Error processing product ${doc.id}:`, err);
+        }
+      });
+      
+      // Check if there are more documents to fetch
+      if (snapshot.size < batchSize) {
+        break; // We've fetched all documents
+      }
+      
+      // Get the last document for pagination
+      lastDoc = snapshot.docs[snapshot.docs.length - 1];
+    }
 
+    console.log(`Successfully fetched ${products.length} products from Firestore`);
     return products;
-  } catch (error) {
+  } catch (error: any) {
+    console.error("Error fetching products from Firestore (with pagination):", error);
+    
+    // If orderBy("__name__") fails (e.g., index not created), try without pagination
+    if (error.code === 'failed-precondition' || error.message?.includes('index')) {
+      console.log("Index not found, attempting to fetch without pagination...");
+      try {
+        const productsRef = collection(db, "products");
+        const snapshot = await getDocs(productsRef);
+        const products: Product[] = [];
+        snapshot.forEach((doc) => {
+          try {
+            const product = firestoreDocToProduct(doc.id, doc.data());
+            products.push(product);
+          } catch (err) {
+            console.error(`Error processing product ${doc.id}:`, err);
+          }
+        });
+        console.log(`Fetched ${products.length} products (without pagination - may be limited to first batch)`);
+        if (snapshot.size >= 1000) {
+          console.warn("Warning: Query returned 1000+ documents. Some products may be missing. Consider creating a Firestore index.");
+        }
+        return products;
+      } catch (fallbackError) {
+        console.error("Error fetching products (fallback method):", fallbackError);
+        return [];
+      }
+    }
+    
     return [];
   }
 }

@@ -25,8 +25,7 @@ export async function saveQuoteToFirestore(data: QuoteData): Promise<string> {
 
   try {
     // Log items to debug
-    console.log("📦 Saving quote with items:", data.items.length, "items");
-    console.log("📦 Items details:", data.items);
+
 
     // Ensure we have a proper array and map all items
     const itemsArray = Array.isArray(data.items) ? data.items : [];
@@ -80,8 +79,6 @@ export async function saveQuoteToFirestore(data: QuoteData): Promise<string> {
   }
 }
 
-
-
 export type SpecialOrderData = {
   name: string;
   email: string;
@@ -122,10 +119,10 @@ export async function saveSpecialOrderToFirestore(data: SpecialOrderData): Promi
     };
 
     const docRef = await addDoc(collection(db, "special_quotes"), specialOrderData);
-    console.log("âœ… Special order saved to Firestore with ID:", docRef.id);
+    console.log("✅ Special order saved to Firestore with ID:", docRef.id);
     return docRef.id;
   } catch (error) {
-    console.error("âŒ Error saving special order to Firestore:", error);
+    console.error("❌ Error saving special order to Firestore:", error);
     throw error;
   }
 }

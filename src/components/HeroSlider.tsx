@@ -10,6 +10,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { useMemo } from "react";
+import { ALL_NEWS } from "@/lib/newsData";
 
 interface Slide {
   id: string;
@@ -20,70 +21,10 @@ interface Slide {
   href?: string;
 }
 
-type NewsPost = {
-  id: string;
-  title: string;
-  date: string;
-  category: string;
-  href: string;
-  img: string;
-};
-
-const ALL_NEWS_POSTS: NewsPost[] = [
-  {
-    id: "p1",
-    title: "ХАБЭА Сургалтын зохион байгуулалт. Үндсэн дүрэм MNS 4969 : 2000",
-    date: "2024-09-04",
-    category: "Зөвлөгөө",
-    href: "https://hsct.mn/posts?category_id=124",
-    img: "/images/hero1.jpg",
-  },
-  {
-    id: "p2",
-    title: "HSCT бараа бүтээгдэхүүний каталог",
-    date: "2023-10-19",
-    category: "Зөвлөгөө",
-    href: "https://hsct.mn/posts?category_id=124",
-    img: "/images/hero2.png",
-  },
-  {
-    id: "p3",
-    title: "ХАБ-ууд бид өөрсдийгөө хязгаарладаг",
-    date: "2023-02-15",
-    category: "Зөвлөгөө",
-    href: "https://hsct.mn/posts?category_id=124",
-    img: "",
-  },
-  {
-    id: "p4",
-    title: "ХАБЭА нэр томъёог зөв хэрэглэн хэвшицгээе",
-    date: "2022-02-15",
-    category: "Зөвлөгөө",
-    href: "https://hsct.mn/posts?category_id=124",
-    img: "",
-  },
-  {
-    id: "p5",
-    title: "Хугацаа алдсан гэмтлийн давтамж — Lost Time Injury Frequency",
-    date: "2022-02-15",
-    category: "Зөвлөгөө",
-    href: "https://hsct.mn/posts?category_id=124",
-    img: "",
-  },
-  {
-    id: "p6",
-    title: "Нийт гэмтлийн давтамж — Total Recordable Injury Frequency",
-    date: "2022-02-15",
-    category: "Зөвлөгөө",
-    href: "https://hsct.mn/posts?category_id=124",
-    img: "/images/hero3.jpg",
-  },
-];
-
 export default function HeroSlider({ slides }: { slides?: Slide[] }) {
   // Get last 3 news items sorted by date (most recent first)
   const newsSlides = useMemo(() => {
-    const sortedNews = [...ALL_NEWS_POSTS].sort((a, b) => {
+    const sortedNews = [...ALL_NEWS].sort((a, b) => {
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
     return sortedNews.slice(0, 3).map((post) => ({
@@ -92,7 +33,7 @@ export default function HeroSlider({ slides }: { slides?: Slide[] }) {
       title: post.title,
       subtitle: `${post.date} • ${post.category}`,
       ctaLabel: "Дэлгэрэнгүй",
-      href: post.href,
+      href: `/news/${post.id}`, // Link to internal news page
     }));
   }, []);
 
@@ -125,11 +66,7 @@ export default function HeroSlider({ slides }: { slides?: Slide[] }) {
                   <p className="text-xs md:text-sm text-white/90 mb-3">{s.subtitle}</p>
                 )}
                 {s.href && (
-                  <Link
-                    href={s.href}
-                    target={s.href.startsWith("http") ? "_blank" : "_self"}
-                    rel={s.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                  >
+                  <Link href={s.href}>
                     <Button className="bg-[#1f632b] hover:bg-[#16451e] text-white cursor-pointer">
                       {s.ctaLabel || "Дэлгэрэнгүй"}
                     </Button>

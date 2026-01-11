@@ -27,9 +27,9 @@ function ProductsCarousel({ productsToShow }: { productsToShow: BackendProduct[]
   }
 
   return (
-    <div className="relative px-8 md:px-12">
+    <div className="relative">
       <Carousel className="w-full">
-        <CarouselContent className="-ml-2 md:-ml-4">
+        <CarouselContent className="-ml-2 md:-ml-4 px-8 md:px-12">
           {productsToShow.map((p) => (
             <CarouselItem key={p.firestoreId || p.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">
               <Link href={`/products/${p.firestoreId || p.id}`} className="block h-full">
