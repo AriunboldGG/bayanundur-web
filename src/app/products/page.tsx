@@ -73,7 +73,17 @@ function ProductsPageContent() {
         uniqueMainCategories.add(p.mainCategory.trim());
       }
     });
-    return Array.from(uniqueMainCategories); // Return all unique mainCategory values (Mongolian text)
+    
+    // Convert to array and sort alphabetically A-Z, with "Бусад" always at the end
+    const categoriesArray = Array.from(uniqueMainCategories);
+    const buсадCategories = categoriesArray.filter(cat => cat === "Бусад");
+    const otherCategories = categoriesArray.filter(cat => cat !== "Бусад");
+    
+    // Sort others alphabetically using localeCompare for proper Mongolian sorting
+    otherCategories.sort((a, b) => a.localeCompare(b, 'mn', { sensitivity: 'base' }));
+    
+    // Return sorted array with "Бусад" at the end
+    return [...otherCategories, ...buсадCategories];
   }, [allProducts]);
 
   // Initialize stock counts (using stock context, not from product data)
@@ -230,6 +240,38 @@ function ProductsPageContent() {
     // Split by comma and filter out empty values
     return str.split(',').map(s => s.trim()).filter(s => s && s.length > 0);
   };
+
+  // Helper function to format and display sizes/colors nicely
+  const formatDisplayValue = (value: string | undefined | null, isSize: boolean = false): string[] => {
+    if (!value) return [];
+    const str = String(value).trim();
+    if (!str) return [];
+    
+    // First try to split by comma
+    const commaSeparated = str.split(',').map(s => s.trim()).filter(s => s && s.length > 0);
+    if (commaSeparated.length > 1) {
+      return commaSeparated;
+    }
+    
+    // For sizes, try to detect concatenated sizes (like "MLXL" -> ["M", "L", "XL"])
+    if (isSize) {
+      // Common size patterns: XS, XXS, XXXS, S, M, L, XL, XXL, XXXL, or numeric sizes
+      const sizePattern = /(XXX?S|XXX?L|XX?S|XX?L|XS|XL|[SM]|\d+)/gi;
+      const matches = str.match(sizePattern);
+      if (matches && matches.length > 1) {
+        return matches;
+      }
+    }
+    
+    // Otherwise return as single value
+    return [str];
+  };
+
+  // Helper function to capitalize first letter for display
+  const capitalizeFirst = (str: string): string => {
+    if (!str) return str;
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  };
   
   // Helper function to check if a product's size contains any selected value
   const productHasSize = (product: Product, selectedSizes: string[]): boolean => {
@@ -237,10 +279,11 @@ function ProductsPageContent() {
     if (!product.size) return false;
     
     // Parse product sizes (handles both single values and comma-separated)
-    const productSizes = parseCommaSeparated(product.size);
+    const productSizes = parseCommaSeparated(product.size).map(s => s.trim().toLowerCase());
+    const normalizedSelectedSizes = selectedSizes.map(s => s.trim().toLowerCase());
     
     // Check if any of the product's sizes match any selected size
-    return productSizes.some(size => selectedSizes.includes(size));
+    return productSizes.some(size => normalizedSelectedSizes.includes(size));
   };
 
   // Helper function to check if a product's color contains any selected value
@@ -249,10 +292,11 @@ function ProductsPageContent() {
     if (!product.color) return false;
     
     // Parse product colors (handles both single values and comma-separated)
-    const productColors = parseCommaSeparated(product.color);
+    const productColors = parseCommaSeparated(product.color).map(c => c.trim().toLowerCase());
+    const normalizedSelectedColors = selectedColors.map(c => c.trim().toLowerCase());
     
     // Check if any of the product's colors match any selected color
-    return productColors.some(color => selectedColors.includes(color));
+    return productColors.some(color => normalizedSelectedColors.includes(color));
   };
   const filtered = useMemo(() => {
     if (allProducts.length === 0) return [];
@@ -442,8 +486,8 @@ function ProductsPageContent() {
                     if (p.color) {
                       const colorStr = String(p.color).trim();
                       if (colorStr) {
-                        // Split by comma and add each color
-                        const colors = colorStr.split(',').map(c => c.trim()).filter(c => c && c.length > 0);
+                        // Split by comma and add each color (normalized to lowercase)
+                        const colors = colorStr.split(',').map(c => c.trim().toLowerCase()).filter(c => c && c.length > 0);
                         colors.forEach(c => allColors.add(c));
                       }
                     }
@@ -510,8 +554,8 @@ function ProductsPageContent() {
                     if (p.size) {
                       const sizeStr = String(p.size).trim();
                       if (sizeStr) {
-                        // Split by comma and add each size
-                        const sizes = sizeStr.split(',').map(s => s.trim()).filter(s => s && s.length > 0);
+                        // Split by comma and add each size (normalized to lowercase)
+                        const sizes = sizeStr.split(',').map(s => s.trim().toLowerCase()).filter(s => s && s.length > 0);
                         sizes.forEach(s => allSizes.add(s));
                       }
                     }
@@ -637,13 +681,31 @@ function ProductsPageContent() {
                     {p.color && (
                       <div className="flex items-start gap-2">
                         <span className="font-semibold text-gray-700 min-w-[70px] md:min-w-[80px] flex-shrink-0">Өнгө:</span>
-                        <span className="text-gray-600 break-words">{p.color}</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {formatDisplayValue(p.color, false).map((color, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200"
+                            >
+                              {capitalizeFirst(color)}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
                     {p.size && (
                       <div className="flex items-start gap-2">
                         <span className="font-semibold text-gray-700 min-w-[70px] md:min-w-[80px] flex-shrink-0">Хэмжээ:</span>
-                        <span className="text-gray-600 break-words">{p.size}</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {formatDisplayValue(p.size, true).map((size, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
+                            >
+                              {size.toUpperCase()}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
                     {p.theme && (
@@ -766,8 +828,8 @@ function ProductsPageContent() {
                       if (p.color) {
                         const colorStr = String(p.color).trim();
                         if (colorStr) {
-                          // Split by comma and add each color
-                          const colors = colorStr.split(',').map(c => c.trim()).filter(c => c && c.length > 0);
+                          // Split by comma and add each color (normalized to lowercase)
+                          const colors = colorStr.split(',').map(c => c.trim().toLowerCase()).filter(c => c && c.length > 0);
                           colors.forEach(c => allColors.add(c));
                         }
                       }
@@ -834,8 +896,8 @@ function ProductsPageContent() {
                       if (p.size) {
                         const sizeStr = String(p.size).trim();
                         if (sizeStr) {
-                          // Split by comma and add each size
-                          const sizes = sizeStr.split(',').map(s => s.trim()).filter(s => s && s.length > 0);
+                          // Split by comma and add each size (normalized to lowercase)
+                          const sizes = sizeStr.split(',').map(s => s.trim().toLowerCase()).filter(s => s && s.length > 0);
                           sizes.forEach(s => allSizes.add(s));
                         }
                       }

@@ -52,9 +52,9 @@ export default function ProductDetailPage() {
           const sizes = parseCommaSeparated(fetchedProduct.size);
           const colors = parseCommaSeparated(fetchedProduct.color);
           
-          // Set initial selection to first parsed value, or empty if none
-          setSelectedSize(sizes.length > 0 ? sizes[0] : "");
-          setSelectedColor(colors.length > 0 ? colors[0] : "");
+          // Set initial selection to first parsed value, or empty if none (normalized to lowercase)
+          setSelectedSize(sizes.length > 0 ? sizes[0].trim().toLowerCase() : "");
+          setSelectedColor(colors.length > 0 ? colors[0].trim().toLowerCase() : "");
           setSelectedTheme(fetchedProduct.theme || "");
 
           // Load images from Firebase Storage
@@ -127,11 +127,11 @@ export default function ProductDetailPage() {
           // Always try to parse as comma-separated first
           const sizes = parseCommaSeparated(sizeStr);
           if (sizes.length > 0) {
-            // Add each individual size from the array
-            sizes.forEach(s => allSizes.add(s));
+            // Add each individual size from the array (normalized to lowercase)
+            sizes.forEach(s => allSizes.add(s.trim().toLowerCase()));
           } else {
-            // If not comma-separated, add as single value
-            allSizes.add(sizeStr);
+            // If not comma-separated, add as single value (normalized to lowercase)
+            allSizes.add(sizeStr.toLowerCase());
           }
         }
       }
@@ -146,11 +146,11 @@ export default function ProductDetailPage() {
           // Always try to parse as comma-separated first
           const colors = parseCommaSeparated(colorStr);
           if (colors.length > 0) {
-            // Add each individual color from the array
-            colors.forEach(c => allColors.add(c));
+            // Add each individual color from the array (normalized to lowercase)
+            colors.forEach(c => allColors.add(c.trim().toLowerCase()));
           } else {
-            // If not comma-separated, add as single value
-            allColors.add(colorStr);
+            // If not comma-separated, add as single value (normalized to lowercase)
+            allColors.add(colorStr.toLowerCase());
           }
         }
       }
@@ -165,18 +165,22 @@ export default function ProductDetailPage() {
 
   // Validate and update selected values to match available options
   useEffect(() => {
-    if (availableOptions.sizes.length > 0 && selectedSize && !availableOptions.sizes.includes(selectedSize)) {
+    // Normalize selected values to lowercase for comparison
+    const normalizedSelectedSize = selectedSize ? selectedSize.toLowerCase() : "";
+    const normalizedSelectedColor = selectedColor ? selectedColor.toLowerCase() : "";
+    
+    if (availableOptions.sizes.length > 0 && normalizedSelectedSize && !availableOptions.sizes.includes(normalizedSelectedSize)) {
       // If selected size is not in available options, select the first one
       setSelectedSize(availableOptions.sizes[0]);
-    } else if (availableOptions.sizes.length > 0 && !selectedSize) {
+    } else if (availableOptions.sizes.length > 0 && !normalizedSelectedSize) {
       // If no size selected but options available, select first
       setSelectedSize(availableOptions.sizes[0]);
     }
     
-    if (availableOptions.colors.length > 0 && selectedColor && !availableOptions.colors.includes(selectedColor)) {
+    if (availableOptions.colors.length > 0 && normalizedSelectedColor && !availableOptions.colors.includes(normalizedSelectedColor)) {
       // If selected color is not in available options, select the first one
       setSelectedColor(availableOptions.colors[0]);
-    } else if (availableOptions.colors.length > 0 && !selectedColor) {
+    } else if (availableOptions.colors.length > 0 && !normalizedSelectedColor) {
       // If no color selected but options available, select first
       setSelectedColor(availableOptions.colors[0]);
     }
@@ -451,7 +455,7 @@ export default function ProductDetailPage() {
                 <label className="block text-sm font-semibold text-gray-800 mb-2">
                   Хэмжээ <span className="text-red-500">*</span>
                 </label>
-                <Select value={selectedSize} onValueChange={setSelectedSize}>
+                <Select value={selectedSize} onValueChange={(value) => setSelectedSize(value.toLowerCase())}>
                   <SelectTrigger className="w-auto min-w-[100px] max-w-[200px]">
                     <SelectValue placeholder="Хэмжээ сонгох" />
                   </SelectTrigger>
@@ -472,7 +476,7 @@ export default function ProductDetailPage() {
                 <label className="block text-sm font-semibold text-gray-800 mb-2">
                   Өнгө <span className="text-red-500">*</span>
                 </label>
-                <Select value={selectedColor} onValueChange={setSelectedColor}>
+                <Select value={selectedColor} onValueChange={(value) => setSelectedColor(value.toLowerCase())}>
                   <SelectTrigger className="w-auto min-w-[100px] max-w-[200px]">
                     <SelectValue placeholder="Өнгө сонгох" />
                   </SelectTrigger>
