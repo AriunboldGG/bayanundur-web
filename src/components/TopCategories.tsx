@@ -27,7 +27,7 @@ export default function TopCategories({
   return (
     <Card className="rounded-xl shadow-sm">
       <CardHeader className="pb-2">
-        <CardTitle className="text-[#1E293B] text-lg">Топ ангилал</CardTitle>
+        <CardTitle className="text-[#1E293B] text-lg">Бүтээгдэхүүний ангилал</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {categories.map((c) => (
