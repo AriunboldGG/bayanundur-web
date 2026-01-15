@@ -4,77 +4,18 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useMemo, useState } from "react";
 import { getAllProducts, type Product } from "@/lib/products";
-import { IconType } from "react-icons";
-import { 
-  FaTag, FaIndustry, FaTools, FaShieldAlt, FaHardHat,
-  FaBox, FaStore, FaBuilding
-} from "react-icons/fa";
-import { 
-  Si3M, SiAnsys, SiSiemens
-} from "react-icons/si";
+import FirebaseImage from "@/components/FirebaseImage";
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Autoplay } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
 
 interface BrandItem {
   id: string;
   title: string;
-  icon: IconType;
+  image: string;
   count: number;
 }
-
-// Brand icon mapping - maps brand names to react-icons
-const getBrandIcon = (brandName: string): IconType => {
-  const normalized = brandName.toLowerCase().trim();
-  
-  // Common brand mappings
-  const brandIconMap: Record<string, IconType> = {
-    '3m': Si3M,
-    'ansys': SiAnsys,
-    'siemens': SiSiemens,
-    'honeywell': FaIndustry, // Using fallback icon
-    'dupont': FaBuilding, // Using fallback icon
-    'microsoft': FaBuilding, // Using fallback icon
-  };
-  
-  // Check exact match first
-  if (brandIconMap[normalized]) {
-    return brandIconMap[normalized];
-  }
-  
-  // Check partial matches
-  for (const [key, icon] of Object.entries(brandIconMap)) {
-    if (normalized.includes(key) || key.includes(normalized)) {
-      return icon;
-    }
-  }
-  
-  // Default icons based on keywords
-  if (normalized.includes('safety') || normalized.includes('хамгаалалт') || normalized.includes('аюулгүй')) {
-    return FaShieldAlt;
-  }
-  if (normalized.includes('helmet') || normalized.includes('малгай') || normalized.includes('дуулга')) {
-    return FaHardHat;
-  }
-  if (normalized.includes('hard') || normalized.includes('hat') || normalized.includes('гувалз')) {
-    return FaHardHat;
-  }
-  if (normalized.includes('work') || normalized.includes('ажлын') || normalized.includes('tool')) {
-    return FaTools;
-  }
-  if (normalized.includes('industrial') || normalized.includes('үйлдвэр')) {
-    return FaIndustry;
-  }
-  if (normalized.includes('store') || normalized.includes('дэлгүүр') || normalized.includes('shop')) {
-    return FaStore;
-  }
-  if (normalized.includes('building') || normalized.includes('барилга')) {
-    return FaBuilding;
-  }
-  if (normalized.includes('other') || normalized.includes('бусад')) {
-    return FaBox;
-  }
-  
-  // Default generic icon
-  return FaTag;
-};
 
 export default function Brands() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -97,7 +38,7 @@ export default function Brands() {
     fetchProducts();
   }, []);
 
-  // Extract brands from products with counts and icons
+  // Extract brands from products with counts and images
   const brands = useMemo(() => {
     // Group products by brand
     const brandMap = new Map<string, Product[]>();
@@ -114,12 +55,27 @@ export default function Brands() {
       }
     });
 
-    // Convert to BrandItem array
+    // Convert to BrandItem array - get image from brandImage field or first product's image
     const brandItems: BrandItem[] = Array.from(brandMap.entries()).map(([brandName, products]) => {
+      // Try to get brandImage from products (prefer brandImage field, fallback to first product image)
+      let brandImage = '';
+      
+      // First, try to find a product with brandImage field
+      const productWithBrandImage = products.find(p => p.brandImage && p.brandImage.trim() !== '');
+      if (productWithBrandImage && productWithBrandImage.brandImage) {
+        brandImage = productWithBrandImage.brandImage;
+      } else if (products.length > 0) {
+        // Fallback to first product's first image or main image
+        const firstProduct = products[0];
+        brandImage = (firstProduct.images && firstProduct.images.length > 0) 
+          ? firstProduct.images[0] 
+          : firstProduct.img || '';
+      }
+      
       return {
         id: brandName,
         title: brandName,
-        icon: getBrandIcon(brandName),
+        image: brandImage,
         count: products.length,
       };
     });
@@ -141,17 +97,15 @@ export default function Brands() {
       return a.title.localeCompare(b.title, 'mn', { sensitivity: 'base' });
     });
 
-    return brandItems;
+    // Filter out brands without images
+    return brandItems.filter(brand => brand.image && brand.image.trim() !== '');
   }, [allProducts]);
 
   if (isLoading) {
     return (
       <Card className="rounded-xl shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-[#1E293B] text-sm md:text-base">БРЭНД</CardTitle>
-          <Link href="/products" className="text-xs text-gray-500 hover:text-[#1f632b] cursor-pointer">
-            Бүгдийг Харах
-          </Link>
+        
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-gray-500">Ачааллаж байна...</div>
@@ -162,37 +116,71 @@ export default function Brands() {
 
   return (
     <Card className="rounded-xl shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-[#1E293B] text-sm md:text-base">БРЭНД</CardTitle>
-        <Link href="/products" className="text-xs text-gray-500 hover:text-[#1f632b] cursor-pointer">
-          Бүгдийг Харах
-        </Link>
-      </CardHeader>
+      
       <CardContent>
         {brands.length === 0 ? (
           <div className="text-center py-8 text-gray-500">Брэнд олдсонгүй</div>
         ) : (
-          <div className="flex flex-wrap gap-3 md:gap-4">
-            {brands.map((brand) => {
-              const BrandIcon = brand.icon;
-              return (
-                <Link
-                  key={brand.id}
-                  href={`/products?brand=${encodeURIComponent(brand.id)}`}
-                  className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 hover:border-[#1f632b] hover:bg-[#1f632b]/5 transition-colors cursor-pointer min-w-[140px]"
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#1f632b]/10">
-                    <BrandIcon className="h-4 w-4 text-[#1f632b]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm text-gray-700 font-medium leading-tight">{brand.title}</span>
-                    {brand.count > 0 && (
-                      <span className="text-[10px] text-gray-500">{brand.count}</span>
-                    )}
-                  </div>
-                </Link>
-              );
-            })}
+          <div className="relative">
+            <Swiper
+              modules={[Navigation, Autoplay]}
+              spaceBetween={16}
+              slidesPerView="auto"
+              navigation={{
+                nextEl: '.swiper-button-next-brands',
+                prevEl: '.swiper-button-prev-brands',
+              }}
+              autoplay={{
+                delay: 3000,
+                disableOnInteraction: false,
+                pauseOnMouseEnter: true,
+              }}
+              loop={brands.length > 4}
+              breakpoints={{
+                640: {
+                  spaceBetween: 20,
+                },
+                768: {
+                  spaceBetween: 24,
+                },
+              }}
+              className="brands-swiper"
+            >
+              {brands.map((brand) => (
+                <SwiperSlide key={brand.id} style={{ width: 'auto' }}>
+                  <Link
+                    href={`/products?brand=${encodeURIComponent(brand.id)}`}
+                    className="block group"
+                  >
+                    <div className="relative h-20 md:h-24 w-32 md:w-40 rounded-lg overflow-hidden bg-white border border-gray-200 hover:border-[#1f632b] hover:shadow-md transition-all cursor-pointer">
+                      {brand.image ? (
+                        <FirebaseImage
+                          src={brand.image}
+                          alt={brand.title}
+                          fill
+                          className="object-contain p-2 md:p-3 group-hover:scale-105 transition-transform"
+                          sizes="(min-width: 768px) 160px, 128px"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+                          <span className="text-xs text-gray-400">{brand.title}</span>
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+            <button className="swiper-button-prev-brands absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-md hover:bg-gray-50 border border-gray-200 rounded-full w-10 h-10 flex items-center justify-center cursor-pointer">
+              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button className="swiper-button-next-brands absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-md hover:bg-gray-50 border border-gray-200 rounded-full w-10 h-10 flex items-center justify-center cursor-pointer">
+              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
         )}
       </CardContent>

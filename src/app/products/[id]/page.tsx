@@ -422,7 +422,7 @@ export default function ProductDetailPage() {
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{product.name}</h1>
             <div className="mt-2 flex items-center gap-3">
               <div className="bg-[#1f632b]/10 px-3 py-1 rounded-md">
-                <div className="text-[10px] text-gray-500">Бүтээгдэхүүний код</div>
+                <div className="text-[10px] text-gray-500">Модел дугаар</div>
                 <div className="text-sm font-semibold text-[#1f632b]">{product.modelNumber || "N/A"}</div>
               </div>
             </div>
@@ -680,7 +680,7 @@ export default function ProductDetailPage() {
                     {rp.name}
                   </div>
                   <div className="mt-1">
-                    <div className="text-[10px] text-gray-500">Бүтээгдэхүүний код</div>
+                    <div className="text-[10px] text-gray-500">Модел дугаар</div>
                     <div className="text-xs font-semibold text-[#1f632b]">{rp.modelNumber || "N/A"}</div>
                   </div>
                 </Link>

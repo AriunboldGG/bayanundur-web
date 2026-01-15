@@ -18,6 +18,7 @@ export type Product = {
   subleaf: string;
   color: string;
   brand: string;
+  brandImage?: string; // Brand logo/image from Firestore
   size: string;
   priceNum: number;
   stock: number; // Stock count from Firebase: > 0 means in stock, 0 means preorder
@@ -133,6 +134,7 @@ function firestoreDocToProduct(docId: string, data: any): Product {
     subleaf: getFirestoreValue(data, "subleaf") || "",
     color: getFirestoreValue(data, "color") || "",
     brand: getFirestoreValue(data, "brand") || "",
+    brandImage: getFirestoreValue(data, "brandImage") || undefined, // Brand logo/image
     size: getFirestoreValue(data, "size") || "",
     priceNum: getFirestoreValue(data, "priceNum") || 0,
     stock: getFirestoreValue(data, "stock") || 0, // Number: > 0 = in stock, 0 = preorder

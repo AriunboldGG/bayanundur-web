@@ -72,7 +72,7 @@ export default function CartPage() {
                         <div className="space-y-1.5 text-xs">
                           {item.modelNumber && (
                             <div className="flex items-start gap-2">
-                              <span className="font-bold text-gray-700 min-w-[100px]">Бүтээгдэхүүний код:</span>
+                              <span className="font-bold text-gray-700 min-w-[100px]">Модел дугаар:</span>
                               <span className="text-[#1f632b] font-semibold">{item.modelNumber}</span>
                             </div>
                           )}

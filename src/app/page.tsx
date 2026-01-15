@@ -22,7 +22,16 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-white">
       <Header />
-      <SearchBar />
+      <section className="container mx-auto px-4 mt-6 md:mt-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          <div className="md:col-span-1">
+            <SearchBar />
+          </div>
+          <div className="md:col-span-2">
+            <Brands />
+          </div>
+        </div>
+      </section>
       <section className="container mx-auto px-4 mt-6 md:mt-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <div className="md:col-span-1">
@@ -32,9 +41,6 @@ export default function Home() {
             <HeroSlider />
           </div>
         </div>
-      </section>
-      <section className="container mx-auto px-4 mt-6 md:mt-8">
-        <Brands />
       </section>
       <section className="container mx-auto px-4 mt-6 md:mt-8">
         <ProductTabsSlider />

@@ -76,14 +76,14 @@ function ProductsPageContent() {
     
     // Convert to array and sort alphabetically A-Z, with "Бусад" always at the end
     const categoriesArray = Array.from(uniqueMainCategories);
-    const buсадCategories = categoriesArray.filter(cat => cat === "Бусад");
+    const bусадCategories = categoriesArray.filter(cat => cat === "Бусад");
     const otherCategories = categoriesArray.filter(cat => cat !== "Бусад");
     
     // Sort others alphabetically using localeCompare for proper Mongolian sorting
     otherCategories.sort((a, b) => a.localeCompare(b, 'mn', { sensitivity: 'base' }));
     
     // Return sorted array with "Бусад" at the end
-    return [...otherCategories, ...buсадCategories];
+    return [...otherCategories, ...bусадCategories];
   }, [allProducts]);
 
   // Initialize stock counts (using stock context, not from product data)
@@ -476,49 +476,6 @@ function ProductsPageContent() {
               </div>
             ) : null}
 
-            {/* Color filter */}
-            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-              <div className="text-sm font-semibold text-gray-800 mb-2">Өнгө</div>
-              <div className="space-y-2 text-sm">
-                {(() => {
-                  const allColors = new Set<string>();
-                  allProducts.forEach((p) => {
-                    if (p.color) {
-                      const colorStr = String(p.color).trim();
-                      if (colorStr) {
-                        // Split by comma and add each color (normalized to lowercase)
-                        const colors = colorStr.split(',').map(c => c.trim().toLowerCase()).filter(c => c && c.length > 0);
-                        colors.forEach(c => allColors.add(c));
-                      }
-                    }
-                  });
-                  const sortedColors = Array.from(allColors).sort();
-                  return sortedColors.length > 0 ? (
-                    sortedColors.map((c) => {
-                      const checked = selectedColors.includes(c);
-                      return (
-                        <label key={c} className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={(e) => {
-                              setPage(1);
-                              setSelectedColors((prev) =>
-                                e.target.checked ? [...prev, c] : prev.filter((x) => x !== c)
-                              );
-                            }}
-                          />
-                          {c}
-                        </label>
-                      );
-                    })
-                  ) : (
-                    <div className="text-xs text-gray-400">Өнгө олдсонгүй</div>
-                  );
-                })()}
-              </div>
-            </div>
-
             {/* Brand filter */}
             <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
               <div className="text-sm font-semibold text-gray-800 mb-2">Брэнд</div>
@@ -541,49 +498,6 @@ function ProductsPageContent() {
                     </label>
                   );
                 })}
-              </div>
-            </div>
-
-            {/* Size filter */}
-            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-              <div className="text-sm font-semibold text-gray-800 mb-2">Хэмжээ</div>
-              <div className="space-y-2 text-sm">
-                {(() => {
-                  const allSizes = new Set<string>();
-                  allProducts.forEach((p) => {
-                    if (p.size) {
-                      const sizeStr = String(p.size).trim();
-                      if (sizeStr) {
-                        // Split by comma and add each size (normalized to lowercase)
-                        const sizes = sizeStr.split(',').map(s => s.trim().toLowerCase()).filter(s => s && s.length > 0);
-                        sizes.forEach(s => allSizes.add(s));
-                      }
-                    }
-                  });
-                  const sortedSizes = Array.from(allSizes).sort();
-                  return sortedSizes.length > 0 ? (
-                    sortedSizes.map((s) => {
-                      const checked = selectedSizes.includes(s);
-                      return (
-                        <label key={s} className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={(e) => {
-                              setPage(1);
-                              setSelectedSizes((prev) =>
-                                e.target.checked ? [...prev, s] : prev.filter((x) => x !== s)
-                              );
-                            }}
-                          />
-                          {s}
-                        </label>
-                      );
-                    })
-                  ) : (
-                    <div className="text-xs text-gray-400">Хэмжээ олдсонгүй</div>
-                  );
-                })()}
               </div>
             </div>
 
@@ -670,7 +584,7 @@ function ProductsPageContent() {
                     <div className="text-sm md:text-base font-bold text-gray-900 line-clamp-2 leading-snug">{p.name}</div>
                   </div>
                   <div className="mb-2">
-                    <div className="text-[10px] md:text-xs text-gray-500 font-medium mb-0.5">Бүтээгдэхүүний код</div>
+                    <div className="text-[10px] md:text-xs text-gray-500 font-medium mb-0.5">Модел дугаар</div>
                     <div className="text-xs md:text-sm font-bold text-[#1f632b] leading-tight">{p.modelNumber || "N/A"}</div>
                   </div>
                   <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm overflow-visible flex-1">
@@ -818,49 +732,6 @@ function ProductsPageContent() {
                 </div>
               ) : null}
 
-              {/* Color */}
-              <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-                <div className="text-sm font-semibold text-gray-800 mb-2">Өнгө</div>
-                <div className="space-y-2 text-sm">
-                  {(() => {
-                    const allColors = new Set<string>();
-                    allProducts.forEach((p) => {
-                      if (p.color) {
-                        const colorStr = String(p.color).trim();
-                        if (colorStr) {
-                          // Split by comma and add each color (normalized to lowercase)
-                          const colors = colorStr.split(',').map(c => c.trim().toLowerCase()).filter(c => c && c.length > 0);
-                          colors.forEach(c => allColors.add(c));
-                        }
-                      }
-                    });
-                    const sortedColors = Array.from(allColors).sort();
-                    return sortedColors.length > 0 ? (
-                      sortedColors.map((c) => {
-                        const checked = selectedColors.includes(c);
-                        return (
-                          <label key={c} className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={(e) => {
-                                setPage(1);
-                                setSelectedColors((prev) =>
-                                  e.target.checked ? [...prev, c] : prev.filter((x) => x !== c)
-                                );
-                              }}
-                            />
-                            {c}
-                          </label>
-                        );
-                      })
-                    ) : (
-                      <div className="text-xs text-gray-400">Өнгө олдсонгүй</div>
-                    );
-                  })()}
-                </div>
-              </div>
-
               {/* Brand */}
               <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
                 <div className="text-sm font-semibold text-gray-800 mb-2">Брэнд</div>
@@ -883,49 +754,6 @@ function ProductsPageContent() {
                       </label>
                     );
                   })}
-                </div>
-              </div>
-
-              {/* Size */}
-              <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-                <div className="text-sm font-semibold text-gray-800 mb-2">Хэмжээ</div>
-                <div className="space-y-2 text-sm">
-                  {(() => {
-                    const allSizes = new Set<string>();
-                    allProducts.forEach((p) => {
-                      if (p.size) {
-                        const sizeStr = String(p.size).trim();
-                        if (sizeStr) {
-                          // Split by comma and add each size (normalized to lowercase)
-                          const sizes = sizeStr.split(',').map(s => s.trim().toLowerCase()).filter(s => s && s.length > 0);
-                          sizes.forEach(s => allSizes.add(s));
-                        }
-                      }
-                    });
-                    const sortedSizes = Array.from(allSizes).sort();
-                    return sortedSizes.length > 0 ? (
-                      sortedSizes.map((s) => {
-                        const checked = selectedSizes.includes(s);
-                        return (
-                          <label key={s} className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={(e) => {
-                                setPage(1);
-                                setSelectedSizes((prev) =>
-                                  e.target.checked ? [...prev, s] : prev.filter((x) => x !== s)
-                                );
-                              }}
-                            />
-                            {s}
-                          </label>
-                        );
-                      })
-                    ) : (
-                      <div className="text-xs text-gray-400">Хэмжээ олдсонгүй</div>
-                    );
-                  })()}
                 </div>
               </div>
 

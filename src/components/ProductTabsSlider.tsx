@@ -61,7 +61,7 @@ function ProductsCarousel({ productsToShow }: { productsToShow: BackendProduct[]
                     </div>
                     {/* Model Number */}
                     <div>
-                      <div className="text-[10px] text-gray-500 font-medium">Бүтээгдэхүүний код</div>
+                      <div className="text-[10px] text-gray-500 font-medium">Модел дугаар</div>
                       <div className="text-xs font-bold text-[#1f632b]">{p.modelNumber || "N/A"}</div>
                     </div>
                     {/* Price */}
