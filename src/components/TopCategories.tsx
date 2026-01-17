@@ -51,7 +51,6 @@ export default function TopCategories() {
           setCategories(categoriesFromProducts);
         }
       } catch (error) {
-        console.error("Error fetching main categories:", error);
         setCategories([]);
       } finally {
         setIsLoading(false);

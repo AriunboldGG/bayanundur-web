@@ -118,7 +118,6 @@ export async function saveSpecialOrderToFirestore(data: SpecialOrderData): Promi
     const docRef = await addDoc(collection(db, "special_quotes"), specialOrderData);
     return docRef.id;
   } catch (error) {
-    console.error("❌ Error saving special order to Firestore:", error);
     throw error;
   }
 }

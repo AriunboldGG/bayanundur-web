@@ -68,7 +68,6 @@ export function QuoteModal({ open, onClose, items }: QuoteModalProps) {
         setSuccess(false);
       }, 3000);
     } catch (err: any) {
-      console.error("Error saving quote:", err);
       setError(err.message || "Алдаа гарлаа. Дахин оролдоно уу.");
     } finally {
       setSubmitting(false);

@@ -53,7 +53,6 @@ export default function FirebaseImage({
         const url = await getImageUrl(src);
         setImageUrl(url);
       } catch (error) {
-        console.warn(`Failed to load image from Firebase Storage: ${src}`, error);
         // Fallback to local path
         setImageUrl(src.startsWith("/") ? src : `/images/${src}`);
       } finally {

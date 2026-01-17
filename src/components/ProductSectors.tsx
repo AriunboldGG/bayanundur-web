@@ -43,7 +43,6 @@ export default function ProductSectors() {
         const sectorsData = await getSectors();
         setSectors(sectorsData);
       } catch (error) {
-        console.error("Error fetching sectors:", error);
         setSectors([]);
       } finally {
         setIsLoading(false);

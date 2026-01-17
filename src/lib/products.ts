@@ -282,7 +282,7 @@ export async function getAllProducts(): Promise<Product[]> {
             const product = firestoreDocToProduct(doc.id, data);
             products.push(product);
           } catch (err) {
-            console.error(`Error processing product ${doc.id}:`, err);
+            // Error processing product, skip it
           }
         });
         
@@ -387,7 +387,6 @@ export type Subcategory = {
  */
 export async function getMainCategories(): Promise<MainCategory[]> {
   if (!db) {
-    console.error("❌ getMainCategories: Firestore db not initialized");
     return [];
   }
 

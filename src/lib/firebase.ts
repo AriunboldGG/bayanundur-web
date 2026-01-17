@@ -17,12 +17,7 @@ const missingVars = Object.entries(requiredEnvVars)
   .filter(([_, value]) => !value)
   .map(([key]) => key);
 
-if (missingVars.length > 0 && typeof window === "undefined") {
-  console.warn(
-    `Missing Firebase environment variables: ${missingVars.join(", ")}. ` +
-    `Please create a .env.local file with these variables. See .env.example for reference.`
-  );
-}
+// Missing environment variables warning removed
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -51,7 +46,7 @@ if (firebaseConfig.apiKey && firebaseConfig.projectId) {
     // Initialize Storage
     storage = getStorage(app);
   } catch (error) {
-    console.error("Firebase initialization error:", error);
+    // Firebase initialization error
   }
 }
 

@@ -17,7 +17,6 @@ export type NewsPost = {
  */
 export async function getAllNews(): Promise<NewsPost[]> {
   if (!db) {
-    console.error("❌ getAllNews: Firestore db not initialized");
     return [];
   }
 
@@ -31,7 +30,6 @@ export async function getAllNews(): Promise<NewsPost[]> {
       snapshot = await getDocs(q);
     } catch (error) {
       // If createdAt field doesn't exist or ordering fails, fetch without order
-      console.log("⚠️ getAllNews: Could not order by createdAt, fetching without order");
       snapshot = await getDocs(newsRef);
     }
 
@@ -71,13 +69,8 @@ export async function getAllNews(): Promise<NewsPost[]> {
       });
     }
 
-    console.log(`✅ getAllNews: Fetched ${news.length} news items`);
     return news;
   } catch (error) {
-    console.error("❌ getAllNews: Error fetching news:", error);
-    if (error instanceof Error) {
-      console.error("Error details:", error.message, error.stack);
-    }
     return [];
   }
 }
@@ -87,14 +80,12 @@ export async function getAllNews(): Promise<NewsPost[]> {
  */
 export async function getNewsById(id: string): Promise<NewsPost | undefined> {
   if (!db) {
-    console.error("❌ getNewsById: Firestore db not initialized");
     return undefined;
   }
 
   try {
     const newsDoc = await getDoc(doc(db, "news", id));
     if (!newsDoc.exists()) {
-      console.warn(`⚠️ getNewsById: News document ${id} does not exist`);
       return undefined;
     }
 
@@ -123,10 +114,6 @@ export async function getNewsById(id: string): Promise<NewsPost | undefined> {
       author: data.author || undefined,
     };
   } catch (error) {
-    console.error(`❌ getNewsById: Error fetching news ${id}:`, error);
-    if (error instanceof Error) {
-      console.error("Error details:", error.message, error.stack);
-    }
     return undefined;
   }
 }

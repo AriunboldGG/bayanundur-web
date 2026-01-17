@@ -65,7 +65,6 @@ export default function ProductDetailPage() {
           setImageUrls(urls);
         }
       } catch (error) {
-        console.error("Error fetching product:", error);
       } finally {
         setIsLoading(false);
       }
@@ -88,7 +87,6 @@ export default function ProductDetailPage() {
           .slice(0, 5);
         setRelatedProducts(related);
       } catch (error) {
-        console.error("Error fetching related products:", error);
       }
     }
     fetchRelated();

@@ -27,7 +27,6 @@ export default function NewsDetailPage() {
         const newsData = await getNewsById(newsId);
         setNews(newsData);
       } catch (error) {
-        console.error("Error fetching news:", error);
         setNews(undefined);
       } finally {
         setIsLoading(false);

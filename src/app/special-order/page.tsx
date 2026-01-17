@@ -73,7 +73,6 @@ export default function SpecialOrderPage() {
         additionalInfo: "",
       });
     } catch (error: any) {
-      console.error("Error saving special order:", error);
       setSubmitStatus("error");
     } finally {
       setIsSubmitting(false);

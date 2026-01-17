@@ -29,7 +29,6 @@ export default function Brands() {
         const products = await getAllProducts();
         setAllProducts(products);
       } catch (error) {
-        console.error("Failed to fetch products:", error);
         setAllProducts([]);
       } finally {
         setIsLoading(false);

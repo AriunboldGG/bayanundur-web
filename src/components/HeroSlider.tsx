@@ -31,7 +31,6 @@ export default function HeroSlider({ slides }: { slides?: Slide[] }) {
         const news = await getAllNews();
         setAllNews(news);
       } catch (error) {
-        console.error("Error fetching news for HeroSlider:", error);
         setAllNews([]);
       }
     }
