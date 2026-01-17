@@ -915,7 +915,7 @@ function ProductsPageContent() {
                   productSectors = sectors.map(s => s.name).sort();
                 } else {
                   // Fallback: Extract unique sectors from products
-                  productSectors = Array.from(new Set(allProducts.map((p) => p.sector).filter(s => s && s.trim() !== ''))).sort();
+                  productSectors = Array.from(new Set(allProducts.map((p) => p.product_sector).filter((s): s is string => !!s && s.trim() !== ''))).sort();
                 }
                 
                 // Always show the filter section, even if empty
