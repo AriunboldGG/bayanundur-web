@@ -70,6 +70,18 @@ export default function CartPage() {
 
                         {/* Product Details - One column, one item per row */}
                         <div className="space-y-1.5 text-xs">
+                          {item.price && item.priceNum > 0 && (
+                            <div className="flex items-start gap-2">
+                              <span className="font-bold text-gray-700 min-w-[100px]">Үнэ:</span>
+                              <span className="text-[#1f632b] font-semibold">{item.price} </span>
+                            </div>
+                          )}
+                          {item.product_code && (
+                            <div className="flex items-start gap-2">
+                              <span className="font-bold text-gray-700 min-w-[100px]">Барааны код:</span>
+                              <span className="text-[#1f632b] font-semibold">{item.product_code}</span>
+                            </div>
+                          )}
                           {item.modelNumber && (
                             <div className="flex items-start gap-2">
                               <span className="font-bold text-gray-700 min-w-[100px]">Модел дугаар:</span>

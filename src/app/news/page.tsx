@@ -2,18 +2,38 @@
 import Header from "@/components/Header";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
-import { ALL_NEWS } from "@/lib/newsData";
+import { getAllNews, type NewsPost } from "@/lib/newsData";
 
 export default function NewsPage() {
+  const [allNews, setAllNews] = useState<NewsPost[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const pageSize = 6;
   const [page, setPage] = useState(1);
-  const totalPages = Math.max(1, Math.ceil(ALL_NEWS.length / pageSize));
+  
+  // Fetch news from Firestore
+  useEffect(() => {
+    async function fetchNews() {
+      try {
+        setIsLoading(true);
+        const news = await getAllNews();
+        setAllNews(news);
+      } catch (error) {
+        setAllNews([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchNews();
+  }, []);
+
+  const totalPages = Math.max(1, Math.ceil(allNews.length / pageSize));
   const pageItems = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return ALL_NEWS.slice(start, start + pageSize);
-  }, [page]);
+    return allNews.slice(start, start + pageSize);
+  }, [page, allNews]);
 
   return (
     <main className="min-h-screen bg-white">
@@ -24,8 +44,17 @@ export default function NewsPage() {
          
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {pageItems.map((post) => (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-gray-500">Ачаалж байна...</div>
+          </div>
+        ) : allNews.length === 0 ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-gray-500">Мэдээ олдсонгүй</div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {pageItems.map((post) => (
             <Card key={post.id} className="overflow-hidden hover:border-[#8DC63F] transition-colors">
               {post.img && post.img.trim() !== '' ? (
                 <div className="relative h-40 w-full bg-gray-100">
@@ -68,28 +97,31 @@ export default function NewsPage() {
               </CardContent>
             </Card>
           ))}
-        </div>
+          </div>
+        )}
 
         {/* Pagination */}
-        <div className="mt-8 flex items-center justify-center gap-2">
-          <button
-            className="px-3 py-1 rounded-md border text-sm disabled:opacity-50"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-          >
-            Өмнөх
-          </button>
-          <span className="text-sm text-gray-600">
-            {page} / {totalPages}
-          </span>
-          <button
-            className="px-3 py-1 rounded-md border text-sm disabled:opacity-50"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-          >
-            Дараах
-          </button>
-        </div>
+        {!isLoading && allNews.length > 0 && (
+          <div className="mt-8 flex items-center justify-center gap-2">
+            <button
+              className="px-3 py-1 rounded-md border text-sm disabled:opacity-50"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              Өмнөх
+            </button>
+            <span className="text-sm text-gray-600">
+              {page} / {totalPages}
+            </span>
+            <button
+              className="px-3 py-1 rounded-md border text-sm disabled:opacity-50"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              Дараах
+            </button>
+          </div>
+        )}
       </div>
     </main>
   );

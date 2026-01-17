@@ -21,6 +21,8 @@ export type Product = {
   brandImage?: string; // Brand logo/image from Firestore
   size: string;
   priceNum: number;
+  product_code?: string; // Product code from backend
+  product_sector?: string; // Product sector from Firebase (product_sector field)
   stock: number; // Stock count from Firebase: > 0 means in stock, 0 means preorder
   theme: string;
   material?: string;
@@ -120,11 +122,34 @@ function firestoreDocToProduct(docId: string, data: any): Product {
   const mainCategoryValue = getFirestoreValue(data, "mainCategory");
   const categoryValue = getFirestoreValue(data, "category") || "other";
   
+  // Handle price - can be number or string
+  const priceValue = getFirestoreValue(data, "price");
+  const priceNumValue = getFirestoreValue(data, "priceNum");
+  let priceStr = "0₮";
+  let priceNum = 0;
+  
+  if (priceNumValue && typeof priceNumValue === 'number' && priceNumValue > 0) {
+    priceNum = priceNumValue;
+    priceStr = `${priceNum.toLocaleString()} ₮`;
+  } else if (priceValue) {
+    if (typeof priceValue === 'number') {
+      priceNum = priceValue;
+      priceStr = `${priceNum.toLocaleString()} ₮`;
+    } else if (typeof priceValue === 'string' && priceValue.trim() !== '') {
+      priceStr = priceValue;
+      // Try to extract number from string (e.g., "85000" or "85000₮")
+      const numMatch = priceValue.match(/\d+/);
+      if (numMatch) {
+        priceNum = parseInt(numMatch[0], 10) || 0;
+      }
+    }
+  }
+  
   return {
     id: getFirestoreValue(data, "id") || docIdNum,
     firestoreId: docId, // Always use Firestore document ID as unique identifier
     name: getFirestoreValue(data, "name") || "",
-    price: getFirestoreValue(data, "price") || "0₮",
+    price: priceStr,
     img: getFirestoreValue(data, "img") || getFirestoreValue(data, "image") || "",
     images: images, // Multiple images for gallery
     modelNumber: getFirestoreValue(data, "modelNumber") || "",
@@ -136,7 +161,9 @@ function firestoreDocToProduct(docId: string, data: any): Product {
     brand: getFirestoreValue(data, "brand") || "",
     brandImage: getFirestoreValue(data, "brandImage") || undefined, // Brand logo/image
     size: getFirestoreValue(data, "size") || "",
-    priceNum: getFirestoreValue(data, "priceNum") || 0,
+    priceNum: priceNum,
+    product_code: getFirestoreValue(data, "product_code") || undefined, // Product code from backend
+    product_sector: getFirestoreValue(data, "product_sector") || undefined, // Product sector from Firebase
     stock: getFirestoreValue(data, "stock") || 0, // Number: > 0 = in stock, 0 = preorder
     theme: getFirestoreValue(data, "theme") || "",
     material: getFirestoreValue(data, "material") || "",
@@ -164,7 +191,6 @@ function firestoreDocToProduct(docId: string, data: any): Product {
  */
 export async function getAllProducts(): Promise<Product[]> {
   if (!db) {
-    console.error("Firebase db is not initialized");
     return [];
   }
 
@@ -212,7 +238,7 @@ export async function getAllProducts(): Promise<Product[]> {
           const product = firestoreDocToProduct(doc.id, data);
           products.push(product);
         } catch (err) {
-          console.error(`Error processing product ${doc.id}:`, err);
+          // Error processing product, skip it
         }
       });
       
@@ -227,11 +253,8 @@ export async function getAllProducts(): Promise<Product[]> {
 
     return products;
   } catch (error: any) {
-    console.error("Error fetching products from Firestore (with pagination):", error);
-    
     // If orderBy("__name__") fails (e.g., index not created), try without pagination
     if (error.code === 'failed-precondition' || error.message?.includes('index')) {
-      console.log("Index not found, attempting to fetch without pagination...");
       try {
         const productsRef = collection(db, "products");
         const snapshot = await getDocs(productsRef);
@@ -263,13 +286,8 @@ export async function getAllProducts(): Promise<Product[]> {
           }
         });
         
-        // Print all unique productTypes
-        if (snapshot.size >= 1000) {
-          console.warn("Warning: Query returned 1000+ documents. Some products may be missing. Consider creating a Firestore index.");
-        }
         return products;
       } catch (fallbackError) {
-        console.error("Error fetching products (fallback method):", fallbackError);
         return [];
       }
     }
@@ -342,11 +360,13 @@ export async function getProductsByCategory(category: Product["category"]): Prom
  */
 export type MainCategory = {
   id: string;
-  name: string;
-  label: string; // Display label in Mongolian
-  slug: Product["category"]; // ppe, rescue, workplace, other
+  name: string; // Mongolian category name (used for filtering)
+  label?: string; // Display label in Mongolian (optional, falls back to name)
+  slug?: string; // Optional slug (auto-generated from name if not provided)
   order?: number;
   icon?: string; // Icon name or identifier
+  children?: string[]; // Array of category names (children of this main category)
+  subchildren?: Record<string, string[]>; // Object where keys are category names, values are arrays of subcategory names
 };
 
 /**
@@ -367,47 +387,31 @@ export type Subcategory = {
  */
 export async function getMainCategories(): Promise<MainCategory[]> {
   if (!db) {
+    console.error("❌ getMainCategories: Firestore db not initialized");
     return [];
   }
 
   try {
-    // Try "main_categories" collection first, fallback to "categories"
-    let categoriesRef = collection(db, "main_categories");
-    let snapshot;
+    const categoriesRef = collection(db, "main_categories");
     
-    try {
-      const q = query(categoriesRef, orderBy("order", "asc"));
-      snapshot = await getDocs(q);
-    } catch (error) {
-      // If "main_categories" doesn't exist or has no order field, try "categories"
-      try {
-        categoriesRef = collection(db, "categories");
-        snapshot = await getDocs(categoriesRef);
-      } catch (err) {
-        // If both fail, return empty array
-        return [];
-      }
-    }
+    // Fetch ALL documents from main_categories collection
+    const snapshot = await getDocs(categoriesRef);
 
     const categories: MainCategory[] = [];
     snapshot.forEach((doc) => {
       const data = doc.data();
-      // Use mainCategory field instead of slug
-      const mainCategory = data.mainCategory || data.slug; // Fallback to slug for backward compatibility
-      
-      if (mainCategory) {
-        // Validate mainCategory is one of the allowed category types
-        const validCategories: Product["category"][] = ["ppe", "rescue", "workplace", "other"];
-        if (validCategories.includes(mainCategory as Product["category"])) {
-          categories.push({
-            id: doc.id,
-            name: data.name || "",
-            label: data.label || data.name || "",
-            slug: mainCategory as Product["category"],
-            order: data.order || 0,
-            icon: data.icon || "",
-          });
-        }
+      // Use name field directly (Mongolian text from Firebase)
+      if (data.name) {
+        categories.push({
+          id: doc.id,
+          name: data.name || "",
+          label: data.label || data.name || "",
+          slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-') || "",
+          order: data.order || 0,
+          icon: data.icon || "",
+          children: Array.isArray(data.children) ? data.children : undefined,
+          subchildren: data.subchildren && typeof data.subchildren === 'object' ? data.subchildren : undefined,
+        });
       }
     });
 
@@ -416,7 +420,6 @@ export async function getMainCategories(): Promise<MainCategory[]> {
 
     return categories;
   } catch (error) {
-    // Return empty array if collection doesn't exist
     return [];
   }
 }
@@ -484,3 +487,337 @@ export async function getSubcategories(category?: Product["category"]): Promise<
   }
 }
 
+/**
+ * Sector type from Firestore
+ */
+export type Sector = {
+  id: string;
+  name: string;
+  slug?: string;
+  order?: number;
+  icon?: string;
+};
+
+/**
+ * Fetch sectors from Firestore
+ * Expected collection structure: "product_sectors"
+ * Each document should have: { name: string, slug?: string, order?: number, icon?: string }
+ */
+export async function getSectors(): Promise<Sector[]> {
+  if (!db) {
+    return [];
+  }
+
+  try {
+    const sectorsRef = collection(db, "product_sectors");
+    let snapshot;
+    
+    try {
+      const q = query(sectorsRef, orderBy("order", "asc"));
+      snapshot = await getDocs(q);
+    } catch (error) {
+      // If order field doesn't exist, fetch without ordering
+      snapshot = await getDocs(sectorsRef);
+    }
+
+    const sectors: Sector[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      sectors.push({
+        id: doc.id,
+        name: data.name || "",
+        slug: data.slug || data.name?.toLowerCase().replace(/\s+/g, '-') || "",
+        order: data.order || 0,
+        icon: data.icon || "",
+      });
+    });
+
+    // Sort by order
+    sectors.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    return sectors;
+  } catch (error) {
+    // If collection doesn't exist, return empty array
+    return [];
+  }
+}
+
+/**
+ * Category type from Firestore (middle level - categories collection)
+ */
+export type Category = {
+  id: string;
+  name: string;
+  mainCategoryId?: string; // Reference to main category document ID
+  mainCategory?: string; // Legacy: Reference to main category name or slug
+  order?: number;
+  slug?: string;
+  children?: string[]; // Array of subcategory names (children of this category)
+};
+
+/**
+ * Sub-subcategory type (leaf level - subcategories collection)
+ */
+export type SubSubcategory = {
+  id: string;
+  name: string;
+  categoryId?: string; // Reference to category document ID
+  category?: string; // Legacy: Reference to category name or id
+  mainCategoryId?: string; // Reference to main category document ID (optional, for direct lookup)
+  order?: number;
+  slug?: string;
+};
+
+/**
+ * Fetch categories from Firestore (middle level)
+ * Expected collection structure: "categories"
+ * Each document should have: { name: string, mainCategory: string, order?: number, slug?: string }
+ */
+export async function getCategories(mainCategory?: string): Promise<Category[]> {
+  if (!db) {
+    return [];
+  }
+
+    try {
+      const categoriesRef = collection(db, "categories");
+      let snapshot;
+      
+      // First, try to get ALL documents without any filters to test connection
+      try {
+        snapshot = await getDocs(categoriesRef);
+      } catch (testError) {
+        return [];
+      }
+      
+      // Now apply filters if needed
+      if (mainCategory && snapshot.size > 0) {
+        // Filter by mainCategoryId or mainCategory
+        try {
+          const q = query(categoriesRef, where("mainCategoryId", "==", mainCategory));
+          snapshot = await getDocs(q);
+        } catch (err) {
+          try {
+            const q = query(categoriesRef, where("mainCategory", "==", mainCategory));
+            snapshot = await getDocs(q);
+          } catch (err2) {
+            // Could not filter, using all documents
+          }
+        }
+      }
+      
+      // Now try to order if we have results
+      if (snapshot.size > 0) {
+        try {
+          const q = query(categoriesRef, ...(mainCategory ? [where("mainCategoryId", "==", mainCategory)] : []), orderBy("order", "asc"));
+          snapshot = await getDocs(q);
+        } catch (orderError) {
+          // Re-fetch without order but with filter if needed
+          if (mainCategory) {
+            try {
+              const q = query(categoriesRef, where("mainCategoryId", "==", mainCategory));
+              snapshot = await getDocs(q);
+            } catch (err) {
+              const q = query(categoriesRef, where("mainCategory", "==", mainCategory));
+              snapshot = await getDocs(q);
+            }
+          } else {
+            snapshot = await getDocs(categoriesRef);
+          }
+        }
+      }
+
+    const categories: Category[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      const children = Array.isArray(data.children) ? data.children : undefined;
+      categories.push({
+        id: doc.id,
+        name: data.name || "",
+        mainCategoryId: data.mainCategoryId || undefined,
+        mainCategory: data.mainCategory || data.mainCategoryId || "", // Support both field names
+        order: data.order || 0,
+        slug: data.slug || data.name?.toLowerCase().replace(/\s+/g, '-') || "",
+        children: children,
+      });
+    });
+
+    // Sort by order
+    categories.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    return categories;
+  } catch (error) {
+    return [];
+  }
+}
+
+/**
+ * Fetch sub-subcategories from Firestore (leaf level)
+ * Expected collection structure: "subcategories"
+ * Each document should have: { name: string, category: string, order?: number, slug?: string }
+ */
+export async function getSubSubcategories(categoryId?: string): Promise<SubSubcategory[]> {
+  if (!db) {
+    return [];
+  }
+
+    try {
+      const subcategoriesRef = collection(db, "subcategories");
+      let snapshot;
+      
+      // First, try to get ALL documents without any filters to test connection
+      try {
+        snapshot = await getDocs(subcategoriesRef);
+      } catch (testError) {
+        return [];
+      }
+      
+      // Now apply filters if needed
+      if (categoryId && snapshot.size > 0) {
+        // Filter by categoryId or category
+        try {
+          const q = query(subcategoriesRef, where("categoryId", "==", categoryId));
+          snapshot = await getDocs(q);
+        } catch (err) {
+          try {
+            const q = query(subcategoriesRef, where("category", "==", categoryId));
+            snapshot = await getDocs(q);
+          } catch (err2) {
+            // Could not filter, using all documents
+          }
+        }
+      }
+      
+      // Now try to order if we have results
+      if (snapshot.size > 0) {
+        try {
+          const q = query(subcategoriesRef, ...(categoryId ? [where("categoryId", "==", categoryId)] : []), orderBy("order", "asc"));
+          snapshot = await getDocs(q);
+        } catch (orderError) {
+          // Re-fetch without order but with filter if needed
+          if (categoryId) {
+            try {
+              const q = query(subcategoriesRef, where("categoryId", "==", categoryId));
+              snapshot = await getDocs(q);
+            } catch (err) {
+              const q = query(subcategoriesRef, where("category", "==", categoryId));
+              snapshot = await getDocs(q);
+            }
+          } else {
+            snapshot = await getDocs(subcategoriesRef);
+          }
+        }
+      }
+
+    const subcategories: SubSubcategory[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      subcategories.push({
+        id: doc.id,
+        name: data.name || "",
+        categoryId: data.categoryId || undefined,
+        category: data.category || data.categoryId || "", // Support both field names
+        mainCategoryId: data.mainCategoryId || undefined,
+        order: data.order || 0,
+        slug: data.slug || data.name?.toLowerCase().replace(/\s+/g, '-') || "",
+      });
+    });
+
+    // Sort by order
+    subcategories.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    return subcategories;
+  } catch (error) {
+    return [];
+  }
+}
+
+/**
+ * Category tree node for SearchBar dropdown
+ */
+export type CategoryTreeNode = {
+  name: string;
+  slug: string;
+  icon?: string;
+  children?: CategoryTreeNode[];
+};
+
+/**
+ * Build hierarchical category tree from Firestore collections
+ * Structure: main_categories -> categories -> subcategories
+ */
+export async function getCategoryTree(): Promise<CategoryTreeNode[]> {
+  try {
+    // Fetch only from main_categories collection (everything is there now)
+    const mainCategories = await getMainCategories();
+
+    // If no main categories, return empty tree
+    if (mainCategories.length === 0) {
+      return [];
+    }
+
+    // Sort main categories: "Бусад" should always be at the bottom
+    const sortedMainCategories = [...mainCategories].sort((a, b) => {
+      const aIsBuсад = a.name === "Бусад";
+      const bIsBuсад = b.name === "Бусад";
+      
+      if (aIsBuсад && !bIsBuсад) return 1; // "Бусад" goes to bottom
+      if (!aIsBuсад && bIsBuсад) return -1; // Other categories go above "Бусад"
+      
+      // For other categories, sort by order or name
+      if (a.order !== undefined && b.order !== undefined) {
+        return a.order - b.order;
+      }
+      return a.name.localeCompare(b.name, 'mn', { sensitivity: 'base' });
+    });
+
+    // Build the tree
+    const tree: CategoryTreeNode[] = [];
+
+    for (const mainCat of sortedMainCategories) {
+
+      
+      const categoryChildren: CategoryTreeNode[] = [];
+
+      // Use children field directly from main category document
+      if (mainCat.children && mainCat.children.length > 0) {
+
+        
+        // Use children names directly - just convert them to CategoryTreeNode format
+        for (const childName of mainCat.children) {
+          const subcategoryChildren: CategoryTreeNode[] = [];
+          
+          // Get subcategories from subchildren field (object where key is category name)
+          if (mainCat.subchildren && mainCat.subchildren[childName] && Array.isArray(mainCat.subchildren[childName])) {
+            const subcats = mainCat.subchildren[childName];
+            
+            // Use subchildren array directly - just convert to CategoryTreeNode format
+            for (const subChildName of subcats) {
+              subcategoryChildren.push({
+                name: subChildName,
+                slug: subChildName.toLowerCase().replace(/\s+/g, '-'),
+              });
+            }
+          }
+          
+          categoryChildren.push({
+            name: childName,
+            slug: childName.toLowerCase().replace(/\s+/g, '-'),
+            children: subcategoryChildren.length > 0 ? subcategoryChildren : [],
+          });
+        }
+      }
+
+      // Add main category
+      tree.push({
+        name: mainCat.name,
+        slug: mainCat.slug || mainCat.name.toLowerCase().replace(/\s+/g, '-'),
+        icon: mainCat.icon,
+        children: categoryChildren.length > 0 ? categoryChildren : [],
+      });
+    }
+
+    return tree;
+  } catch (error) {
+    return [];
+  }
+}

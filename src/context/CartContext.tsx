@@ -8,6 +8,7 @@ export type CartItem = {
   price: string;
   img: string;
   modelNumber: string;
+  product_code?: string; // Product code from backend
   color?: string;
   size?: string;
   brand?: string;

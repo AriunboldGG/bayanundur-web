@@ -1,3 +1,6 @@
+import { db } from "./firebase";
+import { collection, getDocs, doc, getDoc, query, orderBy } from "firebase/firestore";
+
 export type NewsPost = {
   id: string;
   title: string;
@@ -9,119 +12,121 @@ export type NewsPost = {
   author?: string;
 };
 
-export const ALL_NEWS: NewsPost[] = [
-  {
-    id: "p1",
-    title: "ХАБЭА Сургалтын зохион байгуулалт. Үндсэн дүрэм MNS 4969 : 2000",
-    date: "2024-09-04",
-    category: "Зөвлөгөө",
-    img: "/images/hero1.jpg",
-    description: "ХАБЭА сургалтын зохион байгуулалтын үндсэн дүрмийн талаарх дэлгэрэнгүй мэдээлэл.",
-    content: `ХАБЭА сургалт нь ажлын байрны аюулгүй байдлыг хангах гол арга хэрэгслүүдийн нэг юм. MNS 4969:2000 стандартад заасны дагуу сургалтыг зохион байгуулахдаа дараах зүйлсийг харгалзан үзэх шаардлагатай:
+/**
+ * Fetch all news from Firestore
+ */
+export async function getAllNews(): Promise<NewsPost[]> {
+  if (!db) {
+    console.error("❌ getAllNews: Firestore db not initialized");
+    return [];
+  }
 
-1. Сургалтын зорилго, хамрах хүрээг тодорхойлох
-2. Сургалтын агуулгыг ажлын байрны онцлогт тохируулах
-3. Сургалтын хугацаа, давтамжийг тогтоох
-4. Сургалтын үр дүнг үнэлэх арга хэмжээг хэрэгжүүлэх
+  try {
+    const newsRef = collection(db, "news");
+    let snapshot;
+    
+    try {
+      // Try to order by createdAt descending (newest first)
+      const q = query(newsRef, orderBy("createdAt", "desc"));
+      snapshot = await getDocs(q);
+    } catch (error) {
+      // If createdAt field doesn't exist or ordering fails, fetch without order
+      console.log("⚠️ getAllNews: Could not order by createdAt, fetching without order");
+      snapshot = await getDocs(newsRef);
+    }
 
-Сургалтыг тогтмол, үр дүнтэй зохион байгуулснаар ажлын байрны осол гэмтлийг бууруулж, ажилчдын аюулгүй байдлын соёлыг нэмэгдүүлэх боломжтой.`,
-    author: "БАЯН ӨНДӨР",
-  },
-  {
-    id: "p2",
-    title: "HSCT бараа бүтээгдэхүүний каталог",
-    date: "2023-10-19",
-    category: "Зөвлөгөө",
-    img: "/images/hero2.png",
-    description: "Манай компанийн хамгаалах хувцас хэрэгсэл, багаж хэрэгсэлүүдийн шинэ каталог гарлаа.",
-    content: `Манай компани нь ХАБЭА-ийн хувцас хэрэгсэл, багаж хэрэгсэлүүдийг олон улсын стандартын дагуу нийлүүлдэг. Шинэ каталогт дараах ангиллын бараа бүтээгдэхүүн багтсан:
+    const news: NewsPost[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      
+      // Extract date from createdAt timestamp
+      let dateStr = "";
+      if (data.createdAt) {
+        const date = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+        dateStr = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      }
+      
+      // Extract description from body (first 150 characters)
+      const description = data.body 
+        ? (data.body.length > 150 ? data.body.substring(0, 150) + "..." : data.body)
+        : undefined;
 
-• Хамгаалах хувцас хэрэгсэл (PPE)
-• Аврах багаж хэрэгсэл
-• Ажлын байрны тохилог орчин
-• Бусад хамгаалах хэрэгсэл
+      news.push({
+        id: doc.id,
+        title: data.title || "",
+        date: dateStr,
+        category: data.category || "",
+        img: data.coverImageUrl || "",
+        description: description,
+        content: data.body || "",
+        author: data.author || undefined,
+      });
+    });
 
-Бүх бараа бүтээгдэхүүн нь ISO, CE стандартад нийцсэн, чанартай, найдвартай. Дэлгэрэнгүй мэдээллийг манай компаниас авах боломжтой.`,
-    author: "БАЯН ӨНДӨР",
-  },
-  {
-    id: "p3",
-    title: "ХАБ-ууд бид өөрсдийгөө хязгаарладаг",
-    date: "2023-02-15",
-    category: "Зөвлөгөө",
-    img: "",
-    description: "Ажлын байрны аюулгүй байдлын дүрэм, журам нь зөвхөн хязгаарлалт биш, хамгаалалтын хэрэгсэл гэдгийг танилцуулж байна.",
-    content: `Олон уурхай, үйлдвэрийн ажилчид ажлын байрны аюулгүй байдлын (ХАБ) дүрэм, журам нь тэднийг хязгаарладаг гэж боддог. Гэхдээ энэ нь үнэн биш.
+    // Sort by date descending if not already sorted
+    if (!snapshot.empty) {
+      news.sort((a, b) => {
+        if (!a.date || !b.date) return 0;
+        return b.date.localeCompare(a.date);
+      });
+    }
 
-ХАБ-ууд нь:
-• Ажилчдын амь нас, эрүүл мэндийг хамгаалах
-• Осол гэмтлийг урьдчилан сэргийлэх
-• Ажлын байрны тохилог орчныг хангах
-• Компанийн үйл ажиллагааны тасралтгүй байдлыг хангах
-
-зорилготой. Тиймээс ХАБ-ууд нь хязгаарлалт биш, харин хамгаалалт, хамтарсан хариуцлагын илэрхийлэл юм.`,
-    author: "БАЯН ӨНДӨР",
-  },
-  {
-    id: "p4",
-    title: "ХАБЭА нэр томъёог зөв хэрэглэн хэвшицгээе",
-    date: "2022-02-15",
-    category: "Зөвлөгөө",
-    img: "",
-    description: "ХАБЭА-ийн нэр томъёог зөв ойлгож, зөв хэрэглэх нь чухал.",
-    content: `ХАБЭА (Хөдөлмөрийн Аюулгүй Байдал, Эрүүл Ахуй) гэдэг нэр томъёог зөв ойлгож, зөв хэрэглэх нь маш чухал юм.
-
-Зарим алдаатай хэрэглэгддэг нэр томъёонууд:
-• "ХАБ" оронд "ХАБЭА" - Хөдөлмөрийн Аюулгүй Байдал, Эрүүл Ахуй
-• "PPE" (Personal Protective Equipment) - Хувийн хамгаалах хэрэгсэл
-• "JSA" (Job Safety Analysis) - Ажлын аюулгүй байдлын шинжилгээ
-
-Эдгээр нэр томъёог зөв ойлгож, зөв хэрэглэснээр харилцаа, мэдээлэл солилцоо илүү үр дүнтэй болно.`,
-    author: "БАЯН ӨНДӨР",
-  },
-  {
-    id: "p5",
-    title: "Хугацаа алдсан гэмтлийн давтамж — Lost Time Injury Frequency",
-    date: "2022-02-15",
-    category: "Зөвлөгөө",
-    img: "",
-    description: "LTIF (Lost Time Injury Frequency) гэж юу вэ, яаж тооцдог вэ гэсэн асуултын хариуг танилцуулж байна.",
-    content: `LTIF (Lost Time Injury Frequency) нь ажлын байрны аюулгүй байдлыг үнэлэх гол үзүүлэлтүүдийн нэг юм.
-
-LTIF-ийг дараах байдлаар тооцдог:
-LTIF = (Хугацаа алдсан гэмтлийн тоо / Нийт ажилласан цаг) × 1,000,000
-
-Жишээлбэл:
-• 1,000,000 цагийн турш 5 хугацаа алдсан гэмтэл тохиолдвол
-• LTIF = (5 / 1,000,000) × 1,000,000 = 5.0
-
-LTIF-ийг бага байлгах нь ажлын байрны аюулгүй байдал сайжирч байгааг илтгэнэ. Зорилго нь LTIF-ийг тэгтэй ойртуулах явдал юм.`,
-    author: "БАЯН ӨНДӨР",
-  },
-  {
-    id: "p6",
-    title: "Нийт гэмтлийн давтамж — Total Recordable Injury Frequency",
-    date: "2022-02-15",
-    category: "Зөвлөгөө",
-    img: "/images/hero3.jpg",
-    description: "TRIF (Total Recordable Injury Frequency) гэж юу вэ, LTIF-ээс ялгаатай нь юу вэ гэсэн асуултын хариуг танилцуулж байна.",
-    content: `TRIF (Total Recordable Injury Frequency) нь бүх төрлийн бүртгэгдсэн гэмтлийг (хугацаа алдсан + хугацаа алдаагүй) тооцдог үзүүлэлт юм.
-
-TRIF-ийг дараах байдлаар тооцдог:
-TRIF = (Нийт бүртгэгдсэн гэмтлийн тоо / Нийт ажилласан цаг) × 1,000,000
-
-TRIF vs LTIF:
-• LTIF - зөвхөн хугацаа алдсан гэмтлийг тооцдог
-• TRIF - бүх төрлийн бүртгэгдсэн гэмтлийг тооцдог (хугацаа алдсан + эмчлүүлсэн + эрсдэлийн материалтай холбоотой)
-
-TRIF нь ажлын байрны аюулгүй байдлын ерөнхий түвшинг илүү бүрэн харуулдаг.`,
-    author: "БАЯН ӨНДӨР",
-  },
-];
+    console.log(`✅ getAllNews: Fetched ${news.length} news items`);
+    return news;
+  } catch (error) {
+    console.error("❌ getAllNews: Error fetching news:", error);
+    if (error instanceof Error) {
+      console.error("Error details:", error.message, error.stack);
+    }
+    return [];
+  }
+}
 
 /**
- * Get a news post by ID
+ * Get a news post by ID from Firestore
  */
-export function getNewsById(id: string): NewsPost | undefined {
-  return ALL_NEWS.find((news) => news.id === id);
+export async function getNewsById(id: string): Promise<NewsPost | undefined> {
+  if (!db) {
+    console.error("❌ getNewsById: Firestore db not initialized");
+    return undefined;
+  }
+
+  try {
+    const newsDoc = await getDoc(doc(db, "news", id));
+    if (!newsDoc.exists()) {
+      console.warn(`⚠️ getNewsById: News document ${id} does not exist`);
+      return undefined;
+    }
+
+    const data = newsDoc.data();
+    
+    // Extract date from createdAt timestamp
+    let dateStr = "";
+    if (data.createdAt) {
+      const date = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+      dateStr = date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    }
+    
+    // Extract description from body (first 150 characters)
+    const description = data.body 
+      ? (data.body.length > 150 ? data.body.substring(0, 150) + "..." : data.body)
+      : undefined;
+
+    return {
+      id: newsDoc.id,
+      title: data.title || "",
+      date: dateStr,
+      category: data.category || "",
+      img: data.coverImageUrl || "",
+      description: description,
+      content: data.body || "",
+      author: data.author || undefined,
+    };
+  } catch (error) {
+    console.error(`❌ getNewsById: Error fetching news ${id}:`, error);
+    if (error instanceof Error) {
+      console.error("Error details:", error.message, error.stack);
+    }
+    return undefined;
+  }
 }

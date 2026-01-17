@@ -3,15 +3,52 @@ import Header from "@/components/Header";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { getNewsById } from "@/lib/newsData";
+import { getNewsById, type NewsPost } from "@/lib/newsData";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 
 export default function NewsDetailPage() {
   const params = useParams();
   const router = useRouter();
   const newsId = typeof params.id === 'string' ? params.id : '';
-  const news = newsId ? getNewsById(newsId) : undefined;
+  const [news, setNews] = useState<NewsPost | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchNews() {
+      if (!newsId) {
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
+        setIsLoading(true);
+        const newsData = await getNewsById(newsId);
+        setNews(newsData);
+      } catch (error) {
+        console.error("Error fetching news:", error);
+        setNews(undefined);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchNews();
+  }, [newsId]);
+
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-white">
+        <Header />
+        <div className="container mx-auto px-4 py-12">
+          <div className="text-center py-8">
+            <div className="text-gray-500">Ачаалж байна...</div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   if (!news) {
     return (
@@ -53,11 +90,7 @@ export default function NewsDetailPage() {
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
               {news.title}
             </h1>
-            {news.author && (
-              <div className="text-sm text-gray-600">
-                Зохиогч: {news.author}
-              </div>
-            )}
+           
           </header>
 
           {/* Featured Image */}

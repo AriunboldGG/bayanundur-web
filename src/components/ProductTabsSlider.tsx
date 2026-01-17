@@ -131,7 +131,7 @@ export default function ProductTabsSlider() {
   if (isLoading) {
     return (
       <div className="rounded-xl border border-gray-200 shadow-sm p-4 md:p-5">
-        <div className="text-center py-8 text-gray-500">Ачааллаж байна...</div>
+        <div className="text-center py-8 text-gray-500">ачаалж байна...</div>
       </div>
     );
   }
@@ -166,9 +166,7 @@ export default function ProductTabsSlider() {
               })}
             </TabsList>
           </div>
-          <Button variant="outline" size="sm" className="h-8 text-xs self-start md:self-auto">
-            <Link href="/products">Бүгдийг Харах</Link>
-          </Button>
+       
         </div>
         {productTypes.map((type) => {
           const tabValue = type.toLowerCase().replace(/\s+/g, '-');

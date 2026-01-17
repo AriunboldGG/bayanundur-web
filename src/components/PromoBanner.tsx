@@ -24,9 +24,8 @@ export default function PromoBanner() {
         <div className="absolute inset-0 bg-gradient-to-r from-[#5D85A5] via-[#7AB82E] to-[#8DC63F]" />
         <div className="relative flex items-center justify-between px-6 py-6">
           <div className="text-white">
-            <div className="text-[10px] opacity-80">GPods Watch Sport Series 8</div>
             <div className="text-base md:text-lg font-semibold">
-              A healthy leap ahead
+              Тун удахгүй
             </div>
           </div>
           <Button size="sm" className="bg-white text-gray-800 hover:bg-gray-100">

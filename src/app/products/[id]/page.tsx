@@ -268,7 +268,7 @@ export default function ProductDetailPage() {
       <main className="min-h-screen bg-white">
         <Header />
         <div className="container mx-auto px-4 py-12">
-          <div className="text-center">Ачааллаж байна...</div>
+          <div className="text-center">ачаалж байна...</div>
         </div>
       </main>
     );
@@ -420,12 +420,23 @@ export default function ProductDetailPage() {
           {/* Info */}
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{product.name}</h1>
-            <div className="mt-2 flex items-center gap-3">
+            <div className="mt-2 flex items-center gap-3 flex-wrap">
               <div className="bg-[#1f632b]/10 px-3 py-1 rounded-md">
                 <div className="text-[10px] text-gray-500">Модел дугаар</div>
                 <div className="text-sm font-semibold text-[#1f632b]">{product.modelNumber || "N/A"}</div>
               </div>
+              {product.product_code && (
+                <div className="bg-[#1f632b]/10 px-3 py-1 rounded-md">
+                  <div className="text-[10px] text-gray-500">Барааны код</div>
+                  <div className="text-sm font-semibold text-[#1f632b]">{product.product_code}</div>
+                </div>
+              )}
             </div>
+            {product.priceNum > 0 && (
+              <div className="mt-4">
+                <div className="text-sm font-semibold text-gray-700">Үнэ: <span className="text-[#1f632b] text-lg">{product.priceNum.toLocaleString()} ₮</span></div>
+              </div>
+            )}
             <div className="mt-4 space-y-2">
               <div className="flex items-start gap-3">
                 <span className="text-sm font-bold text-gray-700 min-w-[80px]">Ангилал:</span>
@@ -520,6 +531,7 @@ export default function ProductDetailPage() {
                 price={product.price}
                 img={product.images && product.images.length > 0 ? product.images[0] : (product.img || "")}
                 modelNumber={product.modelNumber || ""}
+                product_code={product.product_code}
                 color={selectedColor}
                 size={selectedSize}
                 brand={product.brand}
@@ -700,6 +712,7 @@ function AddToCartButton(props: {
   price: string;
   img: string;
   modelNumber: string;
+  product_code?: string;
   color?: string;
   size?: string;
   brand?: string;
@@ -720,6 +733,7 @@ function AddToCartButton(props: {
       price: props.price,
       img: props.img,
       modelNumber: props.modelNumber,
+      product_code: props.product_code,
       color: props.color,
       size: props.size,
       brand: props.brand,

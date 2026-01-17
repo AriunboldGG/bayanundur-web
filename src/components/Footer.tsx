@@ -65,19 +65,17 @@ export default function Footer() {
           <div>
             <h4 className="text-sm font-semibold text-gray-800 mb-4">ХАРИЛЦАГЧДАД ЗОРИУЛСАН</h4>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li><Link href="#">Customer Service</Link></li>
               <li><Link href="#">Policy</Link></li>
               <li><Link href="#">Terms & Conditions</Link></li>
-              <li><Link href="#">FAQs</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="mt-10 border-t pt-6 flex items-center justify-between text-xs text-gray-500">
-          <div>© 2025 . All Rights Reserved</div>
+          <div>© 2026 БАЯН ӨНДӨР. Бүх эрх хуулиар хамгаалагдсан</div>
           <div className="flex items-center gap-4">
-            <Image src="/svg/mastercard.svg" alt="Mastercard" width={36} height={22} />
-            <Image src="/svg/visa.svg" alt="Visa" width={36} height={22} />
+            {/* <Image src="/svg/mastercard.svg" alt="Mastercard" width={36} height={22} />
+            <Image src="/svg/visa.svg" alt="Visa" width={36} height={22} /> */}
           </div>
         </div>
       </div>

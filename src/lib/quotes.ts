@@ -52,6 +52,7 @@ export async function saveQuoteToFirestore(data: QuoteData): Promise<string> {
           price: item.price,
           img: item.img,
           modelNumber: item.modelNumber,
+          product_code: item.product_code || null, // Add product_code field
           color: item.color || null,
           size: item.size || null,
           brand: item.brand || null,
@@ -71,7 +72,6 @@ export async function saveQuoteToFirestore(data: QuoteData): Promise<string> {
 
     return docRef.id;
   } catch (error) {
-    console.error("❌ Error saving quote to Firestore:", error);
     throw error;
   }
 }

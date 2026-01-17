@@ -8,7 +8,7 @@ import React, { useMemo, useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Shield, LifeBuoy, Wrench, Package } from "lucide-react";
 import { useStock } from "@/context/StockContext";
-import { getAllProducts, getSubcategories, type Product, type Subcategory } from "@/lib/products";
+import { getAllProducts, getSubcategories, getSectors, type Product, type Subcategory, type Sector } from "@/lib/products";
 import { log } from "console";
 
 function ProductsPageContent() {
@@ -25,11 +25,14 @@ function ProductsPageContent() {
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedStock, setSelectedStock] = useState<Array<"in_stock" | "preorder">>([]);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
+  const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFromFirestore, setIsFromFirestore] = useState(false);
   const [backendSubcategories, setBackendSubcategories] = useState<Subcategory[]>([]);
+  const [sectors, setSectors] = useState<Sector[]>([]);
 
   // Fetch products and subcategories from Firestore on mount
   useEffect(() => {
@@ -52,6 +55,14 @@ function ProductsPageContent() {
           setBackendSubcategories(subcategories);
         } else {
           setBackendSubcategories([]);
+        }
+
+        // Fetch sectors from backend
+        const sectorsData = await getSectors();
+        if (sectorsData.length > 0) {
+          setSectors(sectorsData);
+        } else {
+          setSectors([]);
         }
       } catch (error) {
         setAllProducts([]);
@@ -89,10 +100,10 @@ function ProductsPageContent() {
   // Initialize stock counts (using stock context, not from product data)
 
 
-  // Read category and brand from URL query params on mount
+  // Read category, brand, and search from URL query params on mount
   useEffect(() => {
     const categoryParam = searchParams.get("category");
-    if (categoryParam) {
+    if (categoryParam && allProducts.length > 0) {
       // Check if category is valid (ppe, rescue, workplace, other) - legacy support
       const validCategories: Product["category"][] = ["ppe", "rescue", "workplace", "other"];
       if (validCategories.includes(categoryParam as Product["category"])) {
@@ -101,13 +112,60 @@ function ProductsPageContent() {
         setSelectedSub(null);
         setSelectedLeaf([]);
       } else {
-        // Check if it's a mainCategory text from products
+        // Decode the category parameter (it's URL encoded)
+        const decodedCategory = decodeURIComponent(categoryParam);
+        
+        // Check if it's a mainCategory text from products (exact match)
         const mainCategories = Array.from(new Set(allProducts.map(p => p.mainCategory).filter(Boolean) as string[]));
-        if (mainCategories.includes(categoryParam)) {
-          setSelectedCat(categoryParam);
+        const matchedMainCategory = mainCategories.find(mc => 
+          mc.trim() === decodedCategory.trim()
+        );
+        
+        if (matchedMainCategory) {
+          setSelectedCat(matchedMainCategory);
           setPage(1);
           setSelectedSub(null);
           setSelectedLeaf([]);
+        } else {
+          // Check if it's a category name (from category field in products)
+          const allCategoryNames = Array.from(new Set(allProducts.map(p => p.category).filter(Boolean) as string[]));
+          const matchedCategory = allCategoryNames.find(cat => 
+            cat.trim() === decodedCategory.trim()
+          );
+          
+          if (matchedCategory) {
+            // Find which mainCategory this category belongs to
+            const productWithCategory = allProducts.find(p => p.category === matchedCategory);
+            if (productWithCategory && productWithCategory.mainCategory) {
+              setSelectedCat(productWithCategory.mainCategory);
+              setSelectedCategory(matchedCategory);
+              setPage(1);
+              setSelectedSub(null);
+              setSelectedLeaf([]);
+            }
+          } else {
+            // Check if it's a subcategory name
+            const allSubcategoryNames = Array.from(new Set(allProducts.map(p => p.subcategory).filter(Boolean) as string[]));
+            const matchedSubcategory = allSubcategoryNames.find(sub => 
+              sub.trim() === decodedCategory.trim()
+            );
+            
+            if (matchedSubcategory) {
+              // Find which mainCategory and category this subcategory belongs to
+              const productWithSubcategory = allProducts.find(p => p.subcategory === matchedSubcategory);
+              if (productWithSubcategory) {
+                if (productWithSubcategory.mainCategory) {
+                  setSelectedCat(productWithSubcategory.mainCategory);
+                }
+                if (productWithSubcategory.category) {
+                  setSelectedCategory(productWithSubcategory.category);
+                }
+                setSelectedSub(matchedSubcategory);
+                setPage(1);
+                setSelectedLeaf([]);
+              }
+            }
+          }
         }
       }
     }
@@ -119,6 +177,27 @@ function ProductsPageContent() {
         setSelectedBrands([brandParam]);
         setPage(1);
       }
+    }
+
+    const sectorParam = searchParams.get("sector");
+    if (sectorParam && allProducts.length > 0) {
+      const decodedSector = decodeURIComponent(sectorParam);
+      // Check if sector exists in products
+      const allSectors = Array.from(new Set(allProducts.map(p => p.product_sector).filter(Boolean) as string[]));
+      const matchedSector = allSectors.find(s => s.trim() === decodedSector.trim());
+      
+      if (matchedSector) {
+        setSelectedSectors([matchedSector]);
+        setPage(1);
+      }
+    }
+
+    const searchParam = searchParams.get("search");
+    if (searchParam) {
+      setSearchQuery(searchParam);
+      setPage(1);
+    } else {
+      setSearchQuery("");
     }
   }, [searchParams, allProducts]);
 
@@ -322,14 +401,23 @@ function ProductsPageContent() {
     if (selectedBrands.length) base = base.filter(p => selectedBrands.includes(p.brand));
     if (selectedSizes.length) base = base.filter(p => productHasSize(p, selectedSizes));
     if (selectedThemes.length) base = base.filter(p => selectedThemes.includes(p.theme));
+    if (selectedSectors.length) base = base.filter(p => p.product_sector && selectedSectors.includes(p.product_sector));
     if (selectedStock.length) {
       base = base.filter(p => {
         const stockStatus: "in_stock" | "preorder" = p.stock > 0 ? "in_stock" : "preorder";
         return selectedStock.includes(stockStatus);
       });
     }
+    // Filter by search query (product name)
+    if (searchQuery && searchQuery.trim() !== "") {
+      const query = searchQuery.trim().toLowerCase();
+      base = base.filter(p => {
+        const productName = (p.name || "").toLowerCase();
+        return productName.includes(query);
+      });
+    }
     return base;
-  }, [allProducts, selectedCat, selectedCategory, selectedSub, selectedLeaf, selectedColors, selectedBrands, selectedSizes, selectedThemes, selectedStock]);
+  }, [allProducts, selectedCat, selectedCategory, selectedSub, selectedLeaf, selectedColors, selectedBrands, selectedSizes, selectedThemes, selectedSectors, selectedStock, searchQuery]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageItems = useMemo(() => {
@@ -342,7 +430,7 @@ function ProductsPageContent() {
       <main className="min-h-screen bg-white">
         <Header />
         <div className="container mx-auto px-4 py-12">
-          <div className="text-center">Ачааллаж байна...</div>
+          <div className="text-center">ачаалж байна...</div>
         </div>
       </main>
     );
@@ -501,9 +589,54 @@ function ProductsPageContent() {
               </div>
             </div>
 
+            {/* Product Sector filter */}
+            {(() => {
+              // First try to use sectors from backend collection, otherwise extract from products
+              let productSectors: string[] = [];
+              
+              if (sectors.length > 0) {
+                // Use sectors from backend collection
+                productSectors = sectors.map(s => s.name).sort();
+              } else {
+                // Fallback: Extract unique sectors from products
+                productSectors = Array.from(new Set(allProducts.map((p) => p.product_sector).filter(s => s && s.trim() !== ''))).sort();
+              }
+              
+              // Always show the filter section, even if empty
+              return (
+                <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                  <div className="text-sm font-semibold text-gray-800 mb-2">Бүтээгдэхүүний салбар</div>
+                  <div className="space-y-2 text-sm">
+                    {productSectors.length > 0 ? (
+                      productSectors.map((sectorName) => {
+                        const checked = selectedSectors.includes(sectorName);
+                        return (
+                          <label key={sectorName} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                setPage(1);
+                                setSelectedSectors((prev) =>
+                                  e.target.checked ? [...prev, sectorName] : prev.filter((x) => x !== sectorName)
+                                );
+                              }}
+                            />
+                            {sectorName}
+                          </label>
+                        );
+                      })
+                    ) : (
+                      <div className="text-xs text-gray-400">Салбар олдсонгүй</div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Stock Status filter */}
             <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-              <div className="text-sm font-semibold text-gray-800 mb-2">Нөөцийн төлөв</div>
+              <div className="text-sm font-semibold text-gray-800 mb-2">Нөөц</div>
               <div className="space-y-2 text-sm">
                 <label className="flex items-center gap-2">
                   <input
@@ -544,6 +677,7 @@ function ProductsPageContent() {
                 setSelectedBrands([]);
                 setSelectedSizes([]);
                 setSelectedThemes([]);
+                setSelectedSectors([]);
                 setSelectedStock([]);
                 setPage(1);
               }}
@@ -587,7 +721,21 @@ function ProductsPageContent() {
                     <div className="text-[10px] md:text-xs text-gray-500 font-medium mb-0.5">Модел дугаар</div>
                     <div className="text-xs md:text-sm font-bold text-[#1f632b] leading-tight">{p.modelNumber || "N/A"}</div>
                   </div>
+                  {p.product_code && (
+                    <div className="mb-2">
+                      <div className="text-[10px] md:text-xs text-gray-500 font-medium mb-0.5">Барааны код</div>
+                      <div className="text-xs md:text-sm font-bold text-[#1f632b] leading-tight">{p.product_code}</div>
+                    </div>
+                  )}
                   <div className="space-y-1.5 md:space-y-2 text-xs md:text-sm overflow-visible flex-1">
+                    {(p.priceNum > 0 || (p.price && p.price.trim() !== "" && p.price !== "0₮")) && (
+                      <div className="flex items-start gap-2">
+                        <span className="font-semibold text-gray-700 min-w-[70px] md:min-w-[80px] flex-shrink-0">Үнэ:</span>
+                        <span className="text-gray-600 break-words">
+                          {p.priceNum > 0 ? `${p.priceNum.toLocaleString()} ₮` : (p.price || "0₮")}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-start gap-2">
                       <span className="font-semibold text-gray-700 min-w-[70px] md:min-w-[80px] flex-shrink-0">Брэнд:</span>
                       <span className="text-gray-600 break-words">{p.brand || "-"}</span>
@@ -757,6 +905,51 @@ function ProductsPageContent() {
                 </div>
               </div>
 
+              {/* Product Sector filter */}
+              {(() => {
+                // First try to use sectors from backend collection, otherwise extract from products
+                let productSectors: string[] = [];
+                
+                if (sectors.length > 0) {
+                  // Use sectors from backend collection
+                  productSectors = sectors.map(s => s.name).sort();
+                } else {
+                  // Fallback: Extract unique sectors from products
+                  productSectors = Array.from(new Set(allProducts.map((p) => p.sector).filter(s => s && s.trim() !== ''))).sort();
+                }
+                
+                // Always show the filter section, even if empty
+                return (
+                  <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                    <div className="text-sm font-semibold text-gray-800 mb-2">Бүтээгдэхүүний салбар</div>
+                    <div className="space-y-2 text-sm">
+                      {productSectors.length > 0 ? (
+                        productSectors.map((sectorName) => {
+                          const checked = selectedSectors.includes(sectorName);
+                          return (
+                            <label key={sectorName} className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(e) => {
+                                  setPage(1);
+                                  setSelectedSectors((prev) =>
+                                    e.target.checked ? [...prev, sectorName] : prev.filter((x) => x !== sectorName)
+                                  );
+                                }}
+                              />
+                              {sectorName}
+                            </label>
+                          );
+                        })
+                      ) : (
+                        <div className="text-xs text-gray-400">Салбар олдсонгүй</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Theme */}
               <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
                 <div className="text-sm font-semibold text-gray-800 mb-2">Загвар (Theme)</div>
@@ -784,7 +977,7 @@ function ProductsPageContent() {
 
               {/* Stock Status filter */}
               <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-                <div className="text-sm font-semibold text-gray-800 mb-2">Нөөцийн төлөв</div>
+                <div className="text-sm font-semibold text-gray-800 mb-2">Нөөц</div>
                 <div className="space-y-2 text-sm">
                   <label className="flex items-center gap-2">
                     <input
@@ -824,8 +1017,9 @@ function ProductsPageContent() {
                     setSelectedColors([]);
                     setSelectedBrands([]);
                     setSelectedSizes([]);
-                    setSelectedStock([]);
                     setSelectedThemes([]);
+                    setSelectedSectors([]);
+                    setSelectedStock([]);
                     setPage(1);
                   }}
                   className="w-full rounded-md border px-4 py-2 text-sm hover:bg-[#1f632b]/10 hover:text-[#1f632b] hover:border-[#1f632b] transition-colors"
@@ -879,7 +1073,7 @@ export default function ProductsPage() {
       <main className="min-h-screen bg-white">
         <Header />
         <div className="container mx-auto px-4 py-12">
-          <div className="text-center">Ачааллаж байна...</div>
+          <div className="text-center">ачаалж байна...</div>
         </div>
       </main>
     }>

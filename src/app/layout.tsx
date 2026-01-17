@@ -18,6 +18,11 @@ export const metadata: Metadata = {
     template: "%s | БАЯН ӨНДӨР",
   },
   description: "ХАБЭА хамгаалах хувцас хэрэгсэл, аврах багаж хэрэгсэл, ажлын байрны тохилог орчны бүтээгдэхүүнийг чанартай, найдвартай байдлаар нийлүүлнэ.",
+  icons: {
+    icon: "/svg/main-logo.svg",
+    shortcut: "/svg/main-logo.svg",
+    apple: "/svg/main-logo.svg",
+  },
   keywords: [
     "ХАБЭА",
     "хамгаалах хувцас хэрэгсэл",

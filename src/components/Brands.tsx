@@ -108,7 +108,7 @@ export default function Brands() {
         
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-gray-500">Ачааллаж байна...</div>
+          <div className="text-center py-8 text-gray-500">ачаалж байна...</div>
         </CardContent>
       </Card>
     );
