@@ -4,12 +4,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { FaWeixin } from "react-icons/fa";
 import NavLink from "./NavLink";
 import { useCart } from "@/context/CartContext";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 
 export default function Header() {
   const { count } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { companyInfo } = useCompanyInfo();
   return (
     <header className="w-full bg-white">
       {/* Top Header Bar */}
@@ -17,7 +20,12 @@ export default function Header() {
         <div className="container mx-auto px-4 py-2 flex items-center justify-between gap-2 text-[11px] sm:text-xs">
           {/* Left: Social Media Icons */}
           <div className="flex items-center gap-2">
-            <Link href="#" className="flex items-center justify-center">
+            <a
+              href={companyInfo.facebookUrl || "#"}
+              className="flex items-center justify-center"
+              target={companyInfo.facebookUrl ? "_blank" : undefined}
+              rel={companyInfo.facebookUrl ? "noopener noreferrer" : undefined}
+            >
               <Image 
                 src="/svg/fb-logo.svg" 
                 alt="Facebook" 
@@ -25,8 +33,24 @@ export default function Header() {
                 height={20}
                 className="w-5 h-5"
               />
-            </Link>
-            <Link href="#" className="flex items-center justify-center">
+            </a>
+            {companyInfo.wechatUrl ? (
+              <a
+                href={companyInfo.wechatUrl}
+                className="flex items-center justify-center text-[#07C160]"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="WeChat"
+              >
+                <FaWeixin className="w-5 h-5" />
+              </a>
+            ) : null}
+            <a
+              href={companyInfo.whatsappUrl || "#"}
+              className="flex items-center justify-center"
+              target={companyInfo.whatsappUrl ? "_blank" : undefined}
+              rel={companyInfo.whatsappUrl ? "noopener noreferrer" : undefined}
+            >
               <Image 
                 src="/svg/whatsupp-log.svg" 
                 alt="WhatsApp" 
@@ -34,7 +58,7 @@ export default function Header() {
                 height={20}
                 className="w-5 h-5"
               />
-            </Link>
+            </a>
           </div>
 
          
@@ -42,7 +66,7 @@ export default function Header() {
           {/* Right: Contact Info */}
           <div className="flex items-center gap-2 justify-end whitespace-nowrap">
             <a
-              href="mailto:info@bayan-undur.mn"
+              href={`mailto:${companyInfo.email}`}
               className="flex items-center gap-1 text-gray-700 hover:underline"
             >
               <Image 
@@ -52,11 +76,11 @@ export default function Header() {
                 height={16}
                 className="w-4 h-4"
               />
-              <span className="max-sm:text-[10px]">info@bayan-undur.mn</span>
+              <span className="max-sm:text-[10px]">{companyInfo.email}</span>
             </a>
             <span className="text-gray-300 px-1">|</span>
             <a
-              href="tel:70118585"
+              href={`tel:${companyInfo.phone}`}
               className="flex items-center gap-1 text-gray-700 hover:underline"
             >
               <Image 
@@ -66,8 +90,26 @@ export default function Header() {
                 height={16}
                 className="w-4 h-4"
               />
-              <span className="max-sm:text-[10px]">70118585</span>
+              <span className="max-sm:text-[10px]">{companyInfo.phone}</span>
             </a>
+            {companyInfo.mobilePhone ? (
+              <>
+                <span className="text-gray-300 px-1">|</span>
+                <a
+                  href={`tel:${companyInfo.mobilePhone}`}
+                  className="flex items-center gap-1 text-gray-700 hover:underline"
+                >
+                  <Image 
+                    src="/svg/phone-logo.svg" 
+                    alt="Mobile phone" 
+                    width={16} 
+                    height={16}
+                    className="w-4 h-4"
+                  />
+                  <span className="max-sm:text-[10px]">{companyInfo.mobilePhone}</span>
+                </a>
+              </>
+            ) : null}
           </div>
         </div>
       </div>
