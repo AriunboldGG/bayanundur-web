@@ -6,9 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import { getAllProducts, type Product } from "@/lib/products";
 import FirebaseImage from "@/components/FirebaseImage";
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Autoplay } from 'swiper/modules';
+import { Autoplay } from 'swiper/modules';
 import 'swiper/css';
-import 'swiper/css/navigation';
 
 interface BrandItem {
   id: string;
@@ -122,13 +121,9 @@ export default function Brands() {
         ) : (
           <div className="relative">
             <Swiper
-              modules={[Navigation, Autoplay]}
+              modules={[Autoplay]}
               spaceBetween={16}
               slidesPerView="auto"
-              navigation={{
-                nextEl: '.swiper-button-next-brands',
-                prevEl: '.swiper-button-prev-brands',
-              }}
               autoplay={{
                 delay: 3000,
                 disableOnInteraction: false,
@@ -170,16 +165,6 @@ export default function Brands() {
                 </SwiperSlide>
               ))}
             </Swiper>
-            <button className="swiper-button-prev-brands absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-md hover:bg-gray-50 border border-gray-200 rounded-full w-10 h-10 flex items-center justify-center cursor-pointer">
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <button className="swiper-button-next-brands absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-md hover:bg-gray-50 border border-gray-200 rounded-full w-10 h-10 flex items-center justify-center cursor-pointer">
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
           </div>
         )}
       </CardContent>

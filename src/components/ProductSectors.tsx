@@ -12,7 +12,8 @@ import {
   FaBolt,
   FaShieldAlt,
   FaTools,
-  FaBox
+  FaBox,
+  FaHardHat
 } from "react-icons/fa";
 import { getSectors, type Sector } from "@/lib/products";
 
@@ -27,10 +28,36 @@ const iconMap: Record<string, IconType> = {
   FaShieldAlt,
   FaTools,
   FaBox,
+  FaHardHat,
 };
 
 // Default icon if sector doesn't have one
 const DefaultIcon = FaBox;
+
+const keywordIconMap: Array<{ keywords: string[]; icon: IconType }> = [
+  { keywords: ["барилга", "construction", "build"], icon: FaHardHat },
+  { keywords: ["гал", "fire"], icon: FaFire },
+  { keywords: ["зам", "road"], icon: FaRoad },
+  { keywords: ["уул", "mine", "mining"], icon: FaMountain },
+  { keywords: ["үйлдвэр", "industry", "factory"], icon: FaIndustry },
+  { keywords: ["цахилгаан", "energy", "electric"], icon: FaBolt },
+  { keywords: ["хамгаал", "safety", "hse"], icon: FaShieldAlt },
+  { keywords: ["багаж", "tool"], icon: FaTools },
+  { keywords: ["агуулах", "box", "other"], icon: FaBox },
+];
+
+function resolveSectorIcon(sector: Sector): IconType {
+  if (sector.icon && iconMap[sector.icon]) {
+    return iconMap[sector.icon];
+  }
+  const name = `${sector.name || ""} ${sector.slug || ""}`.toLowerCase();
+  for (const entry of keywordIconMap) {
+    if (entry.keywords.some((keyword) => name.includes(keyword))) {
+      return entry.icon;
+    }
+  }
+  return DefaultIcon;
+}
 
 export default function ProductSectors() {
   const [sectors, setSectors] = useState<Sector[]>([]);
@@ -74,7 +101,7 @@ export default function ProductSectors() {
       <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Салбарын ангилал</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 md:gap-4">
         {sectors.map((sector) => {
-          const Icon = (sector.icon && iconMap[sector.icon]) ? iconMap[sector.icon] : DefaultIcon;
+          const Icon = resolveSectorIcon(sector);
           return (
             <Link
               key={sector.id}
