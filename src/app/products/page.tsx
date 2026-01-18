@@ -34,6 +34,31 @@ function ProductsPageContent() {
   const [backendSubcategories, setBackendSubcategories] = useState<Subcategory[]>([]);
   const [sectors, setSectors] = useState<Sector[]>([]);
 
+  const normalizeBrand = (value: string) =>
+    value
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, " ")
+      .replace(/\s*-\s*/g, "-");
+
+  const brandOptions = useMemo(() => {
+    const brandMap = new Map<string, string>();
+
+    allProducts.forEach((product) => {
+      if (product.brand && product.brand.trim() !== "") {
+        const label = product.brand.trim();
+        const key = normalizeBrand(label);
+        if (!brandMap.has(key)) {
+          brandMap.set(key, label);
+        }
+      }
+    });
+
+    return Array.from(brandMap.entries())
+      .map(([key, label]) => ({ key, label }))
+      .sort((a, b) => a.label.localeCompare(b.label, "mn", { sensitivity: "base" }));
+  }, [allProducts]);
+
   // Fetch products and subcategories from Firestore on mount
   useEffect(() => {
     async function fetchData() {
@@ -172,9 +197,9 @@ function ProductsPageContent() {
     
     const brandParam = searchParams.get("brand");
     if (brandParam) {
-      const availableBrands = Array.from(new Set(allProducts.map((p) => p.brand)));
-      if (availableBrands.includes(brandParam)) {
-        setSelectedBrands([brandParam]);
+      const normalizedBrand = normalizeBrand(decodeURIComponent(brandParam));
+      if (brandOptions.some((b) => b.key === normalizedBrand)) {
+        setSelectedBrands([normalizedBrand]);
         setPage(1);
       }
     }
@@ -199,7 +224,7 @@ function ProductsPageContent() {
     } else {
       setSearchQuery("");
     }
-  }, [searchParams, allProducts]);
+  }, [searchParams, allProducts, brandOptions]);
 
   // Icon mapping for categories
   const categoryIcons: Record<Product["category"], typeof Shield | null> = {
@@ -398,7 +423,12 @@ function ProductsPageContent() {
       base = base.filter(p => selectedLeaf.includes(p.subleaf));
     }
     if (selectedColors.length) base = base.filter(p => productHasColor(p, selectedColors));
-    if (selectedBrands.length) base = base.filter(p => selectedBrands.includes(p.brand));
+    if (selectedBrands.length) {
+      base = base.filter((p) => {
+        if (!p.brand) return false;
+        return selectedBrands.includes(normalizeBrand(p.brand));
+      });
+    }
     if (selectedSizes.length) base = base.filter(p => productHasSize(p, selectedSizes));
     if (selectedThemes.length) base = base.filter(p => selectedThemes.includes(p.theme));
     if (selectedSectors.length) base = base.filter(p => p.product_sector && selectedSectors.includes(p.product_sector));
@@ -568,21 +598,23 @@ function ProductsPageContent() {
             <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
               <div className="text-sm font-semibold text-gray-800 mb-2">Брэнд</div>
               <div className="space-y-2 text-sm">
-                {Array.from(new Set(allProducts.map((p) => p.brand).filter(b => b && b.trim() !== ''))).sort().map((b) => {
-                  const checked = selectedBrands.includes(b);
+                {brandOptions.map((b) => {
+                  const checked = selectedBrands.includes(b.key);
                   return (
-                    <label key={b} className="flex items-center gap-2">
+                    <label key={b.key} className="flex items-center gap-2">
                       <input
                         type="checkbox"
                         checked={checked}
                         onChange={(e) => {
                           setPage(1);
                           setSelectedBrands((prev) =>
-                            e.target.checked ? [...prev, b] : prev.filter((x) => x !== b)
+                            e.target.checked
+                              ? [...prev, b.key]
+                              : prev.filter((x) => x !== b.key)
                           );
                         }}
                       />
-                      {b}
+                      {b.label}
                     </label>
                   );
                 })}
@@ -884,21 +916,23 @@ function ProductsPageContent() {
               <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
                 <div className="text-sm font-semibold text-gray-800 mb-2">Брэнд</div>
                 <div className="space-y-2 text-sm">
-                  {Array.from(new Set(allProducts.map((p) => p.brand).filter(b => b && b.trim() !== ''))).sort().map((b) => {
-                    const checked = selectedBrands.includes(b);
+                  {brandOptions.map((b) => {
+                    const checked = selectedBrands.includes(b.key);
                     return (
-                      <label key={b} className="flex items-center gap-2">
+                      <label key={b.key} className="flex items-center gap-2">
                         <input
                           type="checkbox"
                           checked={checked}
                           onChange={(e) => {
                             setPage(1);
                             setSelectedBrands((prev) =>
-                              e.target.checked ? [...prev, b] : prev.filter((x) => x !== b)
+                              e.target.checked
+                                ? [...prev, b.key]
+                                : prev.filter((x) => x !== b.key)
                             );
                           }}
                         />
-                        {b}
+                        {b.label}
                       </label>
                     );
                   })}
