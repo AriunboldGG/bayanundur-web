@@ -7,6 +7,9 @@ import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 
 export default function Footer() {
   const { companyInfo } = useCompanyInfo();
+  const mapSrc =
+    companyInfo.mapEmbedUrl ||
+    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2675.1584418996117!2d106.88357267590312!3d47.89461856804502!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x5d96930010cf9007%3A0xc7910f0df8d73ee!2sM1%20Tower!5e0!3m2!1sen!2smn!4v1768798097551!5m2!1sen!2smn";
   return (
     <footer className="w-full border-t mt-8 md:mt-12 bg-[#F5F5F5]">
       <div className="container mx-auto px-4 py-10">
@@ -75,18 +78,18 @@ export default function Footer() {
           <div>
             <h4 className="text-sm font-semibold text-gray-800 mb-4">ХАЯГ</h4>
             <div className="text-xs text-gray-500 mb-4">{companyInfo.address}</div>
-            {companyInfo.mapEmbedUrl ? (
+            {mapSrc ? (
               <div className="w-full overflow-hidden rounded-lg">
                 <iframe
-                  src={companyInfo.mapEmbedUrl}
-                  title="Company location map"
-                  width="400"
-                  height="300"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="w-full h-auto min-h-[250px] md:min-h-[300px]"
+                  src={mapSrc}
+                title="Company location map"
+                width="400"
+                height="300"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="w-full h-auto min-h-[250px] md:min-h-[300px]"
                 />
               </div>
             ) : null}
