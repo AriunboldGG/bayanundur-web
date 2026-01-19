@@ -81,8 +81,14 @@ function ProductsPageContent() {
         } else {
           setBackendSubcategories([]);
         }
+      } catch (error) {
+        setAllProducts([]);
+        setIsFromFirestore(false);
+        setBackendSubcategories([]);
+      }
 
-        // Fetch sectors from backend
+      try {
+        // Fetch sectors from backend (independent of products)
         const sectorsData = await getSectors();
         if (sectorsData.length > 0) {
           setSectors(sectorsData);
@@ -90,9 +96,7 @@ function ProductsPageContent() {
           setSectors([]);
         }
       } catch (error) {
-        setAllProducts([]);
-        setIsFromFirestore(false);
-        setBackendSubcategories([]);
+        setSectors([]);
       } finally {
         setIsLoading(false);
       }

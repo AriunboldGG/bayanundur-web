@@ -129,7 +129,7 @@ export default function Header() {
           </Link>
 
           {/* Middle: Navigation Links - Desktop */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-8">
             <NavLink href="/">НҮҮР</NavLink>
             <NavLink href="/products">БҮТЭЭГДЭХҮҮН</NavLink>
             <NavLink href="/news">МЭДЭЭ</NavLink>
@@ -159,7 +159,7 @@ export default function Header() {
             {/* Burger Menu Button - Mobile Only */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-2 text-gray-800 hover:text-[#8DC63F] transition-colors"
+              className="lg:hidden p-2 text-gray-800 hover:text-[#8DC63F] transition-colors"
               aria-label="Toggle menu"
             >
               {isMenuOpen ? (
@@ -173,7 +173,7 @@ export default function Header() {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 bg-white">
+          <div className="lg:hidden border-t border-gray-200 bg-white">
             <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
               <NavLink href="/" onClick={() => setIsMenuOpen(false)}>
                 НҮҮР

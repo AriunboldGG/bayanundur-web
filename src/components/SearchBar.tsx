@@ -95,7 +95,7 @@ export default function SearchBar() {
 
   return (
     <div className="w-full">
-      <div className="bg-[#8DC63F] rounded-xl px-4 md:px-5 py-4 md:py-5 shadow-md">
+      <div className="bg-[#1f632b] rounded-xl px-4 md:px-5 py-4 md:py-5 shadow-md">
         <div className="relative" ref={dropdownRef}>
           <div className="flex items-center bg-white rounded-lg overflow-hidden shadow-lg h-12 md:h-14 border-2 border-white/20 focus-within:border-white/40 transition-all">
             {/* Category Dropdown */}
@@ -111,7 +111,7 @@ export default function SearchBar() {
               }}
               className={`flex items-center gap-2 px-3 md:px-4 py-2 border-r border-gray-200 transition-all h-full cursor-pointer ${
                 isCategoryOpen 
-                  ? "bg-[#1f632b]/5 text-[#1f632b]" 
+                  ? "bg-[#1f632b]/10 text-[#1f632b]" 
                   : "hover:bg-gray-50 text-gray-700"
               }`}
             >
@@ -146,7 +146,7 @@ export default function SearchBar() {
               className="px-4 md:px-5 py-3 border-l border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center h-full cursor-pointer group"
             >
               <svg
-                className="w-5 h-5 text-gray-600 group-hover:text-[#1f632b] group-hover:scale-110 transition-all"
+                className="w-5 h-5 text-[#1f632b] group-hover:text-[#1f632b] group-hover:scale-110 transition-all"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

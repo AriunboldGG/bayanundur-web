@@ -39,9 +39,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-      <section className="container mx-auto px-4 mt-6 md:mt-8">
-        <ProductSectors />
-      </section>
+      <ProductSectors variant="floating" />
       <section className="container mx-auto px-4 mt-6 md:mt-8">
         <ProductTabsSlider />
       </section>

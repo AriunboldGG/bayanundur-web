@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { IconType } from "react-icons";
 import { 
   FaBuilding, 
@@ -13,7 +13,15 @@ import {
   FaShieldAlt,
   FaTools,
   FaBox,
-  FaHardHat
+  FaHardHat,
+  FaTruck,
+  FaWarehouse,
+  FaFlask,
+  FaLeaf,
+  FaRecycle,
+  FaHammer,
+  FaBriefcase,
+  FaHandsHelping
 } from "react-icons/fa";
 import { getSectors, type Sector } from "@/lib/products";
 
@@ -29,6 +37,14 @@ const iconMap: Record<string, IconType> = {
   FaTools,
   FaBox,
   FaHardHat,
+  FaTruck,
+  FaWarehouse,
+  FaFlask,
+  FaLeaf,
+  FaRecycle,
+  FaHammer,
+  FaBriefcase,
+  FaHandsHelping,
 };
 
 // Default icon if sector doesn't have one
@@ -43,7 +59,14 @@ const keywordIconMap: Array<{ keywords: string[]; icon: IconType }> = [
   { keywords: ["цахилгаан", "energy", "electric"], icon: FaBolt },
   { keywords: ["хамгаал", "safety", "hse"], icon: FaShieldAlt },
   { keywords: ["багаж", "tool"], icon: FaTools },
-  { keywords: ["агуулах", "box", "other"], icon: FaBox },
+  { keywords: ["агуулах", "warehouse", "storage"], icon: FaWarehouse },
+  { keywords: ["тээвэр", "transport", "logistic"], icon: FaTruck },
+  { keywords: ["хими", "chemical", "lab"], icon: FaFlask },
+  { keywords: ["ногоон", "eco", "environment"], icon: FaLeaf },
+  { keywords: ["дахин", "recycle"], icon: FaRecycle },
+  { keywords: ["засвар", "service", "maintenance"], icon: FaHammer },
+  { keywords: ["зөвлөх", "service", "support"], icon: FaHandsHelping },
+  { keywords: ["офис", "business", "office"], icon: FaBriefcase },
 ];
 
 function resolveSectorIcon(sector: Sector): IconType {
@@ -59,7 +82,13 @@ function resolveSectorIcon(sector: Sector): IconType {
   return DefaultIcon;
 }
 
-export default function ProductSectors() {
+type ProductSectorsVariant = "inline" | "floating";
+
+export default function ProductSectors({
+  variant = "inline",
+}: {
+  variant?: ProductSectorsVariant;
+}) {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -79,6 +108,44 @@ export default function ProductSectors() {
     fetchSectors();
   }, []);
 
+  const iconAssignments = useMemo(() => {
+    const used = new Set<IconType>();
+    const assigned = new Map<string, IconType>();
+    const fallbackIcons: IconType[] = [
+      FaHardHat,
+      FaFire,
+      FaRoad,
+      FaMountain,
+      FaIndustry,
+      FaBolt,
+      FaShieldAlt,
+      FaTools,
+      FaWarehouse,
+      FaTruck,
+      FaFlask,
+      FaLeaf,
+      FaRecycle,
+      FaHammer,
+      FaBriefcase,
+      FaHandsHelping,
+      FaBox,
+    ];
+
+    sectors.forEach((sector) => {
+      let icon = resolveSectorIcon(sector);
+      if (used.has(icon)) {
+        const next = fallbackIcons.find((candidate) => !used.has(candidate));
+        if (next) {
+          icon = next;
+        }
+      }
+      assigned.set(sector.id, icon);
+      used.add(icon);
+    });
+
+    return assigned;
+  }, [sectors]);
+
   if (isLoading) {
     return (
       <div className="w-full">
@@ -96,26 +163,55 @@ export default function ProductSectors() {
     return null;
   }
 
+  if (variant === "floating") {
+    const visibleSectors = sectors.slice(0, 7);
+    return (
+      <div className="fixed right-4 md:right-6 top-1/2 -translate-y-1/2 z-40">
+        <div className="rounded-full bg-white shadow-xl border border-gray-100 px-2 py-3 overflow-visible">
+          <div className="flex flex-col items-center gap-3">
+            {visibleSectors.map((sector) => {
+              const Icon = iconAssignments.get(sector.id) || resolveSectorIcon(sector);
+              return (
+                <Link
+                  key={sector.id}
+                  href={`/products?sector=${encodeURIComponent(sector.name)}`}
+                  className="group relative flex items-center justify-center"
+                  aria-label={sector.name}
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white border border-gray-200 text-[#1f632b] shadow-sm transition-all group-hover:border-[#1f632b] group-hover:shadow-md">
+                    <Icon className="h-6 w-6" />
+                  </span>
+                  <span className="pointer-events-none absolute right-full mr-3 whitespace-nowrap rounded-full bg-[#1f632b] px-3 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+                    {sector.name}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Салбарын ангилал</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 md:gap-4">
+      <div className="flex flex-wrap items-center gap-4 md:gap-6">
         {sectors.map((sector) => {
-          const Icon = resolveSectorIcon(sector);
+          const Icon = iconAssignments.get(sector.id) || resolveSectorIcon(sector);
           return (
             <Link
               key={sector.id}
               href={`/products?sector=${encodeURIComponent(sector.name)}`}
-              className="group relative overflow-hidden rounded-lg border border-gray-200 bg-white hover:border-[#1f632b] hover:shadow-md transition-all cursor-pointer"
+              className="group relative flex flex-col items-center"
+              aria-label={sector.name}
             >
-              <div className="aspect-square flex flex-col items-center justify-center p-4 md:p-6">
-                <div className="flex h-12 w-12 md:h-16 md:w-16 items-center justify-center rounded-lg bg-[#1f632b]/10 group-hover:bg-[#1f632b]/20 transition-colors mb-3">
-                  <Icon className="h-6 w-6 md:h-8 md:w-8 text-[#1f632b]" />
-                </div>
-                <span className="text-xs md:text-sm font-medium text-gray-700 text-center group-hover:text-[#1f632b] transition-colors">
-                  {sector.name}
-                </span>
+              <div className="flex h-14 w-14 md:h-16 md:w-16 items-center justify-center rounded-full bg-white border border-gray-200 shadow-sm transition-all group-hover:border-[#1f632b] group-hover:shadow-md">
+                <Icon className="h-6 w-6 md:h-7 md:w-7 text-[#1f632b]" />
               </div>
+              <span className="pointer-events-none absolute -bottom-8 whitespace-nowrap rounded-full bg-[#1f632b] px-3 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+                {sector.name}
+              </span>
             </Link>
           );
         })}

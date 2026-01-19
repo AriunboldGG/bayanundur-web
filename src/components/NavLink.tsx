@@ -19,8 +19,8 @@ export default function NavLink({ href, children, onClick }: NavLinkProps) {
       onClick={onClick}
       className={`font-medium uppercase transition-colors ${
         isActive
-          ? "text-[#8DC63F] hover:text-[#7AB82E]"
-          : "text-gray-800 hover:text-[#8DC63F]"
+          ? "text-[#1f632b] hover:text-[#1f632b]"
+          : "text-gray-800 hover:text-[#1f632b]"
       }`}
     >
       {children}
