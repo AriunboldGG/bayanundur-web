@@ -17,7 +17,7 @@ export default function Footer() {
           {/* Contact */}
           <div>
             <h4 className="text-sm font-semibold text-gray-800 mb-4">ХОЛБОО БАРИХ</h4>
-            <div className="text-xs font-semibold text-gray-800 mb-1">БОРЛУУЛАЛТЫН УТАС</div>
+            <div className="text-xs font-semibold text-gray-800 mb-1">БОРЛУУЛАЛТЫН АЛБА</div>
             <a
               href={`tel:${companyInfo.phone}`}
               className="text-2xl font-bold text-[#1D75B7] mb-4 inline-block hover:underline"
@@ -115,7 +115,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 border-t pt-6 flex items-center justify-between text-xs text-gray-500">
-          <div>© 2026 БАЯН ӨНДӨР. Бүх эрх хуулиар хамгаалагдсан</div>
+          <div>© 2026 БАЯН ӨНДӨР ХХК. Бүх эрх хуулиар хамгаалагдсан</div>
           <div className="flex items-center gap-4">
             {/* <Image src="/svg/mastercard.svg" alt="Mastercard" width={36} height={22} />
             <Image src="/svg/visa.svg" alt="Visa" width={36} height={22} /> */}
