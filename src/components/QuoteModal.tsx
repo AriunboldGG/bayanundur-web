@@ -33,7 +33,6 @@ export function QuoteModal({ open, onClose, items }: QuoteModalProps) {
     const email = (formData.get("email") as string) ?? "";
     const phone = (formData.get("phone") as string) ?? "";
     const note = (formData.get("note") as string) ?? "";
-    const position = (formData.get("position") as string) ?? "";
     const company = (formData.get("company") as string) ?? "";
 
     try {
@@ -53,7 +52,6 @@ export function QuoteModal({ open, onClose, items }: QuoteModalProps) {
         email,
         phone,
         note,
-        position,
         company,
         items: itemsToSave,
       });
@@ -123,17 +121,17 @@ export function QuoteModal({ open, onClose, items }: QuoteModalProps) {
           <div className="grid grid-cols-1 gap-4">
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-700">
-                Нэр <span className="text-red-500">*</span>
+                Компаний нэр <span className="text-red-500">*</span>
               </label>
               <input
                 required
-                name="firstName"
+                name="company"
                 className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8DC63F]"
               />
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-700">
-                Овог <span className="text-red-500">*</span>
+                Холбоо барих ажилтны овог <span className="text-red-500">*</span>
               </label>
               <input
                 required
@@ -141,6 +139,17 @@ export function QuoteModal({ open, onClose, items }: QuoteModalProps) {
                 className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8DC63F]"
               />
             </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-700">
+                Холбоо барих ажилтны нэр <span className="text-red-500">*</span>
+              </label>
+              <input
+                required
+                name="firstName"
+                className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8DC63F]"
+              />
+            </div>
+            
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-700">
                 Үнийн санал хүлээн авах и-мэйл хаяг <span className="text-red-500">*</span>
@@ -164,33 +173,12 @@ export function QuoteModal({ open, onClose, items }: QuoteModalProps) {
             </div>
             <div className="space-y-1">
               <label className="text-xs font-medium text-gray-700">
-                Нэмэлт мэдээлэл <span className="text-red-500">*</span>
+                Нэмэлт мэдээлэл
               </label>
               <textarea
-                required
                 rows={3}
                 name="note"
                 className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8DC63F] resize-none"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-700">
-                Албан тушаал <span className="text-red-500">*</span>
-              </label>
-              <input
-                required
-                name="position"
-                className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8DC63F]"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-700">
-                Компани <span className="text-red-500">*</span>
-              </label>
-              <input
-                required
-                name="company"
-                className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8DC63F]"
               />
             </div>
           </div>

@@ -8,7 +8,6 @@ export type QuoteData = {
   email: string;
   phone: string;
   note: string;
-  position: string;
   company: string;
   items: CartItem[];
   createdAt?: any;
@@ -36,7 +35,6 @@ export async function saveQuoteToFirestore(data: QuoteData): Promise<string> {
       email: data.email,
       phone: data.phone,
       note: data.note,
-      position: data.position,
       company: data.company,
       items: itemsArray.map((item, index) => {
         // Ensure qty is a number and is valid
