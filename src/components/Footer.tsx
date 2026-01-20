@@ -17,7 +17,7 @@ export default function Footer() {
           {/* Contact */}
           <div>
             <h4 className="text-sm font-semibold text-gray-800 mb-4">ХОЛБОО БАРИХ</h4>
-            <div className="text-xs font-semibold text-gray-800 mb-1">УТАС</div>
+            <div className="text-xs font-semibold text-gray-800 mb-1">БОРЛУУЛАЛТЫН УТАС</div>
             <a
               href={`tel:${companyInfo.phone}`}
               className="text-2xl font-bold text-[#1D75B7] mb-4 inline-block hover:underline"

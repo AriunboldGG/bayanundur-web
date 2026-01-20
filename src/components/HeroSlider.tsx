@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
+  type CarouselApi,
   Carousel,
   CarouselContent,
   CarouselItem,
@@ -11,6 +12,7 @@ import {
 } from "@/components/ui/carousel";
 import { useMemo, useState, useEffect } from "react";
 import { getAllNews, type NewsPost } from "@/lib/newsData";
+import Autoplay from "embla-carousel-autoplay";
 
 interface Slide {
   id: string;
@@ -23,6 +25,9 @@ interface Slide {
 
 export default function HeroSlider({ slides }: { slides?: Slide[] }) {
   const [allNews, setAllNews] = useState<NewsPost[]>([]);
+  const [api, setApi] = useState<CarouselApi | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [snapCount, setSnapCount] = useState(0);
 
   // Fetch news from Firestore
   useEffect(() => {
@@ -37,6 +42,24 @@ export default function HeroSlider({ slides }: { slides?: Slide[] }) {
     
     fetchNews();
   }, []);
+
+  useEffect(() => {
+    if (!api) return;
+
+    const updateState = () => {
+      setActiveIndex(api.selectedScrollSnap());
+      setSnapCount(api.scrollSnapList().length);
+    };
+
+    updateState();
+    api.on("select", updateState);
+    api.on("reInit", updateState);
+
+    return () => {
+      api.off("select", updateState);
+      api.off("reInit", updateState);
+    };
+  }, [api]);
 
   // Get last 3 news items sorted by date (most recent first)
   const newsSlides = useMemo(() => {
@@ -58,7 +81,14 @@ export default function HeroSlider({ slides }: { slides?: Slide[] }) {
   const displaySlides = slides || newsSlides;
   return (
     <div className="w-full h-full min-h-[400px] md:min-h-[500px]">
-      <Carousel className="w-full h-full">
+      <Carousel
+        className="w-full h-full"
+        setApi={setApi}
+        opts={{ loop: true }}
+        plugins={[
+          Autoplay({ delay: 8000, stopOnInteraction: false }),
+        ]}
+      >
         <CarouselContent>
           {displaySlides.map((s) => (
             <CarouselItem key={s.id}>
@@ -69,7 +99,7 @@ export default function HeroSlider({ slides }: { slides?: Slide[] }) {
                   alt={s.title}
                   fill
                   priority
-                  className="object-contain bg-white"
+                  className="object-cover bg-white"
                 />
               ) : (
                 <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
@@ -93,6 +123,21 @@ export default function HeroSlider({ slides }: { slides?: Slide[] }) {
         </CarouselContent>
         <CarouselPrevious className="left-2 cursor-pointer" />
         <CarouselNext className="right-2 cursor-pointer" />
+        {displaySlides.length > 1 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
+            {Array.from({ length: snapCount }).map((_, index) => (
+              <button
+                key={`hero-dot-${index}`}
+                type="button"
+                onClick={() => api?.scrollTo(index)}
+                className={`h-2 w-2 rounded-full transition-colors ${
+                  index === activeIndex ? "bg-[#1f632b]" : "bg-white/80"
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </Carousel>
     </div>
   );

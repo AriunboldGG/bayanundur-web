@@ -91,6 +91,7 @@ export default function ProductSectors({
 }) {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFloatingOpen, setIsFloatingOpen] = useState(false);
 
   useEffect(() => {
     async function fetchSectors() {
@@ -166,8 +167,20 @@ export default function ProductSectors({
   if (variant === "floating") {
     const visibleSectors = sectors.slice(0, 7);
     return (
-      <div className="fixed right-4 md:right-6 top-1/2 -translate-y-1/2 z-40">
-        <div className="rounded-full bg-white shadow-xl border border-gray-100 px-2 py-3 overflow-visible">
+      <div className="fixed right-4 md:right-6 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setIsFloatingOpen((prev) => !prev)}
+          className="md:hidden h-12 w-12 rounded-full bg-[#1f632b] text-white text-lg font-semibold shadow-lg flex items-center justify-center"
+          aria-label="Салбар"
+        >
+          ☰
+        </button>
+        <div
+          className={`rounded-full bg-white shadow-xl border border-gray-100 px-2 py-3 overflow-visible ${
+            isFloatingOpen ? "flex" : "hidden"
+          } md:flex`}
+        >
           <div className="flex flex-col items-center gap-3">
             {visibleSectors.map((sector) => {
               const Icon = iconAssignments.get(sector.id) || resolveSectorIcon(sector);
@@ -177,6 +190,7 @@ export default function ProductSectors({
                   href={`/products?sector=${encodeURIComponent(sector.name)}`}
                   className="group relative flex items-center justify-center"
                   aria-label={sector.name}
+                  onClick={() => setIsFloatingOpen(false)}
                 >
                   <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white border border-gray-200 text-[#1f632b] shadow-sm transition-all group-hover:border-[#1f632b] group-hover:shadow-md">
                     <Icon className="h-6 w-6" />
