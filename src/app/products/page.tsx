@@ -763,7 +763,7 @@ function ProductsPageContent() {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
             {pageItems.map((p) => (
-            <Card key={p.firestoreId || `product-${p.id}`} className="group overflow-hidden flex flex-col h-full md:h-[80vh] relative cursor-pointer hover:border-[#1f632b] hover:shadow-lg transition-all">
+            <Card key={p.firestoreId || `product-${p.id}`} className="group overflow-visible md:overflow-hidden lg:overflow-visible flex flex-col h-auto md:h-[80vh] lg:h-auto relative cursor-pointer hover:border-[#1f632b] hover:shadow-lg transition-all">
               <Link href={`/products/${p.firestoreId || p.id}`} aria-label={`View ${p.name}`} className="absolute inset-0 z-[1]"></Link>
               <div className="relative w-full flex-shrink-0 h-[200px]" style={{ paddingTop: 0 }}>
                 <FirebaseImage
@@ -782,7 +782,7 @@ function ProductsPageContent() {
               </div>
               <CardContent className="p-3 md:p-4 flex flex-col overflow-visible flex-1">
                   <div className="mb-2">
-                    <div className="text-sm md:text-base font-bold text-gray-900 line-clamp-2 leading-snug">{p.name}</div>
+                    <div className="text-sm md:text-base font-bold text-gray-900 leading-snug">{p.name}</div>
                   </div>
                   <div className="mb-2">
                     <div className="text-[10px] md:text-xs text-gray-500 font-medium mb-0.5">Модел дугаар</div>
