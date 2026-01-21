@@ -210,10 +210,22 @@ function ProductsPageContent() {
 
     const sectorParam = searchParams.get("sector");
     if (sectorParam && allProducts.length > 0) {
-      const decodedSector = decodeURIComponent(sectorParam);
-      // Check if sector exists in products
-      const allSectors = Array.from(new Set(allProducts.map(p => p.product_sector).filter(Boolean) as string[]));
-      const matchedSector = allSectors.find(s => s.trim() === decodedSector.trim());
+      const decodedSector = decodeURIComponent(sectorParam).trim();
+      const allSectors = Array.from(
+        new Set(
+          allProducts
+            .flatMap((p) => {
+              if (Array.isArray(p.product_sector)) return p.product_sector;
+              if (typeof p.product_sector === "string") {
+                return p.product_sector.split(",").map((s) => s.trim());
+              }
+              return [];
+            })
+            .filter((s): s is string => !!s && s.trim() !== "")
+            .map((s) => s.trim())
+        )
+      );
+      const matchedSector = allSectors.find((s) => s === decodedSector);
       
       if (matchedSector) {
         setSelectedSectors([matchedSector]);
@@ -435,7 +447,19 @@ function ProductsPageContent() {
     }
     if (selectedSizes.length) base = base.filter(p => productHasSize(p, selectedSizes));
     if (selectedThemes.length) base = base.filter(p => selectedThemes.includes(p.theme));
-    if (selectedSectors.length) base = base.filter(p => p.product_sector && selectedSectors.includes(p.product_sector));
+    if (selectedSectors.length) {
+      base = base.filter((p) => {
+        if (!p.product_sector) return false;
+        const productSectors = Array.isArray(p.product_sector)
+          ? p.product_sector
+          : typeof p.product_sector === "string"
+            ? p.product_sector.split(",").map((s) => s.trim())
+            : [];
+        return productSectors.some((sector) =>
+          selectedSectors.includes(sector)
+        );
+      });
+    }
     if (selectedStock.length) {
       base = base.filter(p => {
         const stockStatus: "in_stock" | "preorder" = p.stock > 0 ? "in_stock" : "preorder";
@@ -627,16 +651,23 @@ function ProductsPageContent() {
 
             {/* Product Sector filter */}
             {(() => {
-              // First try to use sectors from backend collection, otherwise extract from products
+              // Extract sectors from products (supports array and comma-separated string)
               let productSectors: string[] = [];
               
-              if (sectors.length > 0) {
-                // Use sectors from backend collection
-                productSectors = sectors.map(s => s.name).sort();
-              } else {
-                // Fallback: Extract unique sectors from products
-                productSectors = Array.from(new Set(allProducts.map((p) => p.product_sector).filter((s): s is string => !!s && s.trim() !== ''))).sort();
-              }
+              productSectors = Array.from(
+                new Set(
+                  allProducts
+                    .flatMap((p) => {
+                      if (Array.isArray(p.product_sector)) return p.product_sector;
+                      if (typeof p.product_sector === "string") {
+                        return p.product_sector.split(",").map((s) => s.trim());
+                      }
+                      return [];
+                    })
+                    .filter((s): s is string => !!s && s.trim() !== "")
+                    .map((s) => s.trim())
+                )
+              ).sort();
               
               // Always show the filter section, even if empty
               return (
@@ -945,16 +976,23 @@ function ProductsPageContent() {
 
               {/* Product Sector filter */}
               {(() => {
-                // First try to use sectors from backend collection, otherwise extract from products
+                // Extract sectors from products (supports array and comma-separated string)
                 let productSectors: string[] = [];
                 
-                if (sectors.length > 0) {
-                  // Use sectors from backend collection
-                  productSectors = sectors.map(s => s.name).sort();
-                } else {
-                  // Fallback: Extract unique sectors from products
-                  productSectors = Array.from(new Set(allProducts.map((p) => p.product_sector).filter((s): s is string => !!s && s.trim() !== ''))).sort();
-                }
+                productSectors = Array.from(
+                  new Set(
+                    allProducts
+                      .flatMap((p) => {
+                        if (Array.isArray(p.product_sector)) return p.product_sector;
+                        if (typeof p.product_sector === "string") {
+                          return p.product_sector.split(",").map((s) => s.trim());
+                        }
+                        return [];
+                      })
+                      .filter((s): s is string => !!s && s.trim() !== "")
+                      .map((s) => s.trim())
+                  )
+                ).sort();
                 
                 // Always show the filter section, even if empty
                 return (

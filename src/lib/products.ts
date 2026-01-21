@@ -68,6 +68,25 @@ export async function getImageUrls(imagePaths: string[]): Promise<string[]> {
 }
 
 // Helper function to extract value from Firestore data (handles both direct values and Firestore format)
+function parseFirestoreTypedValue(value: any): any {
+  if (!value || typeof value !== "object") return value;
+  if (value.stringValue !== undefined) return value.stringValue;
+  if (value.integerValue !== undefined) return parseInt(value.integerValue, 10);
+  if (value.doubleValue !== undefined) return parseFloat(value.doubleValue);
+  if (value.booleanValue !== undefined) return value.booleanValue;
+  if (value.arrayValue?.values) {
+    return value.arrayValue.values.map(parseFirestoreTypedValue);
+  }
+  if (value.mapValue?.fields) {
+    const result: Record<string, any> = {};
+    Object.entries(value.mapValue.fields).forEach(([key, fieldValue]) => {
+      result[key] = parseFirestoreTypedValue(fieldValue);
+    });
+    return result;
+  }
+  return value;
+}
+
 function getFirestoreValue(data: any, field: string, defaultValue: any = ""): any {
   if (!data) return defaultValue;
   
@@ -78,10 +97,8 @@ function getFirestoreValue(data: any, field: string, defaultValue: any = ""): an
     // Handle direct values
     if (typeof value !== "object" || value === null) return value;
     // Handle Firestore typed values (for REST API compatibility)
-    if (value.stringValue !== undefined) return value.stringValue;
-    if (value.integerValue !== undefined) return parseInt(value.integerValue, 10);
-    if (value.doubleValue !== undefined) return parseFloat(value.doubleValue);
-    if (value.booleanValue !== undefined) return value.booleanValue;
+    const parsedTypedValue = parseFirestoreTypedValue(value);
+    if (parsedTypedValue !== value) return parsedTypedValue;
     // Return as-is if it's already the correct format
     return value;
   }
