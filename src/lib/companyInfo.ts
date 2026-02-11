@@ -10,6 +10,8 @@ export type CompanyInfo = {
   whatsappUrl: string;
   address: string;
   mapEmbedUrl: string;
+  aboutDescription: string;
+  aboutImageUrl: string;
 };
 
 export const defaultCompanyInfo: CompanyInfo = {
@@ -21,6 +23,8 @@ export const defaultCompanyInfo: CompanyInfo = {
   whatsappUrl: "",
   address: "",
   mapEmbedUrl: "",
+  aboutDescription: "",
+  aboutImageUrl: "",
 };
 
 function readStringField(data: Record<string, any>, keys: string[]): string {
@@ -143,6 +147,25 @@ export async function getCompanyInfo(): Promise<CompanyInfo> {
       mapEmbedUrl:
         readStringField(data, ["mapEmbedUrl", "mapUrl", "mapEmbed"]) ||
         defaultCompanyInfo.mapEmbedUrl,
+      aboutDescription:
+        readStringField(data, [
+          "aboutDescription",
+          "about_description",
+          "description",
+          "companyDescription",
+          "company_description",
+        ]) || defaultCompanyInfo.aboutDescription,
+      aboutImageUrl:
+        readStringField(data, [
+          "aboutImageUrl",
+          "about_image",
+          "aboutImage",
+          "image",
+          "imageUrl",
+          "companyImage",
+          "company_image",
+          "company_image_url",
+        ]) || defaultCompanyInfo.aboutImageUrl,
     };
   } catch {
     return defaultCompanyInfo;

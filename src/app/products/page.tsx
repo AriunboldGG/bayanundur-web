@@ -241,6 +241,16 @@ function ProductsPageContent() {
     } else {
       setSearchQuery("");
     }
+
+    const saleParam = searchParams.get("sale");
+    if (saleParam !== null) {
+      const normalized = saleParam.trim().toLowerCase();
+      const isSaleSelected = normalized === "true" || normalized === "1" || normalized === "yes";
+      setSelectedSale(isSaleSelected);
+      if (isSaleSelected) {
+        setPage(1);
+      }
+    }
   }, [searchParams, allProducts, brandOptions]);
 
   // Icon mapping for categories

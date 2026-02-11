@@ -5,7 +5,7 @@ const menuItems = [
   { href: "/", label: "НҮҮР", Icon: Home },
   { href: "/about", label: "БИДНИЙ ТУХАЙ", Icon: Info },
   { href: "/contact", label: "ХОЛБОО БАРИХ", Icon: Phone },
-  { href: "/products", label: "SALE", Icon: Tag },
+  { href: "/products?sale=true", label: "ХЯМДРАЛТАЙ", Icon: Tag },
 ];
 
 export default function RightSideMenu() {
