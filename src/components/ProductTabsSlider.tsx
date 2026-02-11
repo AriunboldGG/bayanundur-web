@@ -56,8 +56,18 @@ function ProductsCarousel({ productsToShow }: { productsToShow: BackendProduct[]
                       )}
                     </div>
                     {/* Title */}
-                    <div className="text-xs text-gray-700 line-clamp-2 min-h-[32px] font-medium">
-                      {p.name}
+                    <div className="min-h-[36px] space-y-0.5">
+                      {p.name_en ? (
+                        <>
+                          <div className="text-xs text-gray-900 font-semibold line-clamp-1">{p.name_en}</div>
+                          <div className="text-[10px] text-gray-600 line-clamp-1">{p.name}</div>
+                        </>
+                      ) : (
+                        <div className="text-xs text-gray-900 font-semibold line-clamp-2">{p.name}</div>
+                      )}
+                      {p.brand ? (
+                        <div className="text-[10px] text-[#1f632b] font-semibold line-clamp-1">Brand: {p.brand}</div>
+                      ) : null}
                     </div>
                     {/* Model Number */}
                     <div>
@@ -65,8 +75,20 @@ function ProductsCarousel({ productsToShow }: { productsToShow: BackendProduct[]
                       <div className="text-xs font-bold text-[#1f632b]">{p.modelNumber || "N/A"}</div>
                     </div>
                     {/* Price */}
-                    <div className="mt-auto">
-                      <div className="text-sm font-bold text-gray-900">{p.price}</div>
+                    <div className="mt-auto space-y-1">
+                      {p.salePriceNum && p.salePriceNum > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-red-600">
+                            {p.salePriceNum.toLocaleString()} ₮
+                          </span>
+                          <span className="text-xs text-gray-400 line-through">{p.price}</span>
+                        </div>
+                      ) : (
+                        <div className="text-sm font-bold text-gray-900">{p.price}</div>
+                      )}
+                      {p.manufacture_country ? (
+                        <div className="text-[10px] text-gray-600">Үйлдвэрлэсэн улс: {p.manufacture_country}</div>
+                      ) : null}
                     </div>
                   </CardContent>
                 </Card>

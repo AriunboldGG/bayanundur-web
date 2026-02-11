@@ -3,7 +3,8 @@ import Header from "@/components/Header";
 import Image from "next/image";
 import Link from "next/link";
 import FirebaseImage from "@/components/FirebaseImage";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { Truck } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
@@ -29,6 +30,12 @@ export default function ProductDetailPage() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [isZoomActive, setIsZoomActive] = useState(false);
+  const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 });
+  const [lensPosition, setLensPosition] = useState({ x: 0, y: 0 });
+  const [magnifierZoom, setMagnifierZoom] = useState(2);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+  const lensSize = 120;
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedTheme, setSelectedTheme] = useState<string>("");
@@ -37,6 +44,20 @@ export default function ProductDetailPage() {
   const parseCommaSeparated = (value: string | undefined | null): string[] => {
     if (!value || typeof value !== 'string') return [];
     return value.split(',').map(s => s.trim()).filter(s => s && s.length > 0);
+  };
+
+  const getYouTubeEmbedUrl = (url: string): string | null => {
+    if (!url) return null;
+    const trimmed = url.trim();
+    if (!trimmed) return null;
+    if (trimmed.includes("youtube.com/embed/")) return trimmed;
+    const shortMatch = trimmed.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/);
+    if (shortMatch?.[1]) return `https://www.youtube.com/embed/${shortMatch[1]}`;
+    const watchMatch = trimmed.match(/[?&]v=([A-Za-z0-9_-]{6,})/);
+    if (watchMatch?.[1]) return `https://www.youtube.com/embed/${watchMatch[1]}`;
+    const shortsMatch = trimmed.match(/youtube\.com\/shorts\/([A-Za-z0-9_-]{6,})/);
+    if (shortsMatch?.[1]) return `https://www.youtube.com/embed/${shortsMatch[1]}`;
+    return trimmed.startsWith("http") ? trimmed : null;
   };
 
   // Fetch product from Firestore
@@ -105,16 +126,13 @@ export default function ProductDetailPage() {
     setSelectedImageIndex(0);
     setZoom(1);
     setPosition({ x: 0, y: 0 });
+    setIsZoomActive(false);
   }, [product?.firestoreId]);
 
-  // Get available options for this product (from related products)
+  // Get available options for this product
   const availableOptions = useMemo(() => {
     if (!product) return { sizes: [], colors: [], themes: [] };
-    const sameCategoryProducts = relatedProducts.filter(
-      (p) => p.category === product.category && p.subcategory === product.subcategory
-    );
-    // Include current product in options
-    const allProducts = [product, ...sameCategoryProducts];
+    const allProducts = [product];
     
     // Parse sizes - always parse comma-separated values to get individual items
     const allSizes = new Set<string>();
@@ -159,7 +177,7 @@ export default function ProductDetailPage() {
       colors: Array.from(allColors).sort(),
       themes: Array.from(new Set(allProducts.map((p) => p.theme).filter(Boolean))).sort(),
     };
-  }, [product, relatedProducts, parseCommaSeparated]);
+  }, [product, parseCommaSeparated]);
 
   // Validate and update selected values to match available options
   useEffect(() => {
@@ -210,6 +228,32 @@ export default function ProductDetailPage() {
       }
       return newZoom;
     });
+  };
+
+  // Handle magnifier zoom (main image hover)
+  const handleMagnifierZoomIn = () => {
+    setMagnifierZoom((prev) => Math.min(prev + 0.5, 3));
+  };
+
+  const handleMagnifierZoomOut = () => {
+    setMagnifierZoom((prev) => Math.max(prev - 0.5, 1.5));
+  };
+
+  const handleMagnifierMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = imageContainerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const half = lensSize / 2;
+    const lensX = Math.max(0, Math.min(x - half, rect.width - lensSize));
+    const lensY = Math.max(0, Math.min(y - half, rect.height - lensSize));
+
+    setLensPosition({ x: lensX, y: lensY });
+    setZoomPosition({
+      x: (x / rect.width) * 100,
+      y: (y / rect.height) * 100,
+    });
+    setIsZoomActive(true);
   };
   
   // Handle fullscreen
@@ -286,6 +330,15 @@ export default function ProductDetailPage() {
     );
   }
 
+  const priceDisplay =
+    product.priceNum > 0 ? `${product.priceNum.toLocaleString()} ₮` : (product.price || "0₮");
+  const salePriceDisplay =
+    product.salePriceNum && product.salePriceNum > 0
+      ? `${product.salePriceNum.toLocaleString()} ₮`
+      : (product.sale_price || "");
+  const activeImage = productImages[selectedImageIndex] || product.img || "";
+  const youtubeEmbedUrl = getYouTubeEmbedUrl(product.youtube_url || "");
+
   return (
     <main className="min-h-screen bg-white">
       <Header />
@@ -303,32 +356,49 @@ export default function ProductDetailPage() {
           <div className="space-y-4">
             {/* Main Image with Controls */}
             <div className="rounded-xl border p-4 bg-white relative">
-              <div className="relative w-full h-64 sm:h-80 md:h-96 overflow-hidden">
-                <div
-                  className="relative w-full h-full cursor-move"
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={handleMouseUp}
-                  style={{
-                    transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`,
-                    transition: isDragging ? "none" : "transform 0.3s ease",
-                  }}
-                >
-                  <FirebaseImage 
-                    src={productImages[selectedImageIndex] || product.img || ""} 
-                    alt={product.name} 
-                    fill 
-                    className="object-contain bg-white select-none" 
-                    draggable={false}
-                  />
-                </div>
+              <div
+                ref={imageContainerRef}
+                className="relative w-full h-64 sm:h-80 md:h-96 overflow-hidden cursor-zoom-in"
+                onMouseEnter={() => setIsZoomActive(true)}
+                onMouseMove={handleMagnifierMove}
+                onMouseLeave={() => setIsZoomActive(false)}
+              >
+                <FirebaseImage 
+                  src={activeImage} 
+                  alt={product.name} 
+                  fill 
+                  className="object-contain bg-white select-none" 
+                  draggable={false}
+                />
+
+                {isZoomActive && (
+                  <>
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        backgroundImage: activeImage ? `url(${activeImage})` : "none",
+                        backgroundRepeat: "no-repeat",
+                        backgroundSize: `${magnifierZoom * 100}%`,
+                        backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                      }}
+                    />
+                    <div
+                      className="absolute pointer-events-none border border-[#1f632b] bg-white/20 shadow-[0_0_0_9999px_rgba(0,0,0,0.02)]"
+                      style={{
+                        left: `${lensPosition.x}px`,
+                        top: `${lensPosition.y}px`,
+                        width: `${lensSize}px`,
+                        height: `${lensSize}px`,
+                      }}
+                    />
+                  </>
+                )}
                 
                 {/* Image Controls Overlay */}
                 <div className="absolute top-2 right-2 flex flex-col gap-2 z-10">
                   <button
-                    onClick={handleZoomIn}
-                    disabled={zoom >= 3}
+                    onClick={handleMagnifierZoomIn}
+                    disabled={magnifierZoom >= 3}
                     className="bg-white/90 hover:bg-white border border-gray-300 rounded-md p-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
                     title="Zoom In"
                   >
@@ -337,8 +407,8 @@ export default function ProductDetailPage() {
                     </svg>
                   </button>
                   <button
-                    onClick={handleZoomOut}
-                    disabled={zoom <= 1}
+                    onClick={handleMagnifierZoomOut}
+                    disabled={magnifierZoom <= 1.5}
                     className="bg-white/90 hover:bg-white border border-gray-300 rounded-md p-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-all"
                     title="Zoom Out"
                   >
@@ -413,11 +483,60 @@ export default function ProductDetailPage() {
                 ))}
               </div>
             )}
+
+         
+
+            {youtubeEmbedUrl ? (
+              <div className="rounded-xl border bg-white p-4">
+                <div className="text-sm font-semibold text-gray-900 mb-2">Бүтээгдэхүүний бичлэг</div>
+                <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-black">
+                  <iframe
+                    src={youtubeEmbedUrl}
+                    title={`${product.name} video`}
+                    className="absolute inset-0 h-full w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            ) : null}
+
+<div className="rounded-xl border bg-white p-4 text-sm text-gray-700">
+              <div className="flex items-center gap-2 text-gray-900 font-semibold mb-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1f632b]/10 text-[#1f632b]">
+                  <Truck className="h-4 w-4" />
+                </span>
+                <span>Хүргэлтийн мэдээлэл:</span>
+              </div>
+              <div className="space-y-1.5">
+                <div>100,000 төгрөгөөс дээш үнийн дүнтэй барааны зариалга:</div>
+                <div className="flex items-start gap-2">
+                  <span className="text-[#1f632b]">•</span>
+                  <span>Улаанбаатар хот дотроо үнэгүй</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-[#1f632b]">•</span>
+                  <span>Орон нутгийн унаанд явуулж өгнө</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Info */}
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{product.name}</h1>
+            <div className="space-y-1">
+              {product.name_en ? (
+                <>
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{product.name_en}</h1>
+                  <div className="text-sm md:text-base text-gray-700">{product.name}</div>
+                </>
+              ) : (
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{product.name}</h1>
+              )}
+              {product.brand ? (
+                <div className="text-xs md:text-sm font-semibold text-[#1f632b]">Brand: {product.brand}</div>
+              ) : null}
+            </div>
             <div className="mt-2 flex items-center gap-3 flex-wrap">
               <div className="bg-[#1f632b]/10 px-3 py-1 rounded-md">
                 <div className="text-[10px] text-gray-500">Модел дугаар</div>
@@ -430,19 +549,31 @@ export default function ProductDetailPage() {
                 </div>
               )}
             </div>
-            {product.priceNum > 0 && (
-              <div className="mt-4">
-                <div className="text-sm font-semibold text-gray-700">Үнэ: <span className="text-[#1f632b] text-lg">{product.priceNum.toLocaleString()} ₮</span></div>
+            {(product.priceNum > 0 || (product.price && product.price.trim() !== "" && product.price !== "0₮")) && (
+              <div className="mt-4 space-y-2">
+                <div className="text-sm font-semibold text-gray-700">
+                  Үнэ:{" "}
+                  {salePriceDisplay ? (
+                    <span className="inline-flex items-center gap-2">
+                      <span className="text-red-600 text-lg font-semibold">{salePriceDisplay}</span>
+                      <span className="text-gray-400 line-through">{priceDisplay}</span>
+                    </span>
+                  ) : (
+                    <span className="text-[#1f632b] text-lg">{priceDisplay}</span>
+                  )}
+                </div>
+                {product.manufacture_country ? (
+                  <div className="text-sm text-gray-600">
+                    Үйлдвэрлэсэн улс:{" "}
+                    <span className="font-semibold text-gray-800">{product.manufacture_country}</span>
+                  </div>
+                ) : null}
               </div>
             )}
             <div className="mt-4 space-y-2">
               <div className="flex items-start gap-3">
                 <span className="text-sm font-bold text-gray-700 min-w-[80px]">Ангилал:</span>
                 <span className="text-sm text-gray-600">{product.category} / {product.subcategory}{product.subleaf ? ` / ${product.subleaf}` : ""}</span>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-sm font-bold text-gray-700 min-w-[80px]">Брэнд:</span>
-                <span className="text-sm text-gray-600">{product.brand}</span>
               </div>
               {product.material && (
                 <div className="flex items-start gap-3">

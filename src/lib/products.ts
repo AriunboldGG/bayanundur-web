@@ -8,7 +8,12 @@ export type Product = {
   id: number;
   firestoreId: string; // Unique Firestore document ID
   name: string;
+  name_en?: string;
+  manufacture_country?: string;
+  youtube_url?: string;
   price: string;
+  sale_price?: string;
+  salePriceNum?: number;
   img: string;
   images?: string[]; // Multiple images for gallery
   modelNumber: string;
@@ -22,7 +27,8 @@ export type Product = {
   size: string;
   priceNum: number;
   product_code?: string; // Product code from backend
-  product_sector?: string; // Product sector from Firebase (product_sector field)
+  product_sector?: string | string[]; // Product sector from Firebase (product_sector field)
+  sale?: boolean; // Sale flag from Firebase
   stock: number; // Stock count from Firebase: > 0 means in stock, 0 means preorder
   theme: string;
   material?: string;
@@ -161,12 +167,36 @@ function firestoreDocToProduct(docId: string, data: any): Product {
       }
     }
   }
+
+  // Handle sale price - can be number or string
+  const salePriceValue = getFirestoreValue(data, "sale_price") ?? getFirestoreValue(data, "salePrice");
+  let salePriceStr = "";
+  let salePriceNum = 0;
+
+  if (salePriceValue && typeof salePriceValue === "number" && salePriceValue > 0) {
+    salePriceNum = salePriceValue;
+    salePriceStr = `${salePriceNum.toLocaleString()} ₮`;
+  } else if (typeof salePriceValue === "string" && salePriceValue.trim() !== "") {
+    salePriceStr = salePriceValue;
+    const numMatch = salePriceValue.match(/\d+/);
+    if (numMatch) {
+      salePriceNum = parseInt(numMatch[0], 10) || 0;
+    }
+  }
   
   return {
     id: getFirestoreValue(data, "id") || docIdNum,
     firestoreId: docId, // Always use Firestore document ID as unique identifier
     name: getFirestoreValue(data, "name") || "",
+    name_en: getFirestoreValue(data, "name_en") || getFirestoreValue(data, "nameEn") || "",
+    manufacture_country:
+      getFirestoreValue(data, "manufacture_country") ||
+      getFirestoreValue(data, "manufactureCountry") ||
+      "",
+    youtube_url: getFirestoreValue(data, "youtube_url") || getFirestoreValue(data, "youtubeUrl") || "",
     price: priceStr,
+    sale_price: salePriceStr || "",
+    salePriceNum: salePriceNum || 0,
     img: getFirestoreValue(data, "img") || getFirestoreValue(data, "image") || "",
     images: images, // Multiple images for gallery
     modelNumber: getFirestoreValue(data, "modelNumber") || "",
@@ -181,6 +211,7 @@ function firestoreDocToProduct(docId: string, data: any): Product {
     priceNum: priceNum,
     product_code: getFirestoreValue(data, "product_code") || undefined, // Product code from backend
     product_sector: getFirestoreValue(data, "product_sector") || undefined, // Product sector from Firebase
+    sale: Boolean(getFirestoreValue(data, "sale")), // Sale flag from Firebase
     stock: getFirestoreValue(data, "stock") || 0, // Number: > 0 = in stock, 0 = preorder
     theme: getFirestoreValue(data, "theme") || "",
     material: getFirestoreValue(data, "material") || "",
@@ -512,6 +543,7 @@ export type Sector = {
   slug?: string;
   order?: number;
   icon?: string;
+  imageUrl?: string;
 };
 
 /**
@@ -545,6 +577,7 @@ export async function getSectors(): Promise<Sector[]> {
         slug: data.slug || data.name?.toLowerCase().replace(/\s+/g, '-') || "",
         order: data.order || 0,
         icon: data.icon || "",
+        imageUrl: data.imageUrl || data.image || data.img || "",
       });
     });
 

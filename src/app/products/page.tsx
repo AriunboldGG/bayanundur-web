@@ -24,6 +24,7 @@ function ProductsPageContent() {
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [selectedStock, setSelectedStock] = useState<Array<"in_stock" | "preorder">>([]);
+  const [selectedSale, setSelectedSale] = useState(false);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -84,8 +85,8 @@ function ProductsPageContent() {
       } catch (error) {
         setAllProducts([]);
         setIsFromFirestore(false);
-        setBackendSubcategories([]);
-      }
+          setBackendSubcategories([]);
+        }
 
       try {
         // Fetch sectors from backend (independent of products)
@@ -466,6 +467,15 @@ function ProductsPageContent() {
         return selectedStock.includes(stockStatus);
       });
     }
+    if (selectedSale) {
+      base = base.filter((p) => {
+        if (p.sale === true) return true;
+        if (Array.isArray(p.productTypes)) {
+          return p.productTypes.some((type) => String(type).trim().toUpperCase() === "DISCOUNTED");
+        }
+        return false;
+      });
+    }
     // Filter by search query (product name)
     if (searchQuery && searchQuery.trim() !== "") {
       const query = searchQuery.trim().toLowerCase();
@@ -475,7 +485,7 @@ function ProductsPageContent() {
       });
     }
     return base;
-  }, [allProducts, selectedCat, selectedCategory, selectedSub, selectedLeaf, selectedColors, selectedBrands, selectedSizes, selectedThemes, selectedSectors, selectedStock, searchQuery]);
+  }, [allProducts, selectedCat, selectedCategory, selectedSub, selectedLeaf, selectedColors, selectedBrands, selectedSizes, selectedThemes, selectedSectors, selectedStock, selectedSale, searchQuery]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageItems = useMemo(() => {
@@ -703,7 +713,7 @@ function ProductsPageContent() {
 
             {/* Stock Status filter */}
             <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-              <div className="text-sm font-semibold text-gray-800 mb-2">Нөөц</div>
+              <div className="text-sm font-semibold text-gray-800 mb-2">Төлөв</div>
               <div className="space-y-2 text-sm">
                 <label className="flex items-center gap-2">
                   <input
@@ -731,6 +741,17 @@ function ProductsPageContent() {
                   />
                   <span className="text-black font-medium">Захиалгаар</span>
                 </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedSale}
+                    onChange={(e) => {
+                      setPage(1);
+                      setSelectedSale(e.target.checked);
+                    }}
+                  />
+                  <span className="text-black font-medium">Хямдралтай</span>
+                </label>
               </div>
             </div>
 
@@ -746,6 +767,7 @@ function ProductsPageContent() {
                 setSelectedThemes([]);
                 setSelectedSectors([]);
                 setSelectedStock([]);
+                setSelectedSale(false);
                 setPage(1);
               }}
               className="w-full rounded-md border px-3 py-2 text-sm hover:bg-[#1f632b]/10 hover:text-[#1f632b] hover:border-[#1f632b] transition-colors"
@@ -781,8 +803,18 @@ function ProductsPageContent() {
                 </Link>
               </div>
               <CardContent className="p-3 md:p-4 flex flex-col overflow-visible flex-1">
-                  <div className="mb-2">
-                    <div className="text-sm md:text-base font-bold text-gray-900 leading-snug">{p.name}</div>
+                  <div className="mb-2 space-y-1">
+                    {p.name_en && p.name_en.trim() !== "" ? (
+                      <>
+                        <div className="text-sm md:text-base font-bold text-gray-900 leading-snug">{p.name_en}</div>
+                        <div className="text-xs md:text-sm text-gray-700 leading-snug">{p.name}</div>
+                      </>
+                    ) : (
+                      <div className="text-sm md:text-base font-bold text-gray-900 leading-snug">{p.name}</div>
+                    )}
+                    {p.brand ? (
+                      <div className="text-[10px] md:text-xs font-semibold text-[#1f632b]">Brand: {p.brand}</div>
+                    ) : null}
                   </div>
                   <div className="mb-2">
                     <div className="text-[10px] md:text-xs text-gray-500 font-medium mb-0.5">Модел дугаар</div>
@@ -799,14 +831,27 @@ function ProductsPageContent() {
                       <div className="flex items-start gap-2">
                         <span className="font-semibold text-gray-700 min-w-[70px] md:min-w-[80px] flex-shrink-0">Үнэ:</span>
                         <span className="text-gray-600 break-words">
-                          {p.priceNum > 0 ? `${p.priceNum.toLocaleString()} ₮` : (p.price || "0₮")}
+                          {p.salePriceNum && p.salePriceNum > 0 ? (
+                            <span className="flex items-center gap-2">
+                              <span className="font-semibold text-red-600">
+                                {`${p.salePriceNum.toLocaleString()} ₮`}
+                              </span>
+                              <span className="text-gray-400 line-through">
+                                {p.priceNum > 0 ? `${p.priceNum.toLocaleString()} ₮` : (p.price || "0₮")}
+                              </span>
+                            </span>
+                          ) : (
+                            <span>{p.priceNum > 0 ? `${p.priceNum.toLocaleString()} ₮` : (p.price || "0₮")}</span>
+                          )}
                         </span>
                       </div>
                     )}
-                    <div className="flex items-start gap-2">
-                      <span className="font-semibold text-gray-700 min-w-[70px] md:min-w-[80px] flex-shrink-0">Брэнд:</span>
-                      <span className="text-gray-600 break-words">{p.brand || "-"}</span>
-                    </div>
+                    {p.manufacture_country ? (
+                      <div className="flex items-start gap-2">
+                        <span className="font-semibold text-gray-700 min-w-[70px] md:min-w-[80px] flex-shrink-0">Үйлдвэрлэсэн улс:</span>
+                        <span className="text-gray-600 break-words">{p.manufacture_country}</span>
+                      </div>
+                    ) : null}
                     {p.color && (
                       <div className="flex items-start gap-2">
                         <span className="font-semibold text-gray-700 min-w-[70px] md:min-w-[80px] flex-shrink-0">Өнгө:</span>
@@ -844,9 +889,9 @@ function ProductsPageContent() {
                       </div>
                     )}
                     {p.material && (
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-start gap-2 flex-wrap">
                         <span className="font-semibold text-gray-700 min-w-[70px] md:min-w-[80px] flex-shrink-0">Материал:</span>
-                        <span className="text-gray-600 break-words">{p.material}</span>
+                        <span className="text-gray-600 break-words whitespace-normal flex-1 min-w-0">{p.material}</span>
                       </div>
                     )}
                     <div className="flex items-start gap-2">
@@ -1081,6 +1126,17 @@ function ProductsPageContent() {
                     />
                     <span className="text-black font-medium">Захиалгаар</span>
                   </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedSale}
+                      onChange={(e) => {
+                        setPage(1);
+                        setSelectedSale(e.target.checked);
+                      }}
+                    />
+                    <span className="text-black font-medium">Sale</span>
+                  </label>
                 </div>
               </div>
 
@@ -1096,6 +1152,7 @@ function ProductsPageContent() {
                     setSelectedThemes([]);
                     setSelectedSectors([]);
                     setSelectedStock([]);
+                setSelectedSale(false);
                     setPage(1);
                   }}
                   className="w-full rounded-md border px-4 py-2 text-sm hover:bg-[#1f632b]/10 hover:text-[#1f632b] hover:border-[#1f632b] transition-colors"

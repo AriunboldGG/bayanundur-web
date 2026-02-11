@@ -113,7 +113,9 @@ export default function Brands() {
   }
 
   return (
-    <Card className="rounded-xl shadow-sm">
+    <div className="relative rounded-xl p-[1px] overflow-hidden bg-gradient-to-r from-red-500 via-yellow-400 to-green-500">
+      <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 animate-[spin_12s_linear_infinite]" />
+      <Card className="relative rounded-xl shadow-sm border border-transparent bg-white">
       
       <CardContent>
         {brands.length === 0 ? (
@@ -169,6 +171,7 @@ export default function Brands() {
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }
 

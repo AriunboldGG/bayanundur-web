@@ -159,7 +159,7 @@ export default function SearchBar() {
           {/* Category Dropdown Menu with sub and sub-sub */}
           {isCategoryOpen && (
             <div
-              className="absolute top-full left-0 mt-2 w-full md:w-[760px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[80vh] md:max-h-none overflow-y-auto md:overflow-y-visible"
+              className="absolute top-full left-0 mt-2 w-full md:w-[980px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[80vh] md:max-h-none overflow-y-auto md:overflow-y-visible"
               onMouseLeave={() => {
                 if (!isMobile) {
                   setHoveredCat(null);
@@ -167,164 +167,58 @@ export default function SearchBar() {
                 }
               }}
             >
-                <div className="flex flex-col md:flex-row">
-                  {/* First column - Show on mobile only when no category selected, always on desktop */}
-                  <div className={`w-full md:w-64 border-b md:border-b-0 md:border-r border-gray-100 ${isMobile && hoveredCat !== null ? 'hidden md:block' : ''}`}>
-                    {isLoadingCategories ? (
-                      <div className="py-4 px-4 text-sm text-gray-500">ачаалж байна...</div>
-                    ) : categoryTree.length === 0 ? (
-                      <div className="py-4 px-4 text-sm text-gray-500">Ангилал олдсонгүй</div>
-                    ) : (
-                      <ul className="py-2">
-                        {categoryTree.map((cat, idx) => (
-                          <li
-                            key={cat.slug}
-                            onMouseEnter={() => {
-                              setHoveredCat(idx);
-                              setHoveredSub(null);
-                            }}
-                            onClick={(e) => {
-                              // On mobile, clicking a category shows its subcategories
-                              if (isMobile) {
-                                e.preventDefault();
-                                setHoveredCat(idx);
-                                setHoveredSub(null);
-                              }
-                            }}
-                          >
-                            <button
-                              className={`w-full text-left px-4 py-3 transition-all cursor-pointer rounded-md mx-2 ${
-                                hoveredCat === idx
-                                  ? "bg-[#1f632b]/10 text-[#1f632b] font-medium"
-                                  : "text-gray-700 hover:bg-gray-50"
-                              }`}
-                            >
-                              <span className="inline-flex items-center gap-3 text-sm md:text-base">
-                                {(() => {
-                                  const IconComponent = cat.icon ? iconMap[cat.icon] : Shield;
-                                  const Icon = IconComponent || Shield;
-                                  return (
-                                    <Icon className={`h-4 w-4 md:h-5 md:w-5 flex-shrink-0 transition-colors ${
-                                      hoveredCat === idx ? "text-[#1f632b]" : "text-gray-500"
-                                    }`} />
-                                  );
-                                })()}
-                                <span className="break-words">{cat.name}</span>
-                              </span>
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-
-                  {/* Second column (subs) - Show when category is hovered */}
-                  {hoveredCat !== null && hoveredCat >= 0 && categoryTree[hoveredCat] && (
-                    <div 
-                      className={`w-full md:w-64 border-b md:border-b-0 md:border-r border-gray-100 ${isMobile && hoveredSub !== null ? 'hidden md:block' : ''}`}
-                      style={{ display: 'block' }}
-                    >
-                      {/* Mobile back button */}
-                      <div className="md:hidden border-b border-gray-100 px-4 py-3 bg-gray-50">
-                        <button
-                          onClick={() => {
-                            setHoveredCat(null);
-                            setHoveredSub(null);
-                          }}
-                          className="text-sm text-[#1f632b] hover:text-[#16451e] flex items-center gap-2 cursor-pointer font-medium"
+              {isLoadingCategories ? (
+                <div className="py-4 px-4 text-sm text-gray-500">ачаалж байна...</div>
+              ) : categoryTree.length === 0 ? (
+                <div className="py-4 px-4 text-sm text-gray-500">Ангилал олдсонгүй</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-6">
+                  {categoryTree.map((cat) => {
+                    return (
+                      <div key={cat.slug} className="space-y-3 text-left flex flex-col items-start">
+                        <Link
+                          href={`/products?category=${encodeURIComponent(cat.name)}`}
+                          className="inline-flex items-center gap-2 text-sm md:text-base font-semibold text-gray-900 hover:text-[#1f632b] uppercase tracking-wide"
+                          onClick={() => setIsCategoryOpen(false)}
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                          </svg>
-                          Буцах
-                        </button>
-                      </div>
-                      {categoryTree[hoveredCat]?.children && Array.isArray(categoryTree[hoveredCat].children) && categoryTree[hoveredCat].children!.length > 0 ? (
-                        <ul className="py-2">
-                          {categoryTree[hoveredCat].children!.map(
-                          (sub, sIdx) => (
-                            <li
-                              key={sub.slug}
-                              onMouseEnter={() => setHoveredSub(sIdx)}
-                              onClick={(e) => {
-                                // On mobile, clicking a subcategory shows its children
-                                if (isMobile) {
-                                  e.preventDefault();
-                                  setHoveredSub(sIdx);
-                                }
-                              }}
-                            >
-                              {sub.children && sub.children.length > 0 ? (
-                                // If subcategory has children, show as button (for hover to show sub-subcategories)
-                                <button
-                                  className={`w-full text-left px-4 py-3 transition-all cursor-pointer rounded-md mx-2 ${
-                                    hoveredSub === sIdx
-                                      ? "bg-[#1f632b]/10 text-[#1f632b] font-medium"
-                                      : "text-gray-700 hover:bg-gray-50"
-                                  }`}
-                                >
-                                  <span className="text-sm md:text-base break-words">{sub.name}</span>
-                                </button>
-                              ) : (
-                                // If no children, make it a clickable link
+                          <span className="break-words">{cat.name}</span>
+                        </Link>
+                        {cat.children && cat.children.length > 0 ? (
+                          <div className="space-y-3">
+                            {cat.children.map((sub) => (
+                              <div key={sub.slug} className="space-y-2">
                                 <Link
                                   href={`/products?category=${encodeURIComponent(sub.name)}`}
-                                  className={`w-full text-left px-4 py-3 transition-all cursor-pointer rounded-md mx-2 block ${
-                                    hoveredSub === sIdx
-                                      ? "bg-[#1f632b]/10 text-[#1f632b] font-medium"
-                                      : "text-gray-700 hover:bg-gray-50"
-                                  }`}
+                                  className="text-sm text-black hover:text-[#1f632b] capitalize"
                                   onClick={() => setIsCategoryOpen(false)}
                                 >
-                                  <span className="text-sm md:text-base break-words">{sub.name}</span>
+                                  {sub.name}
                                 </Link>
-                              )}
-                            </li>
-                          )
-                          )}
-                        </ul>
-                      ) : (
-                        <div className="py-4 px-4 text-sm text-gray-500">Дэд ангилал байхгүй</div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Third column (sub-subs) - Show on mobile when subcategory is selected */}
-                  {hoveredCat !== null && hoveredSub !== null && (
-                    <div className="w-full md:flex-1">
-                      {/* Mobile back button */}
-                      <div className="md:hidden border-b border-gray-100 px-4 py-3 bg-gray-50">
-                        <button
-                          onClick={() => {
-                            setHoveredSub(null);
-                          }}
-                          className="text-sm text-[#1f632b] hover:text-[#16451e] flex items-center gap-2 cursor-pointer font-medium"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                          </svg>
-                          Буцах
-                        </button>
+                                {sub.children && sub.children.length > 0 ? (
+                                  <div className="flex flex-col gap-2 ml-3">
+                                    {sub.children.map((leaf) => (
+                                      <Link
+                                        key={leaf.slug}
+                                        href={`/products?category=${encodeURIComponent(leaf.name)}`}
+                                        className="text-xs text-black hover:text-[#1f632b] hover:underline capitalize"
+                                        onClick={() => setIsCategoryOpen(false)}
+                                      >
+                                        {leaf.name}
+                                      </Link>
+                                    ))}
+                                  </div>
+                                ) : null}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-400">Дэд ангилал байхгүй</div>
+                        )}
                       </div>
-                      <div className="py-4 px-4 grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3">
-                        {(
-                          categoryTree[hoveredCat ?? 0]?.children?.[
-                            hoveredSub ?? 0
-                          ]?.children ?? []
-                        ).map((leaf) => (
-                          <Link
-                            key={leaf.slug}
-                            href={`/products?category=${encodeURIComponent(leaf.name)}`}
-                            className="text-xs md:text-sm text-gray-700 hover:text-[#1f632b] hover:bg-[#1f632b]/5 break-words py-2 px-3 rounded-md transition-all cursor-pointer"
-                            onClick={() => setIsCategoryOpen(false)}
-                          >
-                            {leaf.name}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>

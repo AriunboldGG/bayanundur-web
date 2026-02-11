@@ -8,6 +8,7 @@ import { FaWeixin } from "react-icons/fa";
 import NavLink from "./NavLink";
 import { useCart } from "@/context/CartContext";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
+import RightSideMenu from "@/components/RightSideMenu";
 
 export default function Header() {
   const { count } = useCart();
@@ -133,8 +134,6 @@ export default function Header() {
             <NavLink href="/">НҮҮР</NavLink>
             <NavLink href="/products">БҮТЭЭГДЭХҮҮН</NavLink>
             <NavLink href="/news">МЭДЭЭ</NavLink>
-            <NavLink href="/about">БИДНИЙ ТУХАЙ</NavLink>
-            <NavLink href="/contact">ХОЛБОО БАРИХ</NavLink>
             <NavLink href="/special-order">ТУСГАЙ ЗАХИАЛГА</NavLink>
           </nav>
 
@@ -184,12 +183,6 @@ export default function Header() {
               <NavLink href="/news" onClick={() => setIsMenuOpen(false)}>
                 МЭДЭЭ
               </NavLink>
-              <NavLink href="/about" onClick={() => setIsMenuOpen(false)}>
-                БИДНИЙ ТУХАЙ
-              </NavLink>
-              <NavLink href="/contact" onClick={() => setIsMenuOpen(false)}>
-                ХОЛБОО БАРИХ
-              </NavLink>
               <NavLink href="/special-order" onClick={() => setIsMenuOpen(false)}>
                 ТУСГАЙ ЗАХИАЛГА
               </NavLink>
@@ -197,6 +190,7 @@ export default function Header() {
           </div>
         )}
       </div>
+      <RightSideMenu />
     </header>
   );
 }

@@ -83,7 +83,12 @@ export default function TopCategories() {
         <CardTitle className="text-[#1E293B] text-lg">Бүтээгдэхүүний ангилал</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {categories.map((c) => {
+        {(() => {
+          const other = categories.filter((c) => c.name?.trim() === "Бусад");
+          const rest = categories.filter((c) => c.name?.trim() !== "Бусад");
+          const ordered = [...rest, ...other];
+          return ordered;
+        })().map((c) => {
           const IconComponent = c.icon ? iconMap[c.icon] : Shield;
           const Icon = IconComponent || Shield;
           
