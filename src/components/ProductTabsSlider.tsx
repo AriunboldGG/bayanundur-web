@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useEffect, useState, useMemo } from "react";
 import { getAllProducts, type Product as BackendProduct } from "@/lib/products";
 import FirebaseImage from "@/components/FirebaseImage";
+import Autoplay from "embla-carousel-autoplay";
 
 function ProductsCarousel({ productsToShow }: { productsToShow: BackendProduct[] }) {
   if (productsToShow.length === 0) {
@@ -24,9 +25,19 @@ function ProductsCarousel({ productsToShow }: { productsToShow: BackendProduct[]
     );
   }
 
+  const shouldAutoplay = productsToShow.length > 4;
+  const autoplayPlugin = useMemo(() => {
+    if (!shouldAutoplay) return [];
+    return [Autoplay({ delay: 3000, stopOnInteraction: false })];
+  }, [shouldAutoplay]);
+
   return (
     <div className="relative">
-      <Carousel className="w-full">
+      <Carousel
+        className="w-full"
+        opts={{ loop: shouldAutoplay }}
+        plugins={autoplayPlugin}
+      >
         <CarouselContent className="-ml-2 md:-ml-4 px-8 md:px-12">
           {productsToShow.map((p) => (
             <CarouselItem key={p.firestoreId || p.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4">

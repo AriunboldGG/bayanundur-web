@@ -12,6 +12,8 @@ export type CompanyInfo = {
   mapEmbedUrl: string;
   aboutDescription: string;
   aboutImageUrl: string;
+  partnersImages: string[];
+  riimImages: string[];
 };
 
 export const defaultCompanyInfo: CompanyInfo = {
@@ -25,6 +27,8 @@ export const defaultCompanyInfo: CompanyInfo = {
   mapEmbedUrl: "",
   aboutDescription: "",
   aboutImageUrl: "",
+  partnersImages: [],
+  riimImages: [],
 };
 
 function readStringField(data: Record<string, any>, keys: string[]): string {
@@ -44,6 +48,29 @@ function readStringField(data: Record<string, any>, keys: string[]): string {
     }
   }
   return "";
+}
+
+function readStringArrayField(data: Record<string, any>, keys: string[]): string[] {
+  for (const key of keys) {
+    const value = data?.[key];
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item).trim()).filter(Boolean);
+    }
+    if (value && typeof value === "object" && Array.isArray(value.arrayValue?.values)) {
+      const values = value.arrayValue.values
+        .map((item: any) => item?.stringValue ?? item?.mapValue ?? item?.numberValue ?? "")
+        .map((item: any) => String(item).trim())
+        .filter(Boolean);
+      return values;
+    }
+    if (typeof value === "string") {
+      return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+  }
+  return [];
 }
 
 function normalizeFacebookUrl(value: string): string {
@@ -166,6 +193,12 @@ export async function getCompanyInfo(): Promise<CompanyInfo> {
           "company_image",
           "company_image_url",
         ]) || defaultCompanyInfo.aboutImageUrl,
+      partnersImages:
+        readStringArrayField(data, ["partners_images", "partnersImages", "partners"]) ||
+        defaultCompanyInfo.partnersImages,
+      riimImages:
+        readStringArrayField(data, ["riim_images", "riimImages", "riim"]) ||
+        defaultCompanyInfo.riimImages,
     };
   } catch {
     return defaultCompanyInfo;

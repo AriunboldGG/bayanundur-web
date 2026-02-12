@@ -135,6 +135,7 @@ export default function Header() {
             <NavLink href="/products">БҮТЭЭГДЭХҮҮН</NavLink>
             <NavLink href="/news">МЭДЭЭ</NavLink>
             <NavLink href="/special-order">ТУСГАЙ ЗАХИАЛГА</NavLink>
+            <NavLink href="/about">БИДНИЙ ТУХАЙ</NavLink>
           </nav>
 
           {/* Right: Shopping Cart and Burger Menu */}
@@ -185,6 +186,9 @@ export default function Header() {
               </NavLink>
               <NavLink href="/special-order" onClick={() => setIsMenuOpen(false)}>
                 ТУСГАЙ ЗАХИАЛГА
+              </NavLink>
+              <NavLink href="/about" onClick={() => setIsMenuOpen(false)}>
+                БИДНИЙ ТУХАЙ
               </NavLink>
             </nav>
           </div>

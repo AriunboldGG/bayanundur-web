@@ -81,6 +81,8 @@ export default function SearchBar() {
     };
   }, [isCategoryOpen]);
 
+  // Keep selection unchanged until user clicks a category
+
   // Handle search
   const handleSearch = () => {
     const trimmedQuery = searchQuery.trim();
@@ -93,6 +95,11 @@ export default function SearchBar() {
     }
   };
 
+  const navigateToCategory = (name: string) => {
+    router.push(`/products?category=${encodeURIComponent(name)}`);
+    setIsCategoryOpen(false);
+  };
+
   return (
     <div className="w-full">
       <div className="bg-[#1f632b] rounded-xl px-4 md:px-5 py-4 md:py-5 shadow-md">
@@ -103,9 +110,9 @@ export default function SearchBar() {
               onClick={() => {
                 const newState = !isCategoryOpen;
                 setIsCategoryOpen(newState);
-                if (newState && isMobile) {
-                  // Reset to show categories on mobile when opening
-                  setHoveredCat(null);
+                if (newState) {
+                  // Default to first category when opening
+                  setHoveredCat(0);
                   setHoveredSub(null);
                 }
               }}
@@ -159,61 +166,115 @@ export default function SearchBar() {
           {/* Category Dropdown Menu with sub and sub-sub */}
           {isCategoryOpen && (
             <div
-              className="absolute top-full left-0 mt-2 w-full md:w-[980px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[80vh] md:max-h-none overflow-y-auto md:overflow-y-visible"
-              onMouseLeave={() => {
-                if (!isMobile) {
-                  setHoveredCat(null);
-                  setHoveredSub(null);
-                }
-              }}
+              className="absolute top-full left-0 mt-2 w-full md:w-[640px] max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[80vh] md:max-h-none overflow-y-auto md:overflow-y-visible"
             >
               {isLoadingCategories ? (
                 <div className="py-4 px-4 text-sm text-gray-500">ачаалж байна...</div>
               ) : categoryTree.length === 0 ? (
                 <div className="py-4 px-4 text-sm text-gray-500">Ангилал олдсонгүй</div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-6">
-                  {categoryTree.map((cat) => {
+                <div className="flex flex-col gap-2 p-4 md:p-6">
+                  {categoryTree.map((cat, index) => {
+                    const isActive = hoveredCat === index;
+                    const hasChildren = !!cat.children?.length;
                     return (
-                      <div key={cat.slug} className="space-y-3 text-left flex flex-col items-start">
-                        <Link
-                          href={`/products?category=${encodeURIComponent(cat.name)}`}
-                          className="inline-flex items-center gap-2 text-sm md:text-base font-semibold text-gray-900 hover:text-[#1f632b] uppercase tracking-wide"
-                          onClick={() => setIsCategoryOpen(false)}
+                      <div key={cat.slug} className="border-b border-gray-100 pb-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setHoveredCat(isActive ? null : index);
+                            setHoveredSub(null);
+                          }}
+                          className="hidden"
                         >
-                          <span className="break-words">{cat.name}</span>
-                        </Link>
-                        {cat.children && cat.children.length > 0 ? (
-                          <div className="space-y-3">
-                            {cat.children.map((sub) => (
-                              <div key={sub.slug} className="space-y-2">
-                                <Link
-                                  href={`/products?category=${encodeURIComponent(sub.name)}`}
-                                  className="text-sm text-black hover:text-[#1f632b] capitalize"
-                                  onClick={() => setIsCategoryOpen(false)}
-                                >
-                                  {sub.name}
-                                </Link>
-                                {sub.children && sub.children.length > 0 ? (
-                                  <div className="flex flex-col gap-2 ml-3">
-                                    {sub.children.map((leaf) => (
-                                      <Link
-                                        key={leaf.slug}
-                                        href={`/products?category=${encodeURIComponent(leaf.name)}`}
-                                        className="text-xs text-black hover:text-[#1f632b] hover:underline capitalize"
-                                        onClick={() => setIsCategoryOpen(false)}
+                        </button>
+                        <div className="flex w-full items-start justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm md:text-base text-black hover:bg-gray-50 whitespace-normal uppercase">
+                          <Link
+                            href={`/products?category=${encodeURIComponent(cat.name)}`}
+                            onClick={() => navigateToCategory(cat.name)}
+                            className="flex-1 break-words leading-5 cursor-pointer"
+                          >
+                            {cat.name}
+                          </Link>
+                          {hasChildren ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setHoveredCat(isActive ? null : index);
+                                setHoveredSub(null);
+                              }}
+                              className="p-1 rounded-md text-gray-400 hover:text-[#1f632b] transition-colors cursor-pointer"
+                              aria-label={`${cat.name} дэлгэрэнгүй`}
+                            >
+                              <svg
+                                className={`w-4 h-4 transition-transform ${
+                                  isActive ? "rotate-90" : ""
+                                }`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </button>
+                          ) : null}
+                        </div>
+
+                        {isActive && hasChildren ? (
+                          <div className="ml-4 mt-1 flex flex-col gap-1">
+                            {cat.children!.map((sub, subIndex) => {
+                              const subActive = hoveredSub === subIndex;
+                              const subHasChildren = !!sub.children?.length;
+                              return (
+                                <div key={sub.slug} className="flex flex-col">
+                                  <div className="flex items-start justify-between gap-2 rounded-md px-3 py-2 text-sm text-black hover:bg-gray-50 whitespace-normal uppercase">
+                                    <Link
+                                      href={`/products?category=${encodeURIComponent(cat.name)}`}
+                                      onClick={() => navigateToCategory(cat.name)}
+                                      className="flex-1 break-words leading-5 cursor-pointer"
+                                    >
+                                      {sub.name}
+                                    </Link>
+                                    {subHasChildren ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => setHoveredSub(subActive ? null : subIndex)}
+                                        className="p-1 rounded-md text-gray-400 hover:text-[#1f632b] transition-colors cursor-pointer"
+                                        aria-label={`${sub.name} дэлгэрэнгүй`}
                                       >
-                                        {leaf.name}
-                                      </Link>
-                                    ))}
+                                        <svg
+                                          className={`w-4 h-4 transition-transform ${
+                                            subActive ? "rotate-90" : ""
+                                          }`}
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                      </button>
+                                    ) : null}
                                   </div>
-                                ) : null}
-                              </div>
-                            ))}
+
+                                  {subActive && subHasChildren ? (
+                                    <div className="ml-4 mt-1 flex flex-col gap-1">
+                                      {sub.children!.map((leaf) => (
+                                        <Link
+                                          key={leaf.slug}
+                                          href={`/products?category=${encodeURIComponent(cat.name)}`}
+                                          className="rounded-md px-3 py-2 text-xs text-black hover:bg-gray-50 hover:text-[#1f632b] whitespace-normal break-words leading-5 cursor-pointer uppercase"
+                                          onClick={() => navigateToCategory(cat.name)}
+                                        >
+                                          {leaf.name}
+                                        </Link>
+                                      ))}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              );
+                            })}
                           </div>
-                        ) : (
-                          <div className="text-xs text-gray-400">Дэд ангилал байхгүй</div>
-                        )}
+                        ) : null}
                       </div>
                     );
                   })}

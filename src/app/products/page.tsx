@@ -822,10 +822,13 @@ function ProductsPageContent() {
                     ) : (
                       <div className="text-sm md:text-base font-bold text-gray-900 leading-snug">{p.name}</div>
                     )}
-                    {p.brand ? (
-                      <div className="text-[10px] md:text-xs font-semibold text-[#1f632b]">Brand: {p.brand}</div>
-                    ) : null}
                   </div>
+                  {p.brand && (
+                    <div className="mb-2 inline-flex flex-col rounded-lg bg-[#EAF5EB] px-3 py-2">
+                      <div className="text-[10px] md:text-xs text-gray-500 font-medium mb-0.5">Брэнд</div>
+                      <div className="text-xs md:text-sm font-bold text-[#1f632b] leading-tight">{p.brand}</div>
+                    </div>
+                  )}
                   <div className="mb-2">
                     <div className="text-[10px] md:text-xs text-gray-500 font-medium mb-0.5">Модел дугаар</div>
                     <div className="text-xs md:text-sm font-bold text-[#1f632b] leading-tight">{p.modelNumber || "N/A"}</div>
@@ -847,7 +850,7 @@ function ProductsPageContent() {
                                 {`${p.salePriceNum.toLocaleString()} ₮`}
                               </span>
                               <span className="text-gray-400 line-through">
-                                {p.priceNum > 0 ? `${p.priceNum.toLocaleString()} ₮` : (p.price || "0₮")}
+                          {p.priceNum > 0 ? `${p.priceNum.toLocaleString()} ₮` : (p.price || "0₮")}
                               </span>
                             </span>
                           ) : (
@@ -857,10 +860,10 @@ function ProductsPageContent() {
                       </div>
                     )}
                     {p.manufacture_country ? (
-                      <div className="flex items-start gap-2">
+                    <div className="flex items-start gap-2">
                         <span className="font-semibold text-gray-700 min-w-[70px] md:min-w-[80px] flex-shrink-0">Үйлдвэрлэсэн улс:</span>
-                        <span className="text-gray-600 break-words">{p.manufacture_country}</span>
-                      </div>
+                        <span className="text-gray-600 break-words capitalize">{p.manufacture_country}</span>
+                    </div>
                     ) : null}
                     {p.color && (
                       <div className="flex items-start gap-2">

@@ -533,11 +533,14 @@ export default function ProductDetailPage() {
               ) : (
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{product.name}</h1>
               )}
-              {product.brand ? (
-                <div className="text-xs md:text-sm font-semibold text-[#1f632b]">Brand: {product.brand}</div>
-              ) : null}
             </div>
             <div className="mt-2 flex items-center gap-3 flex-wrap">
+              {product.brand ? (
+                <div className="inline-flex flex-col rounded-lg bg-[#EAF5EB] px-3 py-2">
+                  <div className="text-[10px] text-gray-500">Брэнд</div>
+                  <div className="text-sm font-semibold text-[#1f632b]">{product.brand}</div>
+                </div>
+              ) : null}
               <div className="bg-[#1f632b]/10 px-3 py-1 rounded-md">
                 <div className="text-[10px] text-gray-500">Модел дугаар</div>
                 <div className="text-sm font-semibold text-[#1f632b]">{product.modelNumber || "N/A"}</div>
@@ -564,8 +567,10 @@ export default function ProductDetailPage() {
                 </div>
                 {product.manufacture_country ? (
                   <div className="text-sm text-gray-600">
-                    Үйлдвэрлэсэн улс:{" "}
-                    <span className="font-semibold text-gray-800">{product.manufacture_country}</span>
+                    <span className="font-semibold text-gray-700">Үйлдвэрлэсэн улс:</span>{" "}
+                    <span className="font-normal text-gray-800 capitalize">
+                      {product.manufacture_country}
+                    </span>
                   </div>
                 ) : null}
               </div>
