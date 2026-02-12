@@ -179,23 +179,27 @@ export default function SearchBar() {
                     const hasChildren = !!cat.children?.length;
                     return (
                       <div key={cat.slug} className="border-b border-gray-100 pb-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setHoveredCat(isActive ? null : index);
-                            setHoveredSub(null);
-                          }}
-                          className="hidden"
-                        >
-                        </button>
                         <div className="flex w-full items-start justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm md:text-base text-black hover:bg-gray-50 whitespace-normal uppercase">
-                          <Link
-                            href={`/products?category=${encodeURIComponent(cat.name)}`}
-                            onClick={() => navigateToCategory(cat.name)}
-                            className="flex-1 break-words leading-5 cursor-pointer"
-                          >
-                            {cat.name}
-                          </Link>
+                          {hasChildren ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setHoveredCat(isActive ? null : index);
+                                setHoveredSub(null);
+                              }}
+                              className="flex-1 break-words leading-5 cursor-pointer text-left"
+                            >
+                              {cat.name}
+                            </button>
+                          ) : (
+                            <Link
+                              href={`/products?category=${encodeURIComponent(cat.name)}`}
+                              onClick={() => navigateToCategory(cat.name)}
+                              className="flex-1 break-words leading-5 cursor-pointer"
+                            >
+                              {cat.name}
+                            </Link>
+                          )}
                           {hasChildren ? (
                             <button
                               type="button"
@@ -228,13 +232,23 @@ export default function SearchBar() {
                               return (
                                 <div key={sub.slug} className="flex flex-col">
                                   <div className="flex items-start justify-between gap-2 rounded-md px-3 py-2 text-sm text-black hover:bg-gray-50 whitespace-normal uppercase">
-                                    <Link
-                                      href={`/products?category=${encodeURIComponent(cat.name)}`}
-                                      onClick={() => navigateToCategory(cat.name)}
-                                      className="flex-1 break-words leading-5 cursor-pointer"
-                                    >
-                                      {sub.name}
-                                    </Link>
+                                    {subHasChildren ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => setHoveredSub(subActive ? null : subIndex)}
+                                        className="flex-1 break-words leading-5 cursor-pointer text-left"
+                                      >
+                                        {sub.name}
+                                      </button>
+                                    ) : (
+                                      <Link
+                                        href={`/products?category=${encodeURIComponent(cat.name)}`}
+                                        onClick={() => navigateToCategory(cat.name)}
+                                        className="flex-1 break-words leading-5 cursor-pointer"
+                                      >
+                                        {sub.name}
+                                      </Link>
+                                    )}
                                     {subHasChildren ? (
                                       <button
                                         type="button"
